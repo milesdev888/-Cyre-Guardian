@@ -3,319 +3,993 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CYRE Guardian - Global Synthetic Intelligence</title>
+    <title>Cyre 7 - Guardian AI | The AI That Protects RWA</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #000000; color: #c0c0c0; line-height: 1.6; }
-        nav { position: sticky; top: 0; background: rgba(0, 0, 0, 0.98); border-bottom: 1px solid #404040; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; z-index: 1000; }
-        .logo { font-size: 1.8rem; font-weight: 800; color: #c0c0c0; }
-        nav a { color: #a0a0a0; text-decoration: none; margin: 0 1.5rem; transition: all 0.3s; }
-        nav a:hover { color: #e0e0e0; }
-        .hero { min-height: 90vh; display: flex; align-items: center; justify-content: space-between; padding: 4rem 2rem; background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%); }
-        .hero h1 { font-size: 3.5rem; font-weight: 800; color: #ffffff; margin-bottom: 1rem; }
-        .hero p { font-size: 1.2rem; color: #808080; margin-bottom: 2rem; }
-        .hero-buttons { display: flex; gap: 1rem; flex-wrap: wrap; }
-        .cta-button { padding: 1rem 2rem; background: linear-gradient(135deg, #c0c0c0, #d0d0d0); color: #000000; border: none; border-radius: 5px; font-weight: 700; cursor: pointer; transition: all 0.3s; }
-        .cta-button:hover { transform: translateY(-2px); }
-        .cta-button.secondary { background: transparent; border: 2px solid #606060; color: #c0c0c0; }
-        .avatar-circle { width: 350px; height: 350px; background: linear-gradient(135deg, #404040, #606060); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 120px; animation: float 6s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(20px); } }
-        .metrics { background: #0a0a0a; padding: 4rem 2rem; }
-        .section-title { font-size: 2.5rem; text-align: center; margin-bottom: 3rem; color: #d0d0d0; }
-        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto; }
-        .metric-card { background: #1a1a1a; border: 1px solid #404040; padding: 2rem; border-radius: 5px; }
-        .metric-number { font-size: 2.8rem; font-weight: 900; color: #d0d0d0; }
-        .metric-label { font-size: 0.9rem; color: #808080; text-transform: uppercase; }
-        .products { background: #000000; padding: 4rem 2rem; }
-        .products-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; max-width: 1400px; margin: 0 auto; }
-        .product-card { background: #1a1a1a; border: 1px solid #404040; padding: 2rem; border-radius: 5px; }
-        .product-badge { display: inline-block; padding: 0.4rem 0.9rem; border-radius: 3px; font-size: 0.7rem; font-weight: 700; margin-bottom: 1rem; }
-        .badge-live { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid #22c55e; }
-        .badge-beta { background: rgba(59, 130, 246, 0.15); color: #3b82f6; border: 1px solid #3b82f6; }
-        .badge-coming { background: rgba(160, 160, 160, 0.15); color: #a0a0a0; border: 1px solid #606060; }
-        .pricing { background: #000000; padding: 4rem 2rem; }
-        .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto; }
-        .pricing-card { background: #1a1a1a; border: 1px solid #404040; padding: 2rem; border-radius: 5px; text-align: center; }
-        .pricing-card.featured { border-color: #606060; transform: scale(1.05); }
-        .pricing-price { font-size: 2.5rem; font-weight: 900; color: #c0c0c0; }
-        .pricing-features li { list-style: none; padding: 0.6rem 0; color: #a0a0a0; }
-        .pricing-features li:before { content: "✓ "; color: #c0c0c0; font-weight: 700; margin-right: 0.5rem; }
-        .faq { background: #0a0a0a; padding: 4rem 2rem; }
-        .faq-container { max-width: 900px; margin: 0 auto; }
-        .faq-item { background: #1a1a1a; border-left: 3px solid #606060; padding: 1.5rem; margin-bottom: 1rem; border-radius: 3px; cursor: pointer; }
-        .faq-question { font-size: 1.1rem; font-weight: 700; color: #d0d0d0; }
-        .faq-answer { color: #a0a0a0; display: none; }
-        .faq-item.active .faq-answer { display: block; }
-        .chatbot-sidebar { position: fixed; bottom: 20px; right: 20px; width: 350px; height: 500px; background: #1a1a1a; border: 1px solid #404040; border-radius: 8px; display: flex; flex-direction: column; z-index: 999; }
-        .chatbot-header { background: linear-gradient(135deg, #404040, #606060); padding: 1.5rem; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; }
-        .guardian-avatar { width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 3px solid #c0c0c0; }
-        .guardian-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
-        .guardian-name { font-weight: 700; color: #ffffff; font-size: 1.1rem; text-align: center; }
-        .guardian-online { color: #a0a0a0; font-size: 0.85rem; text-align: center; }
-        .online-dot { display: inline-block; width: 6px; height: 6px; background: #22c55e; border-radius: 50%; margin-right: 0.4rem; animation: pulse 2s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .chatbot-body { flex: 1; overflow-y: auto; padding: 1rem; display: flex; flex-direction: column; gap: 1rem; }
-        .message { display: flex; margin-bottom: 1rem; }
-        .message.user { justify-content: flex-end; }
-        .message-text { background: #2a2a2a; padding: 0.8rem 1rem; border-radius: 5px; max-width: 80%; font-size: 0.9rem; color: #a0a0a0; line-height: 1.4; word-wrap: break-word; }
-        .message.user .message-text { background: #404040; color: #e0e0e0; }
-        .chatbot-input { padding: 1rem; border-top: 1px solid #404040; display: flex; gap: 0.5rem; }
-        .chatbot-input input { flex: 1; background: #2a2a2a; border: 1px solid #404040; color: #c0c0c0; padding: 0.8rem; border-radius: 3px; }
-        .chatbot-input button { background: #606060; border: none; color: #ffffff; padding: 0.8rem 1rem; border-radius: 3px; cursor: pointer; font-weight: 600; }
-        .chatbot-input button:hover { background: #808080; }
-        footer { background: #000000; border-top: 1px solid #404040; padding: 2rem; text-align: center; color: #808080; }
-        @media (max-width: 768px) { .hero { flex-direction: column; } .hero h1 { font-size: 2.2rem; } .chatbot-sidebar { width: calc(100% - 40px); } }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #0d1b2a 50%, #0a0a0a 100%);
+            color: #ffffff;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 10, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 255, 204, 0.2);
+            z-index: 1000;
+            padding: 1rem 2rem;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(45deg, #00ffcc, #0099ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #ffffff;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #00ffcc;
+        }
+
+        .nav-cta {
+            background: linear-gradient(45deg, #00ffcc, #0099ff);
+            color: #000;
+            padding: 8px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: transform 0.3s;
+        }
+
+        .nav-cta:hover {
+            transform: scale(1.05);
+        }
+
+        /* Hero Section */
+        .hero {
+            margin-top: 80px;
+            min-height: 90vh;
+            display: flex;
+            align-items: center;
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, rgba(0, 255, 204, 0.05) 0%, rgba(0, 153, 255, 0.05) 100%);
+        }
+
+        .hero-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero-content h1 {
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #00ffcc, #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-content p {
+            font-size: 18px;
+            color: #a0a0a0;
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #00ffcc, #0099ff);
+            color: #000;
+            padding: 12px 32px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            font-size: 16px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 255, 204, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #00ffcc;
+            padding: 12px 32px;
+            border: 2px solid #00ffcc;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 255, 204, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 255, 204, 0.2);
+        }
+
+        .hero-avatar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .avatar-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .avatar-glow {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 255, 204, 0.2) 0%, rgba(0, 153, 255, 0.1) 50%, transparent 100%);
+            animation: pulse-glow 4s ease-in-out infinite;
+        }
+
+        .avatar-image {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 0 40px rgba(0, 255, 204, 0.4);
+            border: 2px solid rgba(0, 255, 204, 0.3);
+        }
+
+        .avatar-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-status {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(10, 10, 10, 0.9);
+            padding: 12px 16px;
+            border-radius: 20px;
+            border: 2px solid #00ffcc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #00ff00;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.7);
+            }
+            50% {
+                opacity: 0.7;
+                box-shadow: 0 0 0 8px rgba(0, 255, 0, 0);
+            }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.6;
+            }
+        }
+
+        /* Metrics Section */
+        .metrics {
+            max-width: 1200px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .metric-card {
+            background: rgba(13, 27, 42, 0.6);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            transition: transform 0.3s, border-color 0.3s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 255, 204, 0.5);
+        }
+
+        .metric-value {
+            font-size: 36px;
+            font-weight: 800;
+            color: #00ffcc;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 14px;
+            color: #a0a0a0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Products Section */
+        .products {
+            max-width: 1200px;
+            margin: 6rem auto;
+            padding: 0 2rem;
+        }
+
+        .section-title {
+            font-size: 36px;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 3rem;
+            background: linear-gradient(45deg, #00ffcc, #0099ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .product-card {
+            background: linear-gradient(135deg, rgba(13, 27, 42, 0.8) 0%, rgba(20, 40, 60, 0.8) 100%);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            padding: 2rem;
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .product-card:hover {
+            border-color: rgba(0, 255, 204, 0.5);
+            box-shadow: 0 10px 40px rgba(0, 255, 204, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .product-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 1rem;
+        }
+
+        .product-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .product-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-live {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid #22c55e;
+        }
+
+        .badge-beta {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid #3b82f6;
+        }
+
+        .badge-coming {
+            background: rgba(160, 160, 160, 0.2);
+            color: #a0a0a0;
+            border: 1px solid #a0a0a0;
+        }
+
+        .product-description {
+            color: #a0a0a0;
+            font-size: 14px;
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+
+        .product-revenue {
+            font-size: 16px;
+            font-weight: 700;
+            color: #00ffcc;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(0, 255, 204, 0.1);
+        }
+
+        /* Pricing Section */
+        .pricing {
+            max-width: 1200px;
+            margin: 6rem auto;
+            padding: 0 2rem;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .pricing-card {
+            background: linear-gradient(135deg, rgba(13, 27, 42, 0.8) 0%, rgba(20, 40, 60, 0.8) 100%);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            padding: 2rem;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .pricing-card:hover {
+            border-color: rgba(0, 255, 204, 0.5);
+            transform: translateY(-10px);
+        }
+
+        .pricing-card.featured {
+            border: 2px solid #00ffcc;
+            box-shadow: 0 20px 60px rgba(0, 255, 204, 0.2);
+            transform: scale(1.05);
+        }
+
+        .pricing-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 1rem;
+        }
+
+        .pricing-price {
+            font-size: 32px;
+            font-weight: 800;
+            color: #00ffcc;
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing-period {
+            color: #a0a0a0;
+            font-size: 14px;
+            margin-bottom: 2rem;
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .pricing-features li {
+            padding: 8px 0;
+            color: #a0a0a0;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(0, 255, 204, 0.1);
+        }
+
+        .pricing-features li:before {
+            content: "✓ ";
+            color: #00ffcc;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        /* FAQ Section */
+        .faq {
+            max-width: 800px;
+            margin: 6rem auto;
+            padding: 0 2rem;
+        }
+
+        .faq-item {
+            background: rgba(13, 27, 42, 0.6);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            margin-bottom: 1rem;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .faq-item:hover {
+            border-color: rgba(0, 255, 204, 0.5);
+        }
+
+        .faq-question {
+            padding: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .faq-question:hover {
+            color: #00ffcc;
+        }
+
+        .faq-answer {
+            padding: 0 1.5rem 1.5rem;
+            color: #a0a0a0;
+            display: none;
+            line-height: 1.8;
+        }
+
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+
+        .faq-toggle {
+            font-size: 20px;
+            transition: transform 0.3s;
+        }
+
+        .faq-item.active .faq-toggle {
+            transform: rotate(45deg);
+        }
+
+        /* Footer */
+        footer {
+            background: rgba(10, 10, 10, 0.8);
+            border-top: 1px solid rgba(0, 255, 204, 0.2);
+            padding: 3rem 2rem;
+            margin-top: 6rem;
+            text-align: center;
+            color: #a0a0a0;
+            font-size: 14px;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            text-align: left;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h4 {
+            color: #ffffff;
+            margin-bottom: 1rem;
+            font-size: 14px;
+        }
+
+        .footer-section a {
+            display: block;
+            color: #a0a0a0;
+            text-decoration: none;
+            margin-bottom: 0.5rem;
+            font-size: 13px;
+            transition: color 0.3s;
+        }
+
+        .footer-section a:hover {
+            color: #00ffcc;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(0, 255, 204, 0.1);
+            padding-top: 2rem;
+            text-align: center;
+        }
+
+        /* Chatbot Widget */
+        .chatbot-widget {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 350px;
+            height: 500px;
+            background: linear-gradient(135deg, rgba(13, 27, 42, 0.95) 0%, rgba(20, 40, 60, 0.95) 100%);
+            border: 2px solid rgba(0, 255, 204, 0.3);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            z-index: 999;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+        }
+
+        .chatbot-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(0, 255, 204, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .chatbot-avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #00ffcc, #0099ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #000;
+        }
+
+        .chatbot-title {
+            flex: 1;
+        }
+
+        .chatbot-name {
+            font-weight: 700;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        .chatbot-status {
+            font-size: 12px;
+            color: #00ffcc;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            display: flex;
+            gap: 0.5rem;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .message.bot .message-content {
+            background: rgba(0, 255, 204, 0.15);
+            color: #a0a0a0;
+            border: 1px solid rgba(0, 255, 204, 0.2);
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(45deg, #00ffcc, #0099ff);
+            color: #000;
+        }
+
+        .input-area {
+            padding: 1rem;
+            border-top: 1px solid rgba(0, 255, 204, 0.2);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .input-area input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(0, 255, 204, 0.2);
+            color: #ffffff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            transition: border-color 0.3s;
+        }
+
+        .input-area input:focus {
+            outline: none;
+            border-color: rgba(0, 255, 204, 0.5);
+        }
+
+        .send-btn {
+            background: linear-gradient(45deg, #00ffcc, #0099ff);
+            border: none;
+            color: #000;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+            transition: transform 0.2s;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-container {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .hero-content h1 {
+                font-size: 32px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .chatbot-widget {
+                width: 100%;
+                height: 100%;
+                bottom: 0;
+                right: 0;
+                border-radius: 0;
+            }
+
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Navigation -->
     <nav>
-        <div class="logo">CYRE Guardian</div>
-        <div>
-            <a href="#products">Products</a>
-            <a href="#pricing">Pricing</a>
-            <a href="#faq">FAQ</a>
+        <div class="nav-container">
+            <div class="logo">CYRE 7</div>
+            <ul class="nav-links">
+                <li><a href="#products">Products</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#faq">FAQ</a></li>
+            </ul>
+            <a href="#contact" class="nav-cta">Get Started</a>
         </div>
     </nav>
 
+    <!-- Hero Section -->
     <section class="hero">
-        <div class="hero-content">
-            <h1>The AI That Protects RWA</h1>
-            <p>Guardian AI fraud detection system. Global Synthetic Intelligence Infrastructure on Solana.</p>
-            <div class="hero-buttons">
-                <button class="cta-button">Get Started</button>
-                <button class="cta-button secondary">Learn More</button>
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1>The AI That Protects RWA</h1>
+                <p>Guardian AI by Cyre 7 provides real-time fraud detection, behavioral analysis, and synthetic intelligence across global financial networks. Protect your assets with 94.7% accuracy.</p>
+                <div class="hero-buttons">
+                    <button class="btn-primary">Start Free Trial</button>
+                    <button class="btn-secondary">Watch Demo</button>
+                </div>
             </div>
-        </div>
-        <div class="hero-avatar">
-            <div class="avatar-circle">👁️</div>
+            <div class="hero-avatar">
+                <div class="avatar-container">
+                    <div class="avatar-glow"></div>
+                    <div class="avatar-image">
+                        <img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCADIAMgDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWm5ybnJ2eoqOkpaanqKmqsrO0tba2uLm6wsPExcbHyMnK0tPU1dbW2Nna4uPk5ebn6Onq8vP09fb2+Pn6/8QAHwEAAwEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlbaWmJmaoqOkpaanqKmqsrO0tba2uLm6wsPExcbHyMnK0tPU1dbW2Nna4uPk5ebn6Onq8vP09fb2+Pn6/9oADAMBAAIRAxEAPwD3+iiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigD/9k=" alt="Guardian AI Avatar">
+                    </div>
+                    <div class="avatar-status">
+                        <span class="status-dot"></span>
+                        <span>Online • Monitoring</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
+    <!-- Metrics -->
     <section class="metrics">
-        <h2>Why CYRE Leads</h2>
-        <div class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-number">127+</div>
-                <div class="metric-label">Fraud Patterns</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-number">94.7%</div>
-                <div class="metric-label">Detection Accuracy</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-number">42</div>
-                <div class="metric-label">Active Protocols</div>
-            </div>
-            <div class="metric-card">
-                <div class="metric-number">99.98%</div>
-                <div class="metric-label">System Uptime</div>
-            </div>
+        <div class="metric-card">
+            <div class="metric-value">127+</div>
+            <div class="metric-label">Fraud Patterns Detected</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">42</div>
+            <div class="metric-label">Active Protocols</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">94.7%</div>
+            <div class="metric-label">Detection Accuracy</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-value">99.98%</div>
+            <div class="metric-label">System Uptime</div>
         </div>
     </section>
 
+    <!-- Products Section -->
     <section class="products" id="products">
         <h2 class="section-title">7 Golden Products</h2>
         <div class="products-grid">
             <div class="product-card">
-                <span class="product-badge badge-live">LIVE</span>
-                <div class="product-name">Fraud Prediction</div>
-                <p class="product-description">AI-powered fraud detection with 94.7% accuracy. Our flagship product trusted by 42+ protocols.</p>
-                <div class="product-revenue">$125,000/month</div>
+                <div class="product-header">
+                    <div class="product-name">Fraud Prediction</div>
+                    <span class="product-badge badge-live">LIVE</span>
+                </div>
+                <p class="product-description">Real-time fraud detection across RWA networks using advanced ML models and behavioral analysis.</p>
+                <div class="product-revenue">$125,000+/month</div>
             </div>
+
             <div class="product-card">
-                <span class="product-badge badge-beta">BETA</span>
-                <div class="product-name">Credit Scores</div>
-                <p class="product-description">Synthetic credit scoring for on-chain RWA assets.</p>
-                <div class="product-revenue">$45,000/month</div>
+                <div class="product-header">
+                    <div class="product-name">Credit Scores</div>
+                    <span class="product-badge badge-beta">BETA</span>
+                </div>
+                <p class="product-description">AI-generated credit scoring for blockchain assets with real-time risk assessment.</p>
+                <div class="product-revenue">$45,000+/month</div>
             </div>
+
             <div class="product-card">
-                <span class="product-badge badge-beta">BETA</span>
-                <div class="product-name">Behavior Passport</div>
-                <p class="product-description">Real-time behavioral analysis and risk scoring.</p>
-                <div class="product-revenue">$32,000/month</div>
+                <div class="product-header">
+                    <div class="product-name">Behavior Passport</div>
+                    <span class="product-badge badge-beta">BETA</span>
+                </div>
+                <p class="product-description">Behavioral biometrics and identity verification for seamless, secure transactions.</p>
+                <div class="product-revenue">$32,000+/month</div>
             </div>
+
             <div class="product-card">
-                <span class="product-badge badge-beta">BETA</span>
-                <div class="product-name">Forensics Engine</div>
-                <p class="product-description">Post-incident investigation and chain analysis.</p>
-                <div class="product-revenue">$28,000/month</div>
+                <div class="product-header">
+                    <div class="product-name">Forensics</div>
+                    <span class="product-badge badge-beta">BETA</span>
+                </div>
+                <p class="product-description">Deep chain analysis and forensic investigation for on-chain transaction tracking.</p>
+                <div class="product-revenue">$28,000+/month</div>
             </div>
+
             <div class="product-card">
-                <span class="product-badge badge-beta">BETA</span>
-                <div class="product-name">Futures Market</div>
-                <p class="product-description">Predictive analytics for blockchain assets.</p>
-                <div class="product-revenue">$85,000/month</div>
+                <div class="product-header">
+                    <div class="product-name">Futures Market</div>
+                    <span class="product-badge badge-beta">BETA</span>
+                </div>
+                <p class="product-description">Predictive analytics for crypto futures and derivatives with AI-powered insights.</p>
+                <div class="product-revenue">$85,000+/month</div>
             </div>
+
             <div class="product-card">
-                <span class="product-badge badge-beta">BETA</span>
-                <div class="product-name">Sovereign AI</div>
-                <p class="product-description">Autonomous multi-chain surveillance system.</p>
-                <div class="product-revenue">$145,000/month</div>
+                <div class="product-header">
+                    <div class="product-name">Sovereign AI</div>
+                    <span class="product-badge badge-coming">COMING</span>
+                </div>
+                <p class="product-description">National-level threat detection and geopolitical risk assessment for governments.</p>
+                <div class="product-revenue">$145,000+/month</div>
             </div>
+
             <div class="product-card">
-                <span class="product-badge badge-coming">COMING SOON</span>
-                <div class="product-name">Insurance Module</div>
-                <p class="product-description">Parametric insurance powered by Guardian predictions.</p>
-                <div class="product-revenue">$62,000/month</div>
+                <div class="product-header">
+                    <div class="product-name">Insurance Shield</div>
+                    <span class="product-badge badge-coming">COMING</span>
+                </div>
+                <p class="product-description">Dynamic insurance products protecting RWA holders against fraud and market risks.</p>
+                <div class="product-revenue">$62,000+/month</div>
             </div>
         </div>
     </section>
 
+    <!-- Pricing Section -->
     <section class="pricing" id="pricing">
-        <h2 class="section-title">Simple Pricing</h2>
+        <h2 class="section-title">Simple, Transparent Pricing</h2>
         <div class="pricing-grid">
             <div class="pricing-card">
                 <div class="pricing-name">Starter</div>
                 <div class="pricing-price">$500</div>
                 <div class="pricing-period">per month</div>
                 <ul class="pricing-features">
-                    <li>Fraud Prediction API</li>
-                    <li>1M transactions/month</li>
+                    <li>Basic fraud detection</li>
+                    <li>Up to 1,000 transactions/day</li>
                     <li>Email support</li>
+                    <li>Standard API access</li>
                 </ul>
-                <button class="cta-button">Get Started</button>
+                <button class="btn-primary">Get Started</button>
             </div>
+
             <div class="pricing-card featured">
-                <div class="pricing-name">Pro</div>
+                <div class="pricing-name">Professional</div>
                 <div class="pricing-price">$5,000</div>
                 <div class="pricing-period">per month</div>
                 <ul class="pricing-features">
-                    <li>All Starter features</li>
-                    <li>50M transactions/month</li>
-                    <li>Priority support</li>
+                    <li>Advanced AI models</li>
+                    <li>Unlimited transactions</li>
+                    <li>24/7 priority support</li>
+                    <li>Custom integrations</li>
+                    <li>Real-time dashboards</li>
                 </ul>
-                <button class="cta-button">Start Pro</button>
+                <button class="btn-primary">Start Free Trial</button>
             </div>
+
             <div class="pricing-card">
                 <div class="pricing-name">Enterprise</div>
                 <div class="pricing-price">Custom</div>
                 <div class="pricing-period">contact us</div>
                 <ul class="pricing-features">
-                    <li>All Pro features</li>
-                    <li>Unlimited transactions</li>
-                    <li>24/7 support</li>
+                    <li>Full platform access</li>
+                    <li>Unlimited everything</li>
+                    <li>Dedicated account manager</li>
+                    <li>Custom features & models</li>
+                    <li>SLA guarantees</li>
                 </ul>
-                <button class="cta-button">Contact Sales</button>
+                <button class="btn-secondary">Contact Sales</button>
             </div>
         </div>
     </section>
 
+    <!-- FAQ Section -->
     <section class="faq" id="faq">
-        <h2 class="section-title">Frequently Asked</h2>
-        <div class="faq-container">
-            <div class="faq-item active">
-                <div class="faq-question">What is Guardian AI?</div>
-                <div class="faq-answer">Guardian AI is CYRE's core fraud detection engine. It monitors blockchain transactions in real-time with 94.7% accuracy across 127+ fraud patterns.</div>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        
+        <div class="faq-item active">
+            <div class="faq-question">
+                What makes Guardian AI different?
+                <span class="faq-toggle">+</span>
             </div>
-            <div class="faq-item">
-                <div class="faq-question">How does integration work?</div>
-                <div class="faq-answer">Our team handles setup (2-4 hours), testing (1 day), and deployment. Most protocols go live within 24 hours of signup.</div>
+            <div class="faq-answer">
+                Guardian AI combines advanced machine learning with behavioral analysis to detect fraud patterns in real-time. Our 94.7% accuracy rate and focus on RWA protection set us apart from traditional fraud detection systems.
             </div>
-            <div class="faq-item">
-                <div class="faq-question">What networks are supported?</div>
-                <div class="faq-answer">We support Solana, Ethereum, Arbitrum, Polygon, Optimism, and emerging networks with our Sovereign AI.</div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                How fast is the detection?
+                <span class="faq-toggle">+</span>
             </div>
-            <div class="faq-item">
-                <div class="faq-question">Is data secure?</div>
-                <div class="faq-answer">Yes. We're SOC 2 Type II certified with end-to-end encryption. Your data never leaves your infrastructure.</div>
+            <div class="faq-answer">
+                We detect fraudulent transactions in milliseconds. Our real-time monitoring system processes millions of transactions daily with instant alerts and automated response protocols.
             </div>
-            <div class="faq-item">
-                <div class="faq-question">What's the ROI?</div>
-                <div class="faq-answer">Average customers see $2-5M in fraud prevention annually, breaking even within 30 days.</div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                Can I integrate with my existing systems?
+                <span class="faq-toggle">+</span>
+            </div>
+            <div class="faq-answer">
+                Yes! Our API is designed for seamless integration with existing platforms. We support REST and WebSocket connections, with full documentation and dedicated support for implementation.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                What about data privacy?
+                <span class="faq-toggle">+</span>
+            </div>
+            <div class="faq-answer">
+                We're SOC 2 Type II certified and comply with GDPR, CCPA, and all major privacy regulations. Your data is encrypted in transit and at rest, with zero access from external parties.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                What's your uptime guarantee?
+                <span class="faq-toggle">+</span>
+            </div>
+            <div class="faq-answer">
+                Enterprise customers receive a 99.99% SLA guarantee. Our infrastructure is distributed globally with redundancy across multiple regions to ensure maximum availability.
             </div>
         </div>
     </section>
 
-    <div class="chatbot-sidebar">
-        <div class="chatbot-header">
-            <div class="guardian-avatar">
-                <img src="https://raw.githubusercontent.com/milesdev888/Cyre-Guardian/main/guardian%20avatar.jpeg" alt="Guardian AI">
-            </div>
-            <div class="guardian-name">Guardian AI</div>
-            <div class="guardian-online"><span class="online-dot"></span>Online • Monitoring</div>
-        </div>
-        <div class="chatbot-body" id="chatbotBody">
-            <div class="message">
-                <div class="message-text">Hi! I'm Guardian. How can I help you today?</div>
-            </div>
-        </div>
-        <div class="chatbot-input">
-            <input type="text" id="chatInput" placeholder="Ask Guardian...">
-            <button id="sendBtn">Send</button>
-        </div>
-    </div>
-
+    <!-- Footer -->
     <footer>
-        <p>&copy; 2026 CYRE Guardian. Global Synthetic Intelligence Infrastructure.</p>
-        <p>Protecting RWA on Solana. <strong>The AI that protects assets.</strong></p>
-    </footer>
-
-    <script>
-        const chatInput = document.getElementById('chatInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const chatbotBody = document.getElementById('chatbotBody');
-
-        const demoResponses = {
-            'detection': 'We maintain 94.7% accuracy across 127+ fraud patterns.',
-            'pricing': 'Starter: $500/mo, Pro: $5,000/mo, Enterprise: Custom',
-            'protocol': 'Setup takes 2-4 hours, testing 1 day, live in 24 hours.',
-            'security': 'SOC 2 Type II certified with end-to-end encryption.',
-            'blockchain': 'We support Solana, Ethereum, Arbitrum, Polygon, Optimism.',
-            'roi': 'Customers see $2-5M fraud prevention annually, breakeven in 30 days.',
-        };
-
-        sendBtn.addEventListener('click', sendMessage);
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendMessage();
-        });
-
-        function sendMessage() {
-            const message = chatInput.value.trim();
-            if (!message) return;
-            addMessage(message, 'user');
-            chatInput.value = '';
-            setTimeout(() => {
-                const response = getResponse(message);
-                addMessage(response, 'bot');
-            }, 800);
-        }
-
-        function addMessage(text, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${sender}`;
-            const textDiv = document.createElement('div');
-            textDiv.className = 'message-text';
-            textDiv.textContent = text;
-            messageDiv.appendChild(textDiv);
-            chatbotBody.appendChild(messageDiv);
-            chatbotBody.scrollTop = chatbotBody.scrollHeight;
-        }
-
-        function getResponse(message) {
-            const lower = message.toLowerCase();
-            if (lower.includes('detect') || lower.includes('accuracy')) return demoResponses.detection;
-            if (lower.includes('price')) return demoResponses.pricing;
-            if (lower.includes('integr') || lower.includes('setup')) return demoResponses.protocol;
-            if (lower.includes('secure')) return demoResponses.security;
-            if (lower.includes('blockchain') || lower.includes('network')) return demoResponses.blockchain;
-            if (lower.includes('roi')) return demoResponses.roi;
-            return 'Ask me about detection accuracy, pricing, integration, security, blockchain support, or ROI!';
-        }
-
-        document.querySelectorAll('.faq-item').forEach(item => {
-            item.addEventListener('click', () => {
-                document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
-                item.classList.add('active');
-            });
-        });
-
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) target.scrollIntoView({ behavior: 'smooth' });
-            });
-        });
-    </script>
-</body>
-</html>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Product</h4>
+                <a href="#">Features</a>
+                <a href="#">Pricing</a>
+                <a href="#">Security</a>
+                <a href="#">Roadmap</a>
+            </div>
+            <div class="footer-section">
+                <h4>Company</h4>
+                <a href="#">About</a>
+                <a href="#">Blog</a>
+                <a href="#">Careers</a>
+                <a href="#">Contact</a>
+            </div>
+            <div class="footer-section">
+                <h4>Legal</h4>
+                <a href="#">Privacy</a>
+                <a href="#">Terms</a>
+                <a href="#">Cookies</a>
+                <a href="#">License</a>
+            </div>
+            <div class="footer-section">
+                <h4>Social</h4>
+                <a href="#">Twitter</a>
+                <a href="#">Discord</a>
+                <a href="#">GitHub</a>
+                <a href="#">LinkedIn</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            
