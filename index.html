@@ -122,4 +122,916 @@
 
         .cta-button {
             padding: 1rem 2rem;
-            background: linear-gradient(135deg, #c0c0c0, #d
+            background: linear-gradient(135deg, #c0c0c0, #d0d0d0);
+            color: #000000;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            box-shadow: 0 4px 15px rgba(192, 192, 192, 0.2);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(192, 192, 192, 0.4);
+        }
+
+        .cta-button.secondary {
+            background: transparent;
+            border: 2px solid #606060;
+            color: #c0c0c0;
+        }
+
+        .cta-button.secondary:hover {
+            border-color: #d0d0d0;
+            color: #ffffff;
+        }
+
+        /* Hero Avatar */
+        .hero-avatar {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .avatar-circle {
+            width: 350px;
+            height: 350px;
+            background: linear-gradient(135deg, #404040, #606060);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 120px;
+            box-shadow: 0 0 60px rgba(192, 192, 192, 0.1),
+                        inset 0 0 60px rgba(192, 192, 192, 0.05);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(20px); }
+        }
+
+        /* Metrics Section */
+        .metrics {
+            background: #0a0a0a;
+            padding: 4rem 2rem;
+            border-top: 1px solid #242424;
+            border-bottom: 1px solid #242424;
+        }
+
+        .metrics h2 {
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #d0d0d0;
+            text-align: center;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .metric-card {
+            background: #1a1a1a;
+            border: 1px solid #404040;
+            border-radius: 5px;
+            padding: 2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+        }
+
+        .metric-card:hover {
+            border-color: #606060;
+            box-shadow: 0 6px 25px rgba(192, 192, 192, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .metric-number {
+            font-size: 2.8rem;
+            font-weight: 900;
+            color: #d0d0d0;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: #808080;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        /* Products Section */
+        .products {
+            background: #000000;
+            padding: 4rem 2rem;
+            border-bottom: 1px solid #242424;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #d0d0d0;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .product-card {
+            background: #1a1a1a;
+            border: 1px solid #404040;
+            border-radius: 5px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .product-card:hover {
+            border-color: #606060;
+            box-shadow: 0 8px 30px rgba(192, 192, 192, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .product-badge {
+            display: inline-block;
+            padding: 0.4rem 0.9rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            letter-spacing: 1.5px;
+        }
+
+        .badge-live {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+            border: 1px solid #22c55e;
+        }
+
+        .badge-beta {
+            background: rgba(59, 130, 246, 0.15);
+            color: #3b82f6;
+            border: 1px solid #3b82f6;
+        }
+
+        .badge-coming {
+            background: rgba(160, 160, 160, 0.15);
+            color: #a0a0a0;
+            border: 1px solid #606060;
+        }
+
+        .product-name {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #ffffff;
+        }
+
+        .product-description {
+            color: #808080;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .product-revenue {
+            font-size: 1.1rem;
+            color: #c0c0c0;
+            font-weight: 700;
+        }
+
+        /* Dashboard Preview */
+        .dashboard-preview {
+            background: #0a0a0a;
+            padding: 4rem 2rem;
+            border-top: 1px solid #242424;
+            border-bottom: 1px solid #242424;
+        }
+
+        .preview-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .preview-image {
+            background: #1a1a1a;
+            border: 1px solid #404040;
+            border-radius: 5px;
+            padding: 2rem;
+            text-align: center;
+            color: #606060;
+        }
+
+        /* Pricing Section */
+        .pricing {
+            background: #000000;
+            padding: 4rem 2rem;
+            border-bottom: 1px solid #242424;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: #1a1a1a;
+            border: 1px solid #404040;
+            border-radius: 5px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .pricing-card:hover {
+            border-color: #606060;
+            box-shadow: 0 8px 30px rgba(192, 192, 192, 0.1);
+            transform: translateY(-5px);
+        }
+
+        .pricing-card.featured {
+            border-color: #606060;
+            background: linear-gradient(135deg, rgba(96, 96, 96, 0.1), rgba(64, 64, 64, 0.1));
+            transform: scale(1.05);
+        }
+
+        .pricing-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #d0d0d0;
+        }
+
+        .pricing-price {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #c0c0c0;
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing-period {
+            color: #808080;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .pricing-features {
+            text-align: left;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+        }
+
+        .pricing-features li {
+            list-style: none;
+            padding: 0.6rem 0;
+            color: #a0a0a0;
+        }
+
+        .pricing-features li:before {
+            content: "✓ ";
+            color: #c0c0c0;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        /* FAQ Section */
+        .faq {
+            background: #0a0a0a;
+            padding: 4rem 2rem;
+            border-top: 1px solid #242424;
+            border-bottom: 1px solid #242424;
+        }
+
+        .faq-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            background: #1a1a1a;
+            border-left: 3px solid #606060;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .faq-item:hover {
+            border-left-color: #808080;
+            box-shadow: 0 4px 15px rgba(192, 192, 192, 0.05);
+        }
+
+        .faq-question {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #d0d0d0;
+            margin-bottom: 0.5rem;
+        }
+
+        .faq-answer {
+            color: #a0a0a0;
+            display: none;
+            line-height: 1.6;
+        }
+
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+
+        /* Chatbot Sidebar */
+        .chatbot-sidebar {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            height: 500px;
+            background: #1a1a1a;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .chatbot-header {
+            background: linear-gradient(135deg, #404040, #606060);
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 1px solid #404040;
+        }
+
+        .guardian-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #c0c0c0, #d0d0d0);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            color: #000000;
+            font-weight: bold;
+        }
+
+        .guardian-status {
+            flex: 1;
+        }
+
+        .guardian-name {
+            font-weight: 700;
+            color: #ffffff;
+            font-size: 1rem;
+        }
+
+        .guardian-online {
+            font-size: 0.8rem;
+            color: #a0a0a0;
+        }
+
+        .online-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: #22c55e;
+            border-radius: 50%;
+            margin-right: 0.4rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .chatbot-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-text {
+            background: #2a2a2a;
+            padding: 0.8rem 1rem;
+            border-radius: 5px;
+            max-width: 80%;
+            font-size: 0.9rem;
+            color: #a0a0a0;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-text {
+            background: #404040;
+            color: #e0e0e0;
+        }
+
+        .chatbot-input {
+            padding: 1rem;
+            border-top: 1px solid #404040;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chatbot-input input {
+            flex: 1;
+            background: #2a2a2a;
+            border: 1px solid #404040;
+            color: #c0c0c0;
+            padding: 0.8rem;
+            border-radius: 3px;
+            font-size: 0.9rem;
+        }
+
+        .chatbot-input input::placeholder {
+            color: #606060;
+        }
+
+        .chatbot-input button {
+            background: #606060;
+            border: none;
+            color: #ffffff;
+            padding: 0.8rem 1rem;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .chatbot-input button:hover {
+            background: #808080;
+        }
+
+        .chatbot-input button:active {
+            transform: scale(0.95);
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 0.8rem 1rem;
+            background: #2a2a2a;
+            border-radius: 5px;
+            width: fit-content;
+        }
+
+        .typing-dot {
+            width: 6px;
+            height: 6px;
+            background: #a0a0a0;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.5; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-5px); }
+        }
+
+        /* Footer */
+        footer {
+            background: #000000;
+            border-top: 1px solid #404040;
+            padding: 2rem;
+            text-align: center;
+            color: #808080;
+        }
+
+        footer p {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            nav a {
+                margin: 0.5rem;
+                font-size: 0.85rem;
+            }
+
+            .hero {
+                flex-direction: column;
+                padding: 2rem 1rem;
+            }
+
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+
+            .hero-avatar {
+                margin-top: 2rem;
+            }
+
+            .avatar-circle {
+                width: 250px;
+                height: 250px;
+                font-size: 80px;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .metrics-grid, .products-grid, .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+
+            .chatbot-sidebar {
+                width: calc(100% - 40px);
+                height: 400px;
+                right: 20px;
+                bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">CYRE Guardian</div>
+        <div>
+            <a href="#products">Products</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#faq">FAQ</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>The AI That Protects RWA</h1>
+            <p>Guardian AI fraud detection system. Global Synthetic Intelligence Infrastructure on Solana.</p>
+            <div class="hero-buttons">
+                <button class="cta-button">Get Started</button>
+                <button class="cta-button secondary">Learn More</button>
+            </div>
+        </div>
+        <div class="hero-avatar">
+            <div class="avatar-circle">👁️</div>
+        </div>
+    </section>
+
+    <!-- Metrics Section -->
+    <section class="metrics">
+        <h2>Why CYRE Leads</h2>
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-number">127+</div>
+                <div class="metric-label">Fraud Patterns</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">94.7%</div>
+                <div class="metric-label">Detection Accuracy</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">42</div>
+                <div class="metric-label">Active Protocols</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">99.98%</div>
+                <div class="metric-label">System Uptime</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="products" id="products">
+        <h2 class="section-title">7 Golden Products</h2>
+        <div class="products-grid">
+            <div class="product-card">
+                <span class="product-badge badge-live">LIVE</span>
+                <div class="product-name">Fraud Prediction</div>
+                <p class="product-description">AI-powered fraud pattern detection with 94.7% accuracy. Our flagship product trusted by 42+ protocols.</p>
+                <div class="product-revenue">$125,000/month</div>
+            </div>
+
+            <div class="product-card">
+                <span class="product-badge badge-beta">BETA</span>
+                <div class="product-name">Credit Scores</div>
+                <p class="product-description">Synthetic credit scoring for on-chain RWA assets. Coming soon with full institutional support.</p>
+                <div class="product-revenue">$45,000/month</div>
+            </div>
+
+            <div class="product-card">
+                <span class="product-badge badge-beta">BETA</span>
+                <div class="product-name">Behavior Passport</div>
+                <p class="product-description">Real-time behavioral analysis and risk scoring. Currently in testing with select protocols.</p>
+                <div class="product-revenue">$32,000/month</div>
+            </div>
+
+            <div class="product-card">
+                <span class="product-badge badge-beta">BETA</span>
+                <div class="product-name">Forensics Engine</div>
+                <p class="product-description">Post-incident investigation and chain analysis. Deep dive investigation capabilities.</p>
+                <div class="product-revenue">$28,000/month</div>
+            </div>
+
+            <div class="product-card">
+                <span class="product-badge badge-beta">BETA</span>
+                <div class="product-name">Futures Market</div>
+                <p class="product-description">Predictive analytics for blockchain asset movements. Advanced market intelligence tools.</p>
+                <div class="product-revenue">$85,000/month</div>
+            </div>
+
+            <div class="product-card">
+                <span class="product-badge badge-beta">BETA</span>
+                <div class="product-name">Sovereign AI</div>
+                <p class="product-description">Autonomous multi-chain surveillance system. Monitoring across all major blockchains.</p>
+                <div class="product-revenue">$145,000/month</div>
+            </div>
+
+            <div class="product-card">
+                <span class="product-badge badge-coming">COMING SOON</span>
+                <div class="product-name">Insurance Module</div>
+                <p class="product-description">Parametric insurance powered by Guardian predictions. Launching Q4 2026.</p>
+                <div class="product-revenue">$62,000/month</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Preview -->
+    <section class="dashboard-preview">
+        <div class="preview-container">
+            <h2 class="section-title">Real-Time Dashboard</h2>
+            <div class="preview-image">
+                <p>Live metrics dashboard with revenue tracking, protocol monitoring, and Guardian AI integration.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing" id="pricing">
+        <h2 class="section-title">Simple Pricing</h2>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="pricing-name">Starter</div>
+                <div class="pricing-price">$500</div>
+                <div class="pricing-period">per month</div>
+                <ul class="pricing-features">
+                    <li>Fraud Prediction API</li>
+                    <li>1M transactions/month</li>
+                    <li>Email support</li>
+                    <li>Basic analytics</li>
+                </ul>
+                <button class="cta-button">Get Started</button>
+            </div>
+
+            <div class="pricing-card featured">
+                <div class="pricing-name">Pro</div>
+                <div class="pricing-price">$5,000</div>
+                <div class="pricing-period">per month</div>
+                <ul class="pricing-features">
+                    <li>All Starter features</li>
+                    <li>50M transactions/month</li>
+                    <li>Credit Scores API</li>
+                    <li>Behavior Passport</li>
+                    <li>Priority support</li>
+                    <li>Custom dashboards</li>
+                </ul>
+                <button class="cta-button">Start Pro</button>
+            </div>
+
+            <div class="pricing-card">
+                <div class="pricing-name">Enterprise</div>
+                <div class="pricing-price">Custom</div>
+                <div class="pricing-period">contact us</div>
+                <ul class="pricing-features">
+                    <li>All Pro features</li>
+                    <li>Unlimited transactions</li>
+                    <li>All 7 Golden Products</li>
+                    <li>Forensics Engine</li>
+                    <li>Sovereign AI</li>
+                    <li>24/7 dedicated support</li>
+                </ul>
+                <button class="cta-button">Contact Sales</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq" id="faq">
+        <h2 class="section-title">Frequently Asked</h2>
+        <div class="faq-container">
+            <div class="faq-item active">
+                <div class="faq-question">What is Guardian AI?</div>
+                <div class="faq-answer">Guardian AI is CYRE's core fraud detection engine powered by advanced machine learning. It monitors blockchain transactions in real-time and detects suspicious patterns with 94.7% accuracy. Guardian is deployed across 42 active protocols and has become the industry standard for RWA protection.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">How does CYRE integrate with my protocol?</div>
+                <div class="faq-answer">Integration is simple with our REST API and WebSocket connections. Our team handles setup (2-4 hours), testing (1 day), and deployment. No complex infrastructure changes required. Most protocols are monitoring transactions within 24 hours of signup.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">What blockchain networks does CYRE support?</div>
+                <div class="faq-answer">CYRE is built on Solana but supports all major EVM-compatible chains (Ethereum, Arbitrum, Polygon, Optimism) and emerging networks. Our Sovereign AI can deploy across unlimited blockchains simultaneously.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Is my data secure with CYRE?</div>
+                <div class="faq-answer">Yes. CYRE operates with privacy-first architecture. All data is encrypted in transit and at rest. We're SOC 2 Type II certified and comply with enterprise security standards. Your transaction data never leaves your infrastructure.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">What's the ROI for using Guardian?</div>
+                <div class="faq-answer">Average customers see $2-5M in fraud prevention annually. Guardian catches sophisticated wash trading, rug pulls, and manipulation schemes that fly under traditional radar. ROI typically breaks even within 30 days of deployment.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Chatbot Sidebar -->
+    <div class="chatbot-sidebar">
+        <div class="chatbot-header">
+            <div class="guardian-avatar">♀</div>
+            <div class="guardian-status">
+                <div class="guardian-name">Guardian AI</div>
+                <div class="guardian-online"><span class="online-dot"></span>Online • Monitoring</div>
+            </div>
+        </div>
+        <div class="chatbot-body" id="chatbotBody">
+            <div class="message">
+                <div class="message-text">Hi! I'm Guardian. How can I help you today?</div>
+            </div>
+        </div>
+        <div class="chatbot-input">
+            <input type="text" id="chatInput" placeholder="Ask Guardian...">
+            <button id="sendBtn">Send</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 CYRE Guardian. Global Synthetic Intelligence Infrastructure.</p>
+        <p>Protecting RWA on Solana. <strong>The AI that protects assets.</strong></p>
+    </footer>
+
+    <script>
+        // Chatbot Functionality
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const chatbotBody = document.getElementById('chatbotBody');
+
+        // Demo responses for testing
+        const demoResponses = {
+            'detection': 'We maintain 94.7% accuracy across 127+ fraud patterns, detecting everything from wash trading to rug pulls.',
+            'pricing': 'Our plans start at $500/month for Starter, $5,000 for Pro, and custom Enterprise pricing.',
+            'protocol': 'Integration is simple - our team handles setup (2-4 hours) and testing (1 day). Most protocols go live within 24 hours.',
+            'security': 'We\'re SOC 2 Type II certified with end-to-end encryption. Your data never leaves your infrastructure.',
+            'blockchain': 'We support Solana, Ethereum, Arbitrum, Polygon, Optimism, and emerging networks with our Sovereign AI.',
+            'roi': 'Average customers see $2-5M in fraud prevention annually, breaking even within 30 days.',
+        };
+
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Add user message
+            addMessage(message, 'user');
+            chatInput.value = '';
+
+            // Show typing indicator
+            showTypingIndicator();
+
+            // Simulate API delay
+            setTimeout(() => {
+                removeTypingIndicator();
+                const response = getResponse(message);
+                addMessage(response, 'bot');
+            }, 800);
+        }
+
+        function addMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const textDiv = document.createElement('div');
+            textDiv.className = 'message-text';
+            textDiv.textContent = text;
+            
+            messageDiv.appendChild(textDiv);
+            chatbotBody.appendChild(messageDiv);
+            chatbotBody.scrollTop = chatbotBody.scrollHeight;
+        }
+
+        function showTypingIndicator() {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.id = 'typingIndicator';
+            
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+            
+            messageDiv.appendChild(typingDiv);
+            chatbotBody.appendChild(messageDiv);
+            chatbotBody.scrollTop = chatbotBody.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) indicator.remove();
+        }
+
+        function getResponse(message) {
+            const lower = message.toLowerCase();
+            
+            // Check for keywords
+            if (lower.includes('detect') || lower.includes('accuracy')) {
+                return demoResponses.detection;
+            } else if (lower.includes('price') || lower.includes('cost')) {
+                return demoResponses.pricing;
+            } else if (lower.includes('integr') || lower.includes('setup')) {
+                return demoResponses.protocol;
+            } else if (lower.includes('secure') || lower.includes('safe')) {
+                return demoResponses.security;
+            } else if (lower.includes('blockchain') || lower.includes('network') || lower.includes('chain')) {
+                return demoResponses.blockchain;
+            } else if (lower.includes('roi') || lower.includes('return') || lower.includes('benefit')) {
+                return demoResponses.roi;
+            } else {
+                return 'Great question! Ask me about our detection accuracy, pricing, integration process, security, blockchain support, or ROI. I can also tell you more about Guardian AI and CYRE\'s 7 Golden Products.';
+            }
+        }
+
+        // FAQ Toggle
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+
+        // Smooth Scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
