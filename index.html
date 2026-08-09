@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYRE Guardian - Global Synthetic Intelligence</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #0d1b2a 100%);
+            color: #ffffff;
+            line-height: 1.6;
+        }
+
+        /* Navigation */
+        nav {
+            position: sticky;
+            top: 0;
+            background: rgba(10, 10, 10, 0.95);
+            border-bottom: 1px solid #00ffcc;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.1);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc;
+        }
+
+        nav a {
+            color: #ffffff;
+            text-decoration: none;
+            margin: 0 1rem;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: #00ffcc;
+            text-shadow: 0 0 10px #00ffcc;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(0, 255, 204, 0.05) 0%, rgba(0, 153, 255, 0.05) 100%);
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(0, 255, 204, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            top: -250px;
+            left: -250px;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(0, 153, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            bottom: -250px;
+            right: -250px;
+            animation: float 15s ease-in-out infinite reverse;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 10;
+            max-width: 800px;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #00ffcc, #0099ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(0, 255, 204, 0.3);
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            color: #a0a0a0;
+            margin-bottom: 2rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            background: linear-gradient(135deg, #00ffcc, #0099ff);
+            color: #0a0a0a;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            margin: 0.5rem;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+        }
+
+        .cta-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(0, 255, 204, 0.6);
+        }
+
+        .cta-button.secondary {
+            background: transparent;
+            border: 2px solid #00ffcc;
+            color: #00ffcc;
+        }
+
+        /* Metrics Section */
+        .metrics {
+            background: #0a0a0a;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .metrics h2 {
+            font-size: 2.5rem;
+            margin-bottom: 3rem;
+            color: #00ffcc;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(0, 153, 255, 0.1));
+            border: 1px solid #00ffcc;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.1);
+            transition: all 0.3s;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 0 40px rgba(0, 255, 204, 0.3);
+        }
+
+        .metric-number {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #00ffcc;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            font-size: 1rem;
+            color: #a0a0a0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* Products Section */
+        .products {
+            background: linear-gradient(135deg, #0d1b2a 0%, #0a0a0a 100%);
+            padding: 4rem 2rem;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: #00ffcc;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .product-card {
+            background: #0d1b2a;
+            border: 1px solid #0099ff;
+            border-radius: 10px;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .product-card:hover {
+            border-color: #00ffcc;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #00ffcc, #0099ff);
+        }
+
+        .product-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+        }
+
+        .badge-live {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid #22c55e;
+        }
+
+        .badge-beta {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid #3b82f6;
+        }
+
+        .badge-coming {
+            background: rgba(160, 160, 160, 0.2);
+            color: #a0a0a0;
+            border: 1px solid #a0a0a0;
+        }
+
+        .product-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #ffffff;
+        }
+
+        .product-description {
+            color: #a0a0a0;
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .product-revenue {
+            font-size: 1.2rem;
+            color: #00ffcc;
+            font-weight: 700;
+        }
+
+        /* Pricing Section */
+        .pricing {
+            background: #0a0a0a;
+            padding: 4rem 2rem;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: linear-gradient(135deg, rgba(0, 255, 204, 0.05), rgba(0, 153, 255, 0.05));
+            border: 2px solid #00ffcc;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .pricing-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(0, 255, 204, 0.3);
+        }
+
+        .pricing-card.featured {
+            border-color: #0099ff;
+            background: linear-gradient(135deg, rgba(0, 153, 255, 0.15), rgba(0, 255, 204, 0.05));
+            transform: scale(1.05);
+        }
+
+        .pricing-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: #00ffcc;
+        }
+
+        .pricing-price {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #00ffcc;
+            margin-bottom: 0.5rem;
+        }
+
+        .pricing-period {
+            color: #a0a0a0;
+            margin-bottom: 1.5rem;
+        }
+
+        .pricing-features {
+            text-align: left;
+            margin: 1.5rem 0;
+            font-size: 0.95rem;
+        }
+
+        .pricing-features li {
+            list-style: none;
+            padding: 0.5rem 0;
+            color: #a0a0a0;
+        }
+
+        .pricing-features li:before {
+            content: "✓ ";
+            color: #00ffcc;
+            font-weight: 700;
+            margin-right: 0.5rem;
+        }
+
+        /* FAQ Section */
+        .faq {
+            background: linear-gradient(135deg, #0d1b2a 0%, #0a0a0a 100%);
+            padding: 4rem 2rem;
+        }
+
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            background: #0a0a0a;
+            border-left: 3px solid #00ffcc;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .faq-item:hover {
+            border-left-color: #0099ff;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.1);
+        }
+
+        .faq-question {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #00ffcc;
+            margin-bottom: 0.5rem;
+        }
+
+        .faq-answer {
+            color: #a0a0a0;
+            display: none;
+        }
+
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+
+        /* Footer */
+        footer {
+            background: #000000;
+            border-top: 1px solid #00ffcc;
+            padding: 2rem;
+            text-align: center;
+            color: #a0a0a0;
+        }
+
+        /* Animations */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(20px); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 204, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(0, 255, 204, 0.6); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            nav {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            nav a {
+                margin: 0.5rem;
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .metrics-grid, .products-grid, .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pricing-card.featured {
+                transform: scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">👁️ CYRE</div>
+        <div>
+            <a href="#products">Products</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#faq">FAQ</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>The AI That Protects RWA</h1>
+            <p>Guardian AI Fraud Detection. Global Synthetic Intelligence Infrastructure on Solana.</p>
+            <button class="cta-button">Get Started</button>
+            <button class="cta-button secondary">Learn More</button>
+        </div>
+    </section>
+
+    <!-- Metrics Section -->
+    <section class="metrics">
+        <h2>Why CYRE Leads</h2>
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-number">127+</div>
+                <div class="metric-label">Fraud Patterns</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">94.7%</div>
+                <div class="metric-label">Detection Accuracy</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">42</div>
+                <div class="metric-label">Active Protocols</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-number">99.98%</div>
+                <div class="metric-label">System Uptime</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="products" id="products">
+        <h2 class="section-title">7 Golden Products</h2>
+        <div class="products-grid">
+            <div class="product-card">
+                <span class="product-badge badge-live">LIVE</span>
+                <div class="product-name">Fraud Prediction</div>
+                <p class="product-description">AI-powered fraud pattern detection with 94.7% accuracy</p>
+                <div class="product-revenue">$125,000/month</div>
+            </div>
+
+            <div class="product-card">
+                <span class="product-badge badge-live">LIVE</span>
+                <div class="product-name">Credit Scores</div>
+                <p class="product-description">Synthetic credit scoring for on-chain RWA assets</p>
+                <div class="product-revenue">$45,000/month</div>
+            </div>
+
+            <div class="product-card">
+                <span class="product-badge badge-beta">BETA</span>
+                <div class="product-name">Behavior Passport</div>
+                <p class="product-description">Real-time behavioral analysis and risk scoring</p>
+                <div class="product-revenue">$32,000/month</div>
+            </div>
+
+            <div class="product-card">
+                <span class="product-badge badge-beta">BETA</span>
+                <div class="product-name">Forensics Engine</div>
+                <p class="product-description">Post-incident investigation and chain analysis</p>
+                <div class="product-revenue">$28,000/month</div>
+            </div>
+
+            <div class="product-card">
+                <span class="product-badge badge-live">LIVE</span>
+                <div class="product-name">Futures Market</div>
+                <p class="product-description">Predictive analytics for blockchain asset movements</p>
+                <div class="product-revenue">$85,000/month</div>
+            </div>
+
+            <div class="product-card">
+                <span class="product-badge badge-live">LIVE</span>
+                <div class="product-name">Sovereign AI</div>
+                <p class="product-description">Autonomous multi-chain surveillance system</p>
+                <div class="product-revenue">$145,000/month</div>
+            </div>
+
+            <div class="product-card">
+                <span class="product-badge badge-coming">COMING SOON</span>
+                <div class="product-name">Insurance Module</div>
+                <p class="product-description">Parametric insurance powered by Guardian predictions</p>
+                <div class="product-revenue">$62,000/month</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing" id="pricing">
+        <h2 class="section-title">Simple Pricing</h2>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="pricing-name">Starter</div>
+                <div class="pricing-price">$500</div>
+                <div class="pricing-period">per month</div>
+                <ul class="pricing-features">
+                    <li>Fraud Prediction API</li>
+                    <li>1M transactions/month</li>
+                    <li>Email support</li>
+                    <li>Basic analytics</li>
+                </ul>
+                <button class="cta-button">Get Started</button>
+            </div>
+
+            <div class="pricing-card featured">
+                <div class="pricing-name">Pro</div>
+                <div class="pricing-price">$5,000</div>
+                <div class="pricing-period">per month</div>
+                <ul class="pricing-features">
+                    <li>All Starter features</li>
+                    <li>50M transactions/month</li>
+                    <li>Credit Scores API</li>
+                    <li>Behavior Passport</li>
+                    <li>Priority support</li>
+                    <li>Custom dashboards</li>
+                </ul>
+                <button class="cta-button">Start Pro</button>
+            </div>
+
+            <div class="pricing-card">
+                <div class="pricing-name">Enterprise</div>
+                <div class="pricing-price">Custom</div>
+                <div class="pricing-period">contact us</div>
+                <ul class="pricing-features">
+                    <li>All Pro features</li>
+                    <li>Unlimited transactions</li>
+                    <li>All 7 Golden Products</li>
+                    <li>Forensics Engine</li>
+                    <li>Sovereign AI</li>
+                    <li>24/7 dedicated support</li>
+                </ul>
+                <button class="cta-button">Contact Sales</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq" id="faq">
+        <h2 class="section-title">Frequently Asked</h2>
+        <div class="faq-container">
+            <div class="faq-item active">
+                <div class="faq-question">What is Guardian AI?</div>
+                <div class="faq-answer">Guardian AI is CYRE's core fraud detection engine powered by advanced machine learning. It monitors blockchain transactions in real-time and detects suspicious patterns with 94.7% accuracy. Guardian is deployed across 42 active protocols and has become the industry standard for RWA protection.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">How does CYRE integrate with my protocol?</div>
+                <div class="faq-answer">Integration is simple with our REST API and WebSocket connections. Our team handles setup (2-4 hours), testing (1 day), and deployment. No complex infrastructure changes required. Most protocols are monitoring transactions within 24 hours of signup.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">What blockchain networks does CYRE support?</div>
+                <div class="faq-answer">CYRE is built on Solana but supports all major EVM-compatible chains (Ethereum, Arbitrum, Polygon, Optimism) and emerging networks. Our Sovereign AI can deploy across unlimited blockchains simultaneously.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Is my data secure with CYRE?</div>
+                <div class="faq-answer">Yes. CYRE operates with privacy-first architecture. All data is encrypted in transit and at rest. We're SOC 2 Type II certified and comply with enterprise security standards. Your transaction data never leaves your infrastructure.</div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">What's the ROI for using Guardian?</div>
+                <div class="faq-answer">Average customers see $2-5M in fraud prevention annually. Guardian catches sophisticated wash trading, rug pulls, and manipulation schemes that fly under traditional radar. ROI typically breaks even within 30 days of deployment.</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 CYRE Guardian. Global Synthetic Intelligence Infrastructure.</p>
+        <p>Protecting RWA on Solana. <strong style="color: #00ffcc;">The AI that protects assets.</strong></p>
+    </footer>
+
+    <script>
+        document.querySelectorAll('.faq-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+            });
+        });
+
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
