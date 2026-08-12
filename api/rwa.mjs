@@ -3,7 +3,8 @@ export default async function handler(req, res) {
   const H = { accept: 'application/json' };
   if (KEY) H['x-cg-demo-api-key'] = KEY;
 
-    const IDS = 'chainlink,ondo-finance,pax-gold,maple-finance,centrifuge-2';
+      const IDS = 'chainlink,ondo-finance,pax-gold,syrup,centrifuge-2';
+
 
   const B = 'https://api.coingecko.com/api/v3';
 
