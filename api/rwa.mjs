@@ -1,46 +1,35 @@
-// api/rwa.mjs — CYRE 7 live RWA market feed
-// Env var: COINGECKO_API_KEY
+export default async function handler(req, res) {
+  const KEY = process.env.COINGECKO_API_KEY || '';
+  const H = { accept: 'application/json' };
+  if (KEY) H['x-cg-demo-api-key'] = KEY;
 
-const PINNED_IDS = [];
-const CATEGORY = 'real-world-assets-rwa';
-const ROWS = 6;
-const CACHE_MS = 60 * 1000;
+  const B = 'https://api.coingecko.com/api/v3';
+  const C = 'real-world-assets-rwa';
 
-const KEY = process.env.COINGECKO_API_KEY || '';
-const PRO = KEY.startsWith('CG-') && process.env.COINGECKO_PLAN === 'pro';
-const BASE = PRO ? 'https://pro-api.coingecko.com/api/v3' : 'https://api.coingecko.com/api/v3';
+  try {
+    const u = B + '/coins/markets?vs_currency=usd&category=' + C + '&order=market_cap_desc&per_page=6&page=1&sparkline=false';
+    const r = await fetch(u, { headers: H });
+    if (!r.ok) {
+      const t = await r.text();
+      return res.status(200).json({ ok: false, status: r.status, hasKey: KEY.length > 0, body: t.slice(0, 200) });
+    }
+    const list = await r.json();
+    const assets = list.slice(0, 6).map(function (c) {
+      return { name: c.name, symbol: String(c.symbol || '').toUpperCase(), price: c.current_price, change24h: c.price_change_percentage_24h };
+    });
 
-function headers() {
-  const h = { accept: 'application/json' };
-  if (KEY) h[PRO ? 'x-cg-pro-api-key' : 'x-cg-demo-api-key'] = KEY;
-  return h;
+    let sector = null;
+    try {
+      const cr = await fetch(B + '/coins/categories', { headers: H });
+      if (cr.ok) {
+        const row = (await cr.json()).find(function (x) { return x.id === C; });
+        if (row) sector = { marketCap: row.market_cap, change24h: row.market_cap_change_24h };
+      }
+    } catch (e) {}
+
+    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
+    return res.status(200).json({ ok: true, sector: sector, assets: assets, updatedAt: new Date().toISOString(), source: 'CoinGecko' });
+  } catch (e) {
+    return res.status(200).json({ ok: false, message: String(e && e.message) });
+  }
 }
-
-let cache = { at: 0, data: null };
-
-async function get(path) {
-  const r = await fetch(BASE + path, { headers: headers() });
-  if (!r.ok) throw new Error('CoinGecko ' + r.status + ' on ' + path);
-  return r.json();
-}
-
-async function loadSector() {
-  const all = await get('/coins/categories');
-  const row = Array.isArray(all) ? all.find((c) => c.id === CATEGORY) : null;
-  if (!row) return null;
-  return {
-    marketCap: row.market_cap ?? null,
-    change24h: row.market_cap_change_24h ?? null,
-  };
-}
-
-async function loadAssets() {
-  const q = PINNED_IDS.length ? 'ids=' + PINNED_IDS.join(',') : 'category=' + CATEGORY;
-  const list = await get(
-    '/coins/markets?vs_currency=usd&' + q +
-    '&order=market_cap_desc&per_page=' + ROWS + '&page=1&sparkline=false'
-  );
-  if (!Array.isArray(list)) return [];
-  return list.slice(0, ROWS).map((c) => ({
-    name: c.name,
-    symbol: (c.symbol || '').toUpper
