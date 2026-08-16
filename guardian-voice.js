@@ -4,9 +4,12 @@
   var img = portrait.querySelector('img');
   if (!img) return;
 
-  var SCALE = 0.7;
-  var EYES = [ [39.5, 43.5], [60.5, 43.5] ];
-  var MOUTH = [50, 64];
+  var FIT = { s: 1.05, x: -1.3, y: 4.5 };
+  var EYES_IMG = [ [39.6, 43], [62, 43] ];
+  var MOUTH_IMG = [50.8, 64.2];
+
+  function fx(p){ return 50 + (p[0] - 50) * FIT.s + FIT.x; }
+  function fy(p){ return 50 + (p[1] - 50) * FIT.s + FIT.y; }
 
   var LINES = [
     "I am Guardian, the intelligence at the core of Cyre.",
@@ -38,21 +41,22 @@
   robot.onload = function(){
     hasRobot = true;
     robot.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;' +
-     'object-fit:cover;object-position:50% 42%;display:block;opacity:0;mix-blend-mode:screen;' +
-      'transition:opacity .6s ease;transform:scale(' + SCALE + ');' +
+      'object-fit:cover;object-position:50% 50%;display:block;opacity:0;' +
+      'mix-blend-mode:screen;transition:opacity .6s ease;' +
+      'transform:translate(' + FIT.x + '%,' + FIT.y + '%) scale(' + FIT.s + ');' +
       'border-radius:' + (getComputedStyle(img).borderRadius || '0');
     portrait.appendChild(robot);
-    for (var e = 0; e < EYES.length; e++){
+    for (var e = 0; e < EYES_IMG.length; e++){
       var d = document.createElement('div');
       d.className = 'g-eye' + (e === 1 ? ' e2' : '');
-      d.style.left = (50 + (EYES[e][0] - 50) * SCALE) + '%';
-      d.style.top  = (50 + (EYES[e][1] - 50) * SCALE) + '%';
+      d.style.left = fx(EYES_IMG[e]) + '%';
+      d.style.top  = fy(EYES_IMG[e]) + '%';
       portrait.appendChild(d);
     }
     mouth = document.createElement('div');
     mouth.className = 'g-mouth';
-    mouth.style.left = (50 + (MOUTH[0] - 50) * SCALE) + '%';
-    mouth.style.top  = (50 + (MOUTH[1] - 50) * SCALE) + '%';
+    mouth.style.left = fx(MOUTH_IMG) + '%';
+    mouth.style.top  = fy(MOUTH_IMG) + '%';
     portrait.appendChild(mouth);
   };
   robot.src = '/robot.jpg';
@@ -98,9 +102,8 @@
     mouth.style.opacity = '1';
     mouthTimer = setInterval(function(){
       var amp = 0.35 + Math.random() * 0.9;
-      var glow = 0.55 + Math.random() * 0.45;
       mouth.style.transform = 'translate(-50%,-50%) scaleY(' + amp.toFixed(2) + ') scaleX(' + (0.85 + Math.random()*0.3).toFixed(2) + ')';
-      mouth.style.opacity = glow.toFixed(2);
+      mouth.style.opacity = (0.55 + Math.random() * 0.45).toFixed(2);
     }, 110);
   }
   function mouthOff(){
@@ -146,3 +149,4 @@
     if (document.hidden && speaking) stopSpeak();
   });
 })();
+     
