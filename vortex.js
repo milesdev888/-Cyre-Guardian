@@ -1,13 +1,3 @@
-<!doctype html><html><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-body{margin:0;background:#07080b;font-family:Inter,system-ui,sans-serif}
-.hero{min-height:100vh;display:flex;align-items:center;justify-content:center}
-.hero h1{color:#fff1d6;font-size:clamp(22px,4vw,40px);text-align:center;max-width:600px;z-index:2;position:relative}
-.hero h1 span{color:#4fe3d0}
-</style></head><body>
-<section class="hero"><h1>Real-world assets, <span>watched by synthetic intelligence.</span></h1></section>
-<script>
 (function(){
   var hero = document.querySelector('.hero');
   if (!hero) return;
@@ -205,4 +195,3 @@ body{margin:0;background:#07080b;font-family:Inter,system-ui,sans-serif}
     if (document.hidden) stop(); else if (!reduce) start();
   });
 })();
-</script></body></html>
