@@ -40,6 +40,14 @@
   var rings = [], W = 0, H = 0, dpr = 1, raf = null, t = 0;
 
   var CYAN = [79,227,208], GOLD = [217,179,108], HOT = [255,241,214];
+  var RED = 'rgb(255,77,94)', GREEN = 'rgb(61,220,132)';
+  var RED_WORDS = { 'FLAG':1, 'HOLD':1, 'RISK 0.94':1 };
+  var GREEN_WORDS = { 'SETTLED':1, 'SIG VALID':1, 'ATTEST':1 };
+  function statusColor(word){
+    if (RED_WORDS[word]) return RED;
+    if (GREEN_WORDS[word]) return GREEN;
+    return null;
+  }
   function mix(a,b,k){ return [0,1,2].map(function(i){ return Math.round(a[i]+(b[i]-a[i])*k); }); }
   function ringColor(k){
     var c = k < 0.45 ? mix(HOT, GOLD, k/0.45) : mix(GOLD, CYAN, (k-0.45)/0.55);
@@ -67,16 +75,17 @@
       c.textAlign = 'center';
       c.textBaseline = 'middle';
       c.translate(size/2, size/2);
-      if (glow){
-        c.fillStyle = '#fff1d6';
-        c.shadowColor = col;
-        c.shadowBlur = font * 1.6;
-        c.globalAlpha = 1;
-      } else {
-        c.fillStyle = col;
-        c.globalAlpha = (0.30 + (1-k)*0.65) * CFG.dim;
-      }
       for (var j = 0; j < words.length; j++){
+        var sc = statusColor(words[j].word);
+        if (glow){
+          c.fillStyle = sc || '#fff1d6';
+          c.shadowColor = sc || col;
+          c.shadowBlur = font * (sc ? 2.1 : 1.6);
+          c.globalAlpha = 1;
+        } else {
+          c.fillStyle = sc || col;
+          c.globalAlpha = (sc ? 0.55 : 0.30 + (1-k)*0.65) * CFG.dim * (sc ? 1.6 : 1);
+        }
         c.save();
         c.rotate(words[j].a);
         c.translate(0, -radius);
