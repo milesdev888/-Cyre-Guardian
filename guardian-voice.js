@@ -4,7 +4,7 @@
   var img = portrait.querySelector('img');
   if (!img) return;
 
-  var SCALE = 0.82;
+  var SCALE = 0.7;
   var EYES = [ [39.5, 43.5], [60.5, 43.5] ];
 
   var LINES = [
