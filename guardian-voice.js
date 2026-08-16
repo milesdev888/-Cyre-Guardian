@@ -38,7 +38,7 @@
   robot.onload = function(){
     hasRobot = true;
     robot.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;' +
-      'object-fit:cover;object-position:50% 42%;display:block;opacity:0;' +
+     'object-fit:cover;object-position:50% 42%;display:block;opacity:0;mix-blend-mode:screen;' +
       'transition:opacity .6s ease;transform:scale(' + SCALE + ');' +
       'border-radius:' + (getComputedStyle(img).borderRadius || '0');
     portrait.appendChild(robot);
@@ -110,7 +110,7 @@
 
   function morph(on){
     scan.style.opacity = on ? '1' : '0';
-    if (hasRobot) robot.style.opacity = on ? '1' : '0';
+    if (hasRobot) robot.style.opacity = on ? '0.9' : '0';
     if (on){ portrait.classList.add('g-on'); mouthOn(); }
     else { portrait.classList.remove('g-on'); mouthOff(); }
   }
