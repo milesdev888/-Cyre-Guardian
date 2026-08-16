@@ -32,7 +32,7 @@
     'opacity:0;transform:translate(-50%,-50%) scaleY(.4);transition:opacity .3s ease;}';
   document.head.appendChild(css);
 
-  portrait.style.position = 'relative';
+  if (getComputedStyle(portrait).position === 'static') portrait.style.position = 'relative';
 
   var mouth = null;
 
