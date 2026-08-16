@@ -1,26 +1,47 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+body{margin:0;background:#07080b;font-family:Inter,system-ui,sans-serif}
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center}
+.hero h1{color:#fff1d6;font-size:clamp(22px,4vw,40px);text-align:center;max-width:600px;z-index:2;position:relative}
+.hero h1 span{color:#4fe3d0}
+</style></head><body>
+<section class="hero"><h1>Real-world assets, <span>watched by synthetic intelligence.</span></h1></section>
+<script>
 (function(){
   var hero = document.querySelector('.hero');
   if (!hero) return;
 
   var CFG = {
-    tilt: 0.52,
-    rings: 13,
-    innerR: 0.20,
-    outerR: 1.45,
-    spin: 0.055,
-    dim: 0.55,
+    count: 230,          // glyph particles
+    tiltDeg: 58,         // camera tilt (0 = edge-on, 90 = top-down)
+    depth: 1.15,         // how deep the funnel drops (x canvas radius)
+    focal: 1.9,          // perspective strength (x canvas radius, smaller = more warp)
+    outerR: 1.55,        // spawn radius (x canvas radius)
+    coreR: 0.16,         // event-horizon radius (x canvas radius)
+    spin: 0.16,          // base angular speed
+    fall: 0.028,         // inward pull
+    dim: 0.8,            // overall intensity 0..1
     glyphs: [
-      '7f3ac9','RISK 0.94','ADDR','4bE1…q8','SIG VALID','RWA','0x00d4','FLAG',
-      'a91f2c','SETTLED','LP','e77b30','SCORE','b1c4…8a','TRACE','ONDO','6d2e91',
+      '7f3ac9','RISK 0.94','ADDR','4bE1\u2026q8','SIG VALID','RWA','0x00d4','FLAG',
+      'a91f2c','SETTLED','LP','e77b30','SCORE','b1c4\u20268a','TRACE','ONDO','6d2e91',
       'CHAINLINK','PAXG','HOLD','c30f7a','ATTEST','delta 1.2','SYRUP','9ab4e2'
     ]
   };
 
+  var CYAN = [79,227,208], GOLD = [217,179,108], HOT = [255,241,214];
+  var RED = [255,77,94], GREEN = [61,220,132];
+  var RED_WORDS = { 'FLAG':1, 'HOLD':1, 'RISK 0.94':1 };
+  var GREEN_WORDS = { 'SETTLED':1, 'SIG VALID':1, 'ATTEST':1 };
+
+  function mix(a,b,k){ return [0,1,2].map(function(i){ return Math.round(a[i]+(b[i]-a[i])*k); }); }
+  function rgb(c){ return 'rgb('+c[0]+','+c[1]+','+c[2]+')'; }
+
   hero.style.position = 'relative';
   hero.style.overflow = 'hidden';
-  var kids = hero.children;
-  for (var i = 0; i < kids.length; i++){
-    kids[i].style.position = 'relative';
+  var kids = hero.children, i;
+  for (i = 0; i < kids.length; i++){
+    if (getComputedStyle(kids[i]).position === 'static') kids[i].style.position = 'relative';
     kids[i].style.zIndex = '2';
   }
 
@@ -31,157 +52,157 @@
 
   var veil = document.createElement('div');
   veil.style.cssText = 'position:absolute;inset:0;z-index:1;pointer-events:none;background:' +
-    'radial-gradient(closest-side at 50% 50%, rgba(7,8,11,.9) 0%, rgba(7,8,11,.5) 40%, rgba(7,8,11,0) 72%),' +
-    'linear-gradient(to bottom, rgba(7,8,11,.8) 0%, rgba(7,8,11,.15) 30%, rgba(7,8,11,.15) 70%, #07080b 100%)';
+    'radial-gradient(closest-side at 50% 50%, rgba(7,8,11,.88) 0%, rgba(7,8,11,.45) 42%, rgba(7,8,11,0) 74%),' +
+    'linear-gradient(to bottom, rgba(7,8,11,.8) 0%, rgba(7,8,11,.12) 30%, rgba(7,8,11,.12) 70%, #07080b 100%)';
   hero.insertBefore(veil, cv.nextSibling);
 
-  var ctx = cv.getContext('2d', { alpha: true });
-  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var rings = [], W = 0, H = 0, dpr = 1, raf = null, t = 0;
+  var ctx = cv.getContext('2d');
+  var W = 0, H = 0, dpr = 1, base = 0, raf = null, t = 0;
+  var TILT = CFG.tiltDeg * Math.PI / 180;
+  var cosT = Math.cos(TILT), sinT = Math.sin(TILT);
 
-  var CYAN = [79,227,208], GOLD = [217,179,108], HOT = [255,241,214];
-  var RED = 'rgb(255,77,94)', GREEN = 'rgb(61,220,132)';
-  var RED_WORDS = { 'FLAG':1, 'HOLD':1, 'RISK 0.94':1 };
-  var GREEN_WORDS = { 'SETTLED':1, 'SIG VALID':1, 'ATTEST':1 };
-  function statusColor(word){
-    if (RED_WORDS[word]) return RED;
-    if (GREEN_WORDS[word]) return GREEN;
-    return null;
+  // ---- sprite cache: one small canvas per word+color ----
+  var FONT_PX = 22, PAD = 18;
+  var sprites = {};
+  function sprite(word, col, glow){
+    var key = word + '|' + col + '|' + (glow?1:0);
+    if (sprites[key]) return sprites[key];
+    var m = document.createElement('canvas').getContext('2d');
+    m.font = '400 ' + FONT_PX + 'px ui-monospace, Menlo, monospace';
+    var w = Math.ceil(m.measureText(word).width) + PAD*2;
+    var off = document.createElement('canvas');
+    off.width = w; off.height = FONT_PX + PAD*2;
+    var c = off.getContext('2d');
+    c.font = '400 ' + FONT_PX + 'px ui-monospace, Menlo, monospace';
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    if (glow){ c.shadowColor = col; c.shadowBlur = 14; }
+    c.fillStyle = col;
+    c.fillText(word, w/2, (FONT_PX + PAD*2)/2);
+    sprites[key] = off;
+    return off;
   }
-  function mix(a,b,k){ return [0,1,2].map(function(i){ return Math.round(a[i]+(b[i]-a[i])*k); }); }
-  function ringColor(k){
+
+  function colorFor(word, rNorm){
+    if (RED_WORDS[word]) return { col: rgb(RED), status: true };
+    if (GREEN_WORDS[word]) return { col: rgb(GREEN), status: true };
+    var k = Math.min(1, Math.max(0, (rNorm - CFG.coreR) / (CFG.outerR - CFG.coreR)));
     var c = k < 0.45 ? mix(HOT, GOLD, k/0.45) : mix(GOLD, CYAN, (k-0.45)/0.55);
-    return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+    return { col: rgb(c), status: false };
   }
 
-  function buildRing(radius, k){
-    var size = Math.ceil(radius*2 + 60);
-    var font = Math.max(9, 20 - k*9);
-    var col = ringColor(k);
-    var meas = document.createElement('canvas').getContext('2d');
-    meas.font = '400 ' + font + "px ui-monospace, Menlo, monospace";
-    var words = [], used = 0, circ = 2 * Math.PI * radius;
-    while (used < circ - 20){
-      var word = CFG.glyphs[(Math.random()*CFG.glyphs.length)|0];
-      var w = meas.measureText(word).width + font*1.4;
-      words.push({ word: word, a: (used + w/2) / radius });
-      used += w;
-    }
-    function paint(glow){
-      var off = document.createElement('canvas');
-      off.width = off.height = size;
-      var c = off.getContext('2d');
-      c.font = '400 ' + font + "px ui-monospace, Menlo, monospace";
-      c.textAlign = 'center';
-      c.textBaseline = 'middle';
-      c.translate(size/2, size/2);
-      for (var j = 0; j < words.length; j++){
-        var sc = statusColor(words[j].word);
-        if (glow){
-          c.fillStyle = sc || '#fff1d6';
-          c.shadowColor = sc || col;
-          c.shadowBlur = font * (sc ? 2.1 : 1.6);
-          c.globalAlpha = 1;
-        } else {
-          c.fillStyle = sc || col;
-          c.globalAlpha = (sc ? 0.55 : 0.30 + (1-k)*0.65) * CFG.dim * (sc ? 1.6 : 1);
-        }
-        c.save();
-        c.rotate(words[j].a);
-        c.translate(0, -radius);
-        c.fillText(words[j].word, 0, 0);
-        c.restore();
-      }
-      return off;
-    }
-    return { base: paint(false), glow: paint(true) };
+  // ---- particles ----
+  var parts = [];
+  function spawn(p, fresh){
+    p.word = CFG.glyphs[(Math.random()*CFG.glyphs.length)|0];
+    p.a = Math.random() * Math.PI * 2;
+    p.r = fresh ? (CFG.coreR + Math.random()*(CFG.outerR - CFG.coreR))
+                : (CFG.outerR * (0.92 + Math.random()*0.16));
+    p.wob = Math.random() * Math.PI * 2;
+    return p;
   }
+  for (i = 0; i < CFG.count; i++) parts.push(spawn({}, true));
 
   function layout(){
     var r = cv.getBoundingClientRect();
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     W = r.width; H = r.height;
-    cv.width = W*dpr; cv.height = H*dpr;
-    var base = Math.min(W, H);
-    rings = [];
-    for (var i = 0; i < CFG.rings; i++){
-      var k = i / (CFG.rings - 1);
-      var radius = base * (CFG.innerR + (CFG.outerR - CFG.innerR) * Math.pow(k, 1.35));
-      var imgs = buildRing(radius, k);
-      rings.push({
-        radius: radius, k: k,
-        img: imgs.base, glowImg: imgs.glow,
-        speed: CFG.spin / Math.pow(radius / (base*CFG.innerR), 0.9),
-        phase: Math.random() * Math.PI * 2,
-        pulse: Math.random() * Math.PI * 2,
-        pulseSpeed: 0.015 + Math.random() * 0.02
-      });
-    }
+    cv.width = Math.max(1, W*dpr); cv.height = Math.max(1, H*dpr);
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    base = Math.min(W, H) * 0.5;
   }
 
-  function drawHorizon(base){
-    var r = base * CFG.innerR;
+  // project a funnel point: rNorm (radius), a (angle) -> screen x,y,scale,zc
+  function project(rNorm, a){
+    var x = Math.cos(a) * rNorm;
+    var z = Math.sin(a) * rNorm;
+    var down = 1 - Math.min(1, (rNorm - CFG.coreR) / (CFG.outerR - CFG.coreR));
+    var y = -Math.pow(down, 2.2) * CFG.depth;           // drop into the well near the core
+    // tilt camera around X
+    var y2 = y*cosT - z*sinT;
+    var z2 = y*sinT + z*cosT;
+    var s = CFG.focal / (CFG.focal + z2 + CFG.outerR);   // keep denominator positive
+    return { x: W/2 + x*base*s, y: H*0.52 + y2*base*s, s: s, z: z2 };
+  }
+
+  function drawCore(){
+    // event horizon: dark ellipse + glowing rim, drawn in the tilted plane
+    var p = project(CFG.coreR, 0);
+    var rim = CFG.coreR * base * p.s;
     ctx.save();
-    ctx.scale(1, CFG.tilt);
-    var g = ctx.createRadialGradient(0,0, r*0.55, 0,0, r*1.5);
+    ctx.translate(W/2, H*0.52);
+    ctx.scale(1, cosT);
+    var g = ctx.createRadialGradient(0,0, rim*0.5, 0,0, rim*1.7);
     g.addColorStop(0, 'rgba(7,8,11,1)');
-    g.addColorStop(0.62, 'rgba(7,8,11,1)');
-    g.addColorStop(0.72, 'rgba(255,241,214,0.5)');
+    g.addColorStop(0.55, 'rgba(7,8,11,1)');
+    g.addColorStop(0.72, 'rgba(255,241,214,' + (0.35 + 0.18*Math.sin(t*1.4)) + ')');
     g.addColorStop(1, 'rgba(217,179,108,0)');
     ctx.fillStyle = g;
-    ctx.beginPath(); ctx.arc(0,0, r*1.5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath();
+    ctx.arc(0, 0, rim*1.7, 0, Math.PI*2);
+    ctx.fill();
     ctx.restore();
   }
 
   function frame(){
-    var base = Math.min(W, H);
-    ctx.setTransform(dpr,0,0,dpr,0,0);
-    ctx.clearRect(0,0,W,H);
-    ctx.translate(W/2, H/2);
-    for (var i = rings.length - 1; i >= 0; i--){
-      var ring = rings[i];
-      var rot = ring.phase + t * ring.speed;
-      var half = ring.img.width / 2;
-      ctx.save();
-      ctx.scale(1, CFG.tilt);
-      ctx.rotate(rot);
-      ctx.drawImage(ring.img, -half, -half);
-      var breathe = 0.5 + 0.5 * Math.sin(ring.pulse + t * ring.pulseSpeed);
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = (0.12 + 0.30 * breathe) * (1 - ring.k * 0.6) * CFG.dim;
-      ctx.drawImage(ring.glowImg, -half, -half);
-      var arcA = (t * 0.012 + ring.pulse) % (Math.PI * 2);
-      ctx.rotate(-rot);
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.arc(0, 0, half, arcA, arcA + 0.9);
-      ctx.closePath();
-      ctx.clip();
-      ctx.rotate(rot);
-      ctx.globalAlpha = 0.85 * (1 - ring.k * 0.5) * CFG.dim;
-      ctx.drawImage(ring.glowImg, -half, -half);
-      ctx.restore();
+    t += 0.016;
+    ctx.clearRect(0, 0, W, H);
+
+    var order = [];
+    for (var j = 0; j < parts.length; j++){
+      var p = parts[j];
+      var rn = (p.r - CFG.coreR) / (CFG.outerR - CFG.coreR);
+      p.a += CFG.spin * 0.016 * (0.35 + 1.3/(rn + 0.18));   // faster near the core
+      p.r -= CFG.fall * 0.016 * (0.25 + (1 - rn));           // accelerating fall
+      if (p.r <= CFG.coreR * 1.02) spawn(p, false);
+      order.push(p);
     }
-    drawHorizon(base);
-    ctx.setTransform(1,0,0,1,0,0);
-    if (!reduce){ t += 1; raf = requestAnimationFrame(frame); }
+
+    // draw the far half, then the core, then the near half
+    var proj = [];
+    for (j = 0; j < order.length; j++){
+      var q = order[j];
+      var wobR = q.r + Math.sin(t*0.7 + q.wob) * 0.012;
+      var pr = project(wobR, q.a);
+      pr.p = q; pr.rn = (q.r - CFG.coreR) / (CFG.outerR - CFG.coreR);
+      proj.push(pr);
+    }
+    proj.sort(function(a,b){ return b.z - a.z; });
+
+    var coreDrawn = false;
+    for (j = 0; j < proj.length; j++){
+      var d = proj[j];
+      if (!coreDrawn && d.z < 0){ drawCore(); coreDrawn = true; }
+      var cf = colorFor(d.p.word, d.p.r);
+      var sp = sprite(d.p.word, cf.col, cf.status);
+      var sc = d.s * (cf.status ? 0.5 : 0.42);
+      var swallow = Math.min(1, d.rn / 0.12);               // fade right at the horizon
+      var fog = 0.25 + 0.75 * d.s;                           // depth fog
+      ctx.globalAlpha = CFG.dim * fog * swallow * (cf.status ? 1 : 0.8);
+      ctx.drawImage(sp, d.x - sp.width*sc/2, d.y - sp.height*sc/2, sp.width*sc, sp.height*sc);
+    }
+    if (!coreDrawn) drawCore();
+    ctx.globalAlpha = 1;
+
+    raf = requestAnimationFrame(frame);
   }
 
-  function start(){ if (raf === null) raf = requestAnimationFrame(frame); }
-  function stop(){ if (raf !== null) { cancelAnimationFrame(raf); raf = null; } }
+  function start(){ if (!raf){ layout(); raf = requestAnimationFrame(frame); } }
+  function stop(){ if (raf){ cancelAnimationFrame(raf); raf = null; } }
 
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   layout();
-  if (reduce){ frame(); } else { start(); }
+  if (reduce){ t = 1; frame(); cancelAnimationFrame(raf); raf = null; }
+  else start();
 
-  var rt;
-  window.addEventListener('resize', function(){
-    clearTimeout(rt);
-    rt = setTimeout(function(){ stop(); layout(); reduce ? frame() : start(); }, 200);
-  });
-  if ('IntersectionObserver' in window && !reduce){
-    new IntersectionObserver(function(es){ es[0].isIntersecting ? start() : stop(); }, {threshold:0}).observe(cv);
+  addEventListener('resize', layout);
+  if ('IntersectionObserver' in window){
+    new IntersectionObserver(function(es){
+      if (reduce) return;
+      es[0].isIntersecting ? start() : stop();
+    }).observe(cv);
   }
   document.addEventListener('visibilitychange', function(){
     if (document.hidden) stop(); else if (!reduce) start();
   });
 })();
+</script></body></html>
