@@ -4,6 +4,9 @@
   var img = portrait.querySelector('img');
   if (!img) return;
 
+  var SCALE = 0.82;
+  var EYES = [ [39.5, 43.5], [60.5, 43.5] ];
+
   var LINES = [
     "I am Guardian, the intelligence at the core of Cyre.",
     "I watch real world assets as they move on chain.",
@@ -12,23 +15,36 @@
     "Request early access, and let me watch what matters to you."
   ];
 
+  var css = document.createElement('style');
+  css.textContent =
+    '@keyframes gEye{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}' +
+    '.g-eye{position:absolute;width:11%;aspect-ratio:1;border-radius:50%;pointer-events:none;' +
+    'background:radial-gradient(circle, rgba(79,227,208,.95) 0%, rgba(79,227,208,.45) 40%, rgba(79,227,208,0) 70%);' +
+    'opacity:0;transform:translate(-50%,-50%);}' +
+    '.g-on .g-eye{animation:gEye 1.6s ease-in-out infinite;}' +
+    '.g-eye.e2{animation-delay:.8s;}';
+  document.head.appendChild(css);
+
   portrait.style.position = 'relative';
 
   var robot = new Image();
   var hasRobot = false;
   robot.onload = function(){
     hasRobot = true;
-    robot.style.cssText = img.style.cssText;
-    robot.style.position = 'absolute';
-    robot.style.inset = '0';
-    robot.style.width = '100%';
-    robot.style.height = '100%';
-    robot.style.objectFit = getComputedStyle(img).objectFit || 'cover';
-    robot.style.objectPosition = getComputedStyle(img).objectPosition;
-    robot.style.opacity = '0';
-    robot.style.transition = 'opacity .6s ease';
-    robot.style.borderRadius = getComputedStyle(img).borderRadius;
+    robot.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;' +
+      'object-fit:cover;object-position:50% 42%;display:block;opacity:0;' +
+      'transition:opacity .6s ease;transform:scale(' + SCALE + ');' +
+      'border-radius:' + (getComputedStyle(img).borderRadius || '0');
     portrait.appendChild(robot);
+    for (var e = 0; e < EYES.length; e++){
+      var d = document.createElement('div');
+      d.className = 'g-eye' + (e === 1 ? ' e2' : '');
+      var ex = 50 + (EYES[e][0] - 50) * SCALE;
+      var ey = 50 + (EYES[e][1] - 50) * SCALE;
+      d.style.left = ex + '%';
+      d.style.top = ey + '%';
+      portrait.appendChild(d);
+    }
   };
   robot.src = '/robot.jpg';
 
@@ -69,8 +85,7 @@
   function morph(on){
     scan.style.opacity = on ? '1' : '0';
     if (hasRobot) robot.style.opacity = on ? '1' : '0';
-    img.style.transition = 'filter .5s ease';
-    img.style.filter = on ? 'saturate(.6) contrast(1.1)' : '';
+    if (on) portrait.classList.add('g-on'); else portrait.classList.remove('g-on');
   }
 
   function stopSpeak(){
