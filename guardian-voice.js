@@ -6,6 +6,7 @@
 
   var SCALE = 0.7;
   var EYES = [ [39.5, 43.5], [60.5, 43.5] ];
+  var MOUTH = [50, 64];
 
   var LINES = [
     "I am Guardian, the intelligence at the core of Cyre.",
@@ -17,15 +18,20 @@
 
   var css = document.createElement('style');
   css.textContent =
-    '@keyframes gEye{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}' +
+    '@keyframes gEye{0%,100%{opacity:.25;transform:translate(-50%,-50%) scale(.8)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}}' +
     '.g-eye{position:absolute;width:11%;aspect-ratio:1;border-radius:50%;pointer-events:none;' +
     'background:radial-gradient(circle, rgba(79,227,208,.95) 0%, rgba(79,227,208,.45) 40%, rgba(79,227,208,0) 70%);' +
     'opacity:0;transform:translate(-50%,-50%);}' +
     '.g-on .g-eye{animation:gEye 1.6s ease-in-out infinite;}' +
-    '.g-eye.e2{animation-delay:.8s;}';
+    '.g-eye.e2{animation-delay:.8s;}' +
+    '.g-mouth{position:absolute;width:16%;height:3.5%;border-radius:999px;pointer-events:none;' +
+    'background:radial-gradient(ellipse at center, rgba(79,227,208,.95) 0%, rgba(79,227,208,.4) 55%, rgba(79,227,208,0) 80%);' +
+    'opacity:0;transform:translate(-50%,-50%) scaleY(.4);transition:opacity .3s ease;}';
   document.head.appendChild(css);
 
   portrait.style.position = 'relative';
+
+  var mouth = null;
 
   var robot = new Image();
   var hasRobot = false;
@@ -39,12 +45,15 @@
     for (var e = 0; e < EYES.length; e++){
       var d = document.createElement('div');
       d.className = 'g-eye' + (e === 1 ? ' e2' : '');
-      var ex = 50 + (EYES[e][0] - 50) * SCALE;
-      var ey = 50 + (EYES[e][1] - 50) * SCALE;
-      d.style.left = ex + '%';
-      d.style.top = ey + '%';
+      d.style.left = (50 + (EYES[e][0] - 50) * SCALE) + '%';
+      d.style.top  = (50 + (EYES[e][1] - 50) * SCALE) + '%';
       portrait.appendChild(d);
     }
+    mouth = document.createElement('div');
+    mouth.className = 'g-mouth';
+    mouth.style.left = (50 + (MOUTH[0] - 50) * SCALE) + '%';
+    mouth.style.top  = (50 + (MOUTH[1] - 50) * SCALE) + '%';
+    portrait.appendChild(mouth);
   };
   robot.src = '/robot.jpg';
 
@@ -82,10 +91,28 @@
   }
 
   var speaking = false;
+  var mouthTimer = null;
+
+  function mouthOn(){
+    if (!mouth) return;
+    mouth.style.opacity = '1';
+    mouthTimer = setInterval(function(){
+      var amp = 0.35 + Math.random() * 0.9;
+      var glow = 0.55 + Math.random() * 0.45;
+      mouth.style.transform = 'translate(-50%,-50%) scaleY(' + amp.toFixed(2) + ') scaleX(' + (0.85 + Math.random()*0.3).toFixed(2) + ')';
+      mouth.style.opacity = glow.toFixed(2);
+    }, 110);
+  }
+  function mouthOff(){
+    if (mouthTimer){ clearInterval(mouthTimer); mouthTimer = null; }
+    if (mouth){ mouth.style.opacity = '0'; mouth.style.transform = 'translate(-50%,-50%) scaleY(.4)'; }
+  }
+
   function morph(on){
     scan.style.opacity = on ? '1' : '0';
     if (hasRobot) robot.style.opacity = on ? '1' : '0';
-    if (on) portrait.classList.add('g-on'); else portrait.classList.remove('g-on');
+    if (on){ portrait.classList.add('g-on'); mouthOn(); }
+    else { portrait.classList.remove('g-on'); mouthOff(); }
   }
 
   function stopSpeak(){
