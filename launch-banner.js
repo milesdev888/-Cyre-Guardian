@@ -24,6 +24,38 @@
       '<a class="cyb-cta" href="#guardian">Request early access</a>' +
     '</div>';
 
+  // $CYRE nav tab — inserted before "Request access"
+  var nav = document.querySelector('nav.nav');
+  if (nav && !document.getElementById('cy-nav-token')){
+    var tk = document.createElement('a');
+    tk.id = 'cy-nav-token';
+    tk.href = '/tokenomics';
+    tk.textContent = '$CYRE';
+    tk.style.cssText = 'color:var(--gold,#5fd0ff);font-weight:600';
+    var req = nav.querySelector('.req');
+    if (req) nav.insertBefore(tk, req); else nav.appendChild(tk);
+  }
+
+  // $CYRE hero button — joins the CTA row next to "Check an address"
+  var ctaRow = document.querySelector('.cta-row');
+  if (ctaRow && !document.getElementById('cy-hero-token')){
+    var wrapA = document.createElement('a');
+    wrapA.href = '/tokenomics';
+    wrapA.id = 'cy-hero-token';
+    var btn = document.createElement('button');
+    btn.className = 'btn b-ghost';
+    btn.style.cssText = 'color:var(--gold,#5fd0ff);border-color:rgba(95,208,255,.5);display:inline-flex;align-items:center;gap:9px';
+    var lg = document.createElement('img');
+    lg.src = '/cyre-token-256.png';
+    lg.alt = '';
+    lg.style.cssText = 'width:22px;height:22px;border-radius:50%;display:block';
+    lg.onerror = function(){ lg.remove(); };
+    btn.appendChild(lg);
+    btn.appendChild(document.createTextNode('$CYRE Token'));
+    wrapA.appendChild(btn);
+    ctaRow.appendChild(wrapA);
+  }
+
   // Use Case 01 link strip
   var uc = document.createElement('a');
   uc.id = 'cy-usecase';
