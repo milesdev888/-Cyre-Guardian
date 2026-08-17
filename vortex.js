@@ -42,8 +42,8 @@
 
   var veil = document.createElement('div');
   veil.style.cssText = 'position:absolute;inset:0;z-index:1;pointer-events:none;background:' +
-    'radial-gradient(closest-side at 50% 50%, rgba(7,8,11,.88) 0%, rgba(7,8,11,.45) 42%, rgba(7,8,11,0) 74%),' +
-    'linear-gradient(to bottom, rgba(7,8,11,.8) 0%, rgba(7,8,11,.12) 30%, rgba(7,8,11,.12) 70%, #07080b 100%)';
+    'radial-gradient(closest-side at 50% 50%, rgba(7,8,11,.55) 0%, rgba(7,8,11,.2) 42%, rgba(7,8,11,0) 74%),' +
+    'linear-gradient(to bottom, rgba(7,8,11,.55) 0%, rgba(7,8,11,.05) 30%, rgba(7,8,11,.05) 70%, #07080b 100%)';
   hero.insertBefore(veil, cv.nextSibling);
 
   var ctx = cv.getContext('2d');
@@ -166,7 +166,7 @@
       var sp = sprite(d.p.word, cf.col, cf.status);
       var sc = d.s * (cf.status ? 0.5 : 0.42);
       var swallow = Math.min(1, d.rn / 0.12);               // fade right at the horizon
-      var fog = 0.25 + 0.75 * d.s;                           // depth fog
+      var fog = 0.4 + 0.6 * d.s;                           // depth fog
       ctx.globalAlpha = CFG.dim * fog * swallow * (cf.status ? 1 : 0.8);
       ctx.drawImage(sp, d.x - sp.width*sc/2, d.y - sp.height*sc/2, sp.width*sc, sp.height*sc);
     }
