@@ -71,7 +71,7 @@
   btn.textContent = '\u25B8 Hear Guardian';
   btn.setAttribute('aria-label','Hear Guardian speak');
   btn.style.cssText = 'position:absolute;left:50%;bottom:10px;transform:translateX(-50%);' +
-    'z-index:3;font:500 12px Inter,system-ui,sans-serif;color:#07080b;background:#d9b36c;' +
+    'z-index:3;font:500 12px Inter,system-ui,sans-serif;color:#07080b;background:#5fd0ff;' +
     'border:0;border-radius:999px;padding:8px 16px;cursor:pointer;white-space:nowrap;';
   portrait.appendChild(btn);
 

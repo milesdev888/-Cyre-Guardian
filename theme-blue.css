@@ -12,3 +12,4 @@
 
 /* New Guardian portrait — overrides the base64 avatar without touching index.html */
 .portrait img{content:url('/guardian2.jpg');object-position:50% 50%}
+.g-av img{content:url('/guardian2.jpg')}
