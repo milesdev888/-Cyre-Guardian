@@ -24,10 +24,20 @@
       '<a class="cyb-cta" href="#guardian">Request early access</a>' +
     '</div>';
 
+  // Use Case 01 link strip
+  var uc = document.createElement('a');
+  uc.id = 'cy-usecase';
+  uc.href = '/auto.html';
+  uc.style.cssText = 'display:block;background:#0d1017;border-top:1px solid #1f2634;border-bottom:1px solid #1f2634;padding:18px 24px;text-align:center;text-decoration:none;font-family:Inter,system-ui,sans-serif;font-size:15px;color:#e8ecf3';
+  uc.innerHTML = '<span style="font-family:\'JetBrains Mono\',Menlo,monospace;font-size:12px;color:#4fe3d0;letter-spacing:.1em;margin-right:14px">USE CASE 01 \u2014 AUTO</span>' +
+    'Guardian watches a tokenized dealer lot <span style="color:var(--gold,#5fd0ff)">\u2192</span>';
+
   var anchor = document.getElementById('guardian') ||
                document.querySelector('#pricing, section.sec:last-of-type');
-  if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(sec, anchor);
-  else document.body.appendChild(sec);
+  if (anchor && anchor.parentNode){
+    anchor.parentNode.insertBefore(sec, anchor);
+    anchor.parentNode.insertBefore(uc, anchor);
+  } else { document.body.appendChild(sec); document.body.appendChild(uc); }
 
   var cv = sec.querySelector('canvas'), ctx = cv.getContext('2d');
   var ICE = [95,208,255], CYAN = [79,227,208], HOT = [238,250,255];
