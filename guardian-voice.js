@@ -118,19 +118,35 @@
     else { portrait.classList.remove('g-on'); mouthOff(); }
   }
 
+  /* Pre-generated voice: if /guardian-voice.mp3 exists in the repo it is
+     used for playback (one identical, high-quality voice for every visitor).
+     Falls back to browser speech synthesis when the file is absent. */
+  var voiceFile = new Audio('/guardian-voice.mp3');
+  var hasFile = false;
+  voiceFile.preload = 'auto';
+  voiceFile.addEventListener('canplaythrough', function(){ hasFile = true; });
+  voiceFile.addEventListener('error', function(){ hasFile = false; });
+  voiceFile.addEventListener('ended', function(){ stopSpeak(); });
+
   function stopSpeak(){
     speaking = false;
-    speechSynthesis.cancel();
+    if (window.speechSynthesis) speechSynthesis.cancel();
+    try { voiceFile.pause(); voiceFile.currentTime = 0; } catch(e){}
     morph(false);
     btn.textContent = '\u25B8 Hear Guardian';
   }
 
   btn.addEventListener('click', function(){
-    if (!window.speechSynthesis){ btn.textContent = 'Voice unavailable'; return; }
     if (speaking){ stopSpeak(); return; }
     speaking = true;
     btn.textContent = '\u25A0 Stop';
     morph(true);
+    if (hasFile){
+      voiceFile.currentTime = 0;
+      voiceFile.play().catch(stopSpeak);
+      return;
+    }
+    if (!window.speechSynthesis){ stopSpeak(); btn.textContent = 'Voice unavailable'; return; }
     var idx = 0;
     function next(){
       if (!speaking || idx >= LINES.length){ stopSpeak(); return; }
