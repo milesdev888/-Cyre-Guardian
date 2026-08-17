@@ -19,7 +19,7 @@
     ]
   };
 
-  var CYAN = [79,227,208], GOLD = [217,179,108], HOT = [255,241,214];
+  var CYAN = [79,227,208], GOLD = [95,208,255], HOT = [238,250,255];
   var RED = [255,77,94], GREEN = [61,220,132];
   var RED_WORDS = { 'FLAG':1, 'HOLD':1, 'RISK 0.94':1 };
   var GREEN_WORDS = { 'SETTLED':1, 'SIG VALID':1, 'ATTEST':1 };
@@ -124,8 +124,8 @@
     var g = ctx.createRadialGradient(0,0, rim*0.5, 0,0, rim*1.7);
     g.addColorStop(0, 'rgba(7,8,11,1)');
     g.addColorStop(0.55, 'rgba(7,8,11,1)');
-    g.addColorStop(0.72, 'rgba(255,241,214,' + (0.35 + 0.18*Math.sin(t*1.4)) + ')');
-    g.addColorStop(1, 'rgba(217,179,108,0)');
+    g.addColorStop(0.72, 'rgba(238,250,255,' + (0.35 + 0.18*Math.sin(t*1.4)) + ')');
+    g.addColorStop(1, 'rgba(95,208,255,0)');
     ctx.fillStyle = g;
     ctx.beginPath();
     ctx.arc(0, 0, rim*1.7, 0, Math.PI*2);

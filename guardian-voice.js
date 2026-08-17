@@ -4,9 +4,9 @@
   var img = portrait.querySelector('img');
   if (!img) return;
 
-  var FIT = { s: 1.05, x: -1.3, y: 4.5 };
-  var EYES_IMG = [ [39.6, 43], [62, 43] ];
-  var MOUTH_IMG = [50.8, 64.2];
+  var FIT = { s: 1.04, x: -0.5, y: 0.4 };
+  var EYES_IMG = [ [40, 39], [67, 39] ];
+  var MOUTH_IMG = [50, 67];
 
   function fx(p){ return 50 + (p[0] - 50) * FIT.s + FIT.x; }
   function fy(p){ return 50 + (p[1] - 50) * FIT.s + FIT.y; }
