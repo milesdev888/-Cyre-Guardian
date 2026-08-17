@@ -11,7 +11,7 @@
     coreR: 0.16,         // event-horizon radius (x canvas radius)
     spin: 0.16,          // base angular speed
     fall: 0.028,         // inward pull
-    dim: 0.8,            // overall intensity 0..1
+    dim: 1.0,            // overall intensity 0..1
     glyphs: [
       '7f3ac9','RISK 0.94','ADDR','4bE1\u2026q8','SIG VALID','RWA','0x00d4','FLAG',
       'a91f2c','SETTLED','LP','e77b30','SCORE','b1c4\u20268a','TRACE','ONDO','6d2e91',
@@ -65,7 +65,7 @@
     var c = off.getContext('2d');
     c.font = '400 ' + FONT_PX + 'px ui-monospace, Menlo, monospace';
     c.textAlign = 'center'; c.textBaseline = 'middle';
-    if (glow){ c.shadowColor = col; c.shadowBlur = 14; }
+    c.shadowColor = col; c.shadowBlur = glow ? 22 : 9;
     c.fillStyle = col;
     c.fillText(word, w/2, (FONT_PX + PAD*2)/2);
     sprites[key] = off;
@@ -124,7 +124,7 @@
     var g = ctx.createRadialGradient(0,0, rim*0.5, 0,0, rim*1.7);
     g.addColorStop(0, 'rgba(7,8,11,1)');
     g.addColorStop(0.55, 'rgba(7,8,11,1)');
-    g.addColorStop(0.72, 'rgba(238,250,255,' + (0.35 + 0.18*Math.sin(t*1.4)) + ')');
+    g.addColorStop(0.72, 'rgba(238,250,255,' + (0.6 + 0.22*Math.sin(t*1.4)) + ')');
     g.addColorStop(1, 'rgba(95,208,255,0)');
     ctx.fillStyle = g;
     ctx.beginPath();
