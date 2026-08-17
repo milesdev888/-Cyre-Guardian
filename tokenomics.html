@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>$CYRE Tokenomics · CYRE 7</title>
+<meta name="description" content="$CYRE token allocation: 100M fixed supply — 25% community float, 5% airdrop, 10% team vested, 60% development treasury on a 2-year linear vesting lock. 100% of liquidity permanently locked.">
+<link rel="icon" href="/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#07080b;--panel:#0d1017;--line:#1f2634;--text:#e8ecf3;--dim:#8892a4;--gold:#5fd0ff;--cyan:#4fe3d0;--live:#3ddc84;--red:#ff4d5e;--amber:#ffbe50;--violet:#9d8cff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--ink);color:var(--text);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--gold);text-decoration:none}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--line)}
+.logo{font-family:Sora,sans-serif;font-weight:700;font-size:18px;letter-spacing:.5px;color:var(--text)}
+.logo span{color:var(--gold)}
+header{padding:44px 0 8px}
+.kicker{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--cyan);letter-spacing:.12em;margin-bottom:12px}
+h1{font-family:Sora,sans-serif;font-weight:700;font-size:clamp(26px,4.6vw,40px);line-height:1.22}
+h1 span{color:var(--gold)}
+.sub{color:var(--dim);font-size:16px;margin-top:12px;max-width:640px;line-height:1.65}
+.grid{display:grid;grid-template-columns:340px 1fr;gap:26px;align-items:center;margin:34px 0 8px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.donut{width:100%;max-width:340px;margin:0 auto;display:block}
+.legend{display:grid;gap:10px}
+.leg{display:grid;grid-template-columns:14px 1fr auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:13px 16px}
+.leg i{width:14px;height:14px;border-radius:4px;display:block}
+.leg b{font-size:14.5px;font-weight:600}
+.leg small{display:block;color:var(--dim);font-size:12.5px;margin-top:2px;line-height:1.45}
+.leg .pct{font-family:Sora,sans-serif;font-weight:700;font-size:18px}
+.sec-label{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--dim);letter-spacing:.1em;margin:36px 0 12px}
+.locks{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.lock{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+.lock h3{font-size:14px;font-weight:600;color:var(--gold);margin-bottom:8px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em}
+.lock p{font-size:13.5px;color:var(--dim);line-height:1.6}
+.principles{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-top:10px}
+.principles li{list-style:none;font-size:14.5px;line-height:1.55;padding:7px 0 7px 26px;position:relative;color:#c6cdd9}
+.principles li::before{content:'✓';position:absolute;left:0;color:var(--live);font-weight:700}
+.ca{background:linear-gradient(180deg,rgba(95,208,255,.07),rgba(95,208,255,.02));border:1px solid rgba(95,208,255,.4);border-radius:12px;padding:20px 22px;margin-top:26px}
+.ca h2{font-family:Sora,sans-serif;font-size:17px;margin-bottom:8px}
+.ca p{font-size:14px;color:var(--dim);line-height:1.65}
+.ca code{font-family:'JetBrains Mono',monospace;color:var(--gold);font-size:14px}
+footer{border-top:1px solid var(--line);padding:22px 0 44px;color:#6c7891;font-size:12.5px;line-height:1.65;margin-top:44px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <a class="logo" href="/">CY<span>R</span>E 7</a>
+  <a href="/" style="font-size:14px">← All products</a>
+</nav>
+
+<header>
+  <div class="kicker">$CYRE — TOKEN ALLOCATION</div>
+  <h1>100,000,000 tokens. <span>Every lock verifiable on-chain.</span></h1>
+  <p class="sub">$CYRE launches on Solana via Meteora's Dynamic Bonding Curve. Fixed supply, immutable mint, and a structure designed so you never have to trust us — you can check.</p>
+</header>
+
+<div class="grid">
+  <svg class="donut" viewBox="0 0 200 200" role="img" aria-label="Allocation donut: 60% treasury, 25% community, 10% team, 3% airdrop, 2% exchange reserve">
+    <!-- circumference of r=70 ≈ 439.8 -->
+    <circle cx="100" cy="100" r="70" fill="none" stroke="#12161f" stroke-width="34"/>
+    <circle cx="100" cy="100" r="70" fill="none" stroke="#5fd0ff" stroke-width="34"
+      stroke-dasharray="109.95 329.85" stroke-dashoffset="0" transform="rotate(-90 100 100)"/>
+    <circle cx="100" cy="100" r="70" fill="none" stroke="#9d8cff" stroke-width="34"
+      stroke-dasharray="263.88 175.92" stroke-dashoffset="-109.95" transform="rotate(-90 100 100)"/>
+    <circle cx="100" cy="100" r="70" fill="none" stroke="#4fe3d0" stroke-width="34"
+      stroke-dasharray="43.98 395.84" stroke-dashoffset="-373.84" transform="rotate(-90 100 100)"/>
+    <circle cx="100" cy="100" r="70" fill="none" stroke="#3ddc84" stroke-width="34"
+      stroke-dasharray="13.19 426.63" stroke-dashoffset="-417.82" transform="rotate(-90 100 100)"/>
+    <circle cx="100" cy="100" r="70" fill="none" stroke="#ffbe50" stroke-width="34"
+      stroke-dasharray="8.80 431.02" stroke-dashoffset="-431.01" transform="rotate(-90 100 100)"/>
+    <text x="100" y="94" text-anchor="middle" fill="#e8ecf3" font-family="Sora,sans-serif" font-weight="700" font-size="22">100M</text>
+    <text x="100" y="114" text-anchor="middle" fill="#8892a4" font-family="Inter,sans-serif" font-size="10">FIXED SUPPLY</text>
+  </svg>
+
+  <div class="legend">
+    <div class="leg"><i style="background:#9d8cff"></i><div><b>Development treasury</b><small>60,000,000 — locked in a 2-year <u>linear</u> on-chain vesting contract. No cliff bomb: tokens release gradually across 24 months, every unlock publicly visible.</small></div><span class="pct">60%</span></div>
+    <div class="leg"><i style="background:#5fd0ff"></i><div><b>Community float</b><small>25,000,000 — the only freely tradeable supply at launch. Sold on the bonding curve; seeds the graduated liquidity pool.</small></div><span class="pct">25%</span></div>
+    <div class="leg"><i style="background:#4fe3d0"></i><div><b>Team</b><small>10,000,000 — 12-month on-chain vesting with a 6-month cliff. The team cannot sell a single token for six months, then daily release.</small></div><span class="pct">10%</span></div>
+    <div class="leg"><i style="background:#3ddc84"></i><div><b>Airdrop</b><small>3,000,000 — reserved for the community campaign. Distribution criteria published before launch.</small></div><span class="pct">3%</span></div>
+    <div class="leg"><i style="background:#ffbe50"></i><div><b>Exchange & liquidity ops</b><small>2,000,000 — reserved for future exchange listings and related liquidity requirements. Unused portion stays locked; movements disclosed.</small></div><span class="pct">2%</span></div>
+  </div>
+</div>
+
+<div class="sec-label">THE LOCKS</div>
+<div class="locks">
+  <div class="lock"><h3>LIQUIDITY: 100% LOCKED</h3><p>All graduated pool liquidity is permanently locked. The team can never withdraw it — only collect trading fees on the locked position.</p></div>
+  <div class="lock"><h3>MINT: IMMUTABLE</h3><p>Token authority is set to immutable at creation. No new tokens can ever be minted; metadata cannot be changed.</p></div>
+  <div class="lock"><h3>RAISE: 0% TAKEN</h3><p>The team takes zero percent of the liquidity raised on the curve. Everything raised migrates into the trading pool.</p></div>
+</div>
+
+<div class="sec-label">WHY IT'S BUILT THIS WAY</div>
+<div class="principles">
+  <li>Small float, honest float — 25% is what trades, and everyone knows it.</li>
+  <li>No unlock cliffs on the treasury — linear vesting means no single date where supply floods.</li>
+  <li>Insider allocations (team + treasury) are large <b>and loudly disclosed</b> — locked on-chain, not promised in a PDF.</li>
+  <li>Launch protected by anti-sniper fees that decay over the first minute, so bots can't scoop the curve bottom.</li>
+</div>
+
+<div class="ca">
+  <h2>Contract address</h2>
+  <p><code>To be announced.</code> The official $CYRE address will be published here and on <a href="https://x.com/Cyredev888">@Cyredev888</a> — nowhere else, and never in replies or DMs. Any other address claiming to be $CYRE is fake.</p>
+</div>
+
+<footer>
+  CYRE 7 · $CYRE tokenomics. Figures describe the intended launch configuration; final on-chain parameters will be verifiable at the published contract address at launch. Nothing on this page is an offer to sell securities, investment advice, or a promise of profit or price performance. Digital assets are volatile — never commit funds you cannot afford to lose.
+</footer>
+</div>
+</body>
+</html>
