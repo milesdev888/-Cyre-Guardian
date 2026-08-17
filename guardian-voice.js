@@ -79,7 +79,7 @@
   function pickVoice(){
     var vs = speechSynthesis.getVoices();
     if (!vs.length) return;
-    var names = ['Samantha','Google UK English Female','Karen','Victoria','Moira'];
+    var names = ['Ava','Zoe','Allison','Aria','Jenny','Samantha','Google US English','Google UK English Female','Victoria','Karen','Moira'];
     for (var i = 0; i < names.length; i++){
       for (var j = 0; j < vs.length; j++){
         if (vs[j].name.indexOf(names[i]) !== -1){ voice = vs[j]; return; }
@@ -136,8 +136,8 @@
       if (!speaking || idx >= LINES.length){ stopSpeak(); return; }
       var u = new SpeechSynthesisUtterance(LINES[idx++]);
       if (voice) u.voice = voice;
-      u.rate = 0.95;
-      u.pitch = 0.85;
+      u.rate = 0.84;
+      u.pitch = 0.8;
       u.onend = next;
       u.onerror = stopSpeak;
       speechSynthesis.speak(u);
