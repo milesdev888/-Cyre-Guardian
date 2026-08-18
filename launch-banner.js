@@ -30,8 +30,12 @@
     var tk = document.createElement('a');
     tk.id = 'cy-nav-token';
     tk.href = '/tokenomics';
-    tk.textContent = '$CYRE';
+    tk.textContent = '$C7';
     tk.style.cssText = 'color:var(--gold,#5fd0ff);font-weight:600';
+    var rm = document.createElement('a');
+    rm.href = '/roadmap';
+    rm.textContent = 'Roadmap';
+    nav.insertBefore(rm, nav.querySelector('.req'));
     var req = nav.querySelector('.req');
     if (req) nav.insertBefore(tk, req); else nav.appendChild(tk);
   }
@@ -51,7 +55,7 @@
     lg.style.cssText = 'width:22px;height:22px;border-radius:50%;display:block';
     lg.onerror = function(){ lg.remove(); };
     btn.appendChild(lg);
-    btn.appendChild(document.createTextNode('$CYRE Token'));
+    btn.appendChild(document.createTextNode('$C7 Token'));
     wrapA.appendChild(btn);
     ctaRow.appendChild(wrapA);
   }
