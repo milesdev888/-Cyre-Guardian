@@ -121,6 +121,23 @@
   /* Pre-generated voice: if /guardian-voice.mp3 exists in the repo it is
      used for playback (one identical, high-quality voice for every visitor).
      Falls back to browser speech synthesis when the file is absent. */
+  /* Talking-video mode: on tap, the portrait circle plays /guardian-video.mp4
+     (her animated face + voice in one file). Falls back to mp3, then synth. */
+  var vid = null;
+  function ensureVid(){
+    if (vid) return vid;
+    var host = portrait;
+    vid = document.createElement('video');
+    vid.src = '/guardian-video.mp4';
+    vid.playsInline = true;
+    vid.preload = 'none';
+    vid.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit;opacity:0;transition:opacity .45s;z-index:2;pointer-events:none';
+    vid.addEventListener('ended', function(){ stopSpeak(); });
+    vid.addEventListener('error', function(){ vid.dataset.dead = '1'; });
+    host.appendChild(vid);
+    return vid;
+  }
+
   var voiceFile = new Audio('/guardian-voice.mp3');
   var hasFile = true; // optimistic — attempt the file first, fall back only if it truly errors
   voiceFile.preload = 'auto';
@@ -129,6 +146,7 @@
 
   function stopSpeak(){
     speaking = false;
+    if (vid){ try { vid.pause(); vid.currentTime = 0; } catch(e){} vid.style.opacity = 0; }
     if (window.speechSynthesis) speechSynthesis.cancel();
     try { voiceFile.pause(); voiceFile.currentTime = 0; } catch(e){}
     morph(false);
@@ -156,6 +174,22 @@
     speaking = true;
     btn.textContent = '\u25A0 Stop';
     morph(true);
+    var v = ensureVid();
+    if (v && v.dataset.dead !== '1'){
+      v.currentTime = 0;
+      v.play().then(function(){
+        v.style.opacity = 1;
+      }).catch(function(){
+        v.dataset.dead = '1';
+        playAudioOrSynth();
+      });
+      return;
+    }
+    playAudioOrSynth();
+    return;
+  });
+
+  function playAudioOrSynth(){
     if (hasFile){
       voiceFile.currentTime = 0;
       voiceFile.play().then(function(){ /* playing */ }).catch(function(){
@@ -165,7 +199,7 @@
       return;
     }
     speakWithSynth();
-  });
+  }
 
   document.addEventListener('visibilitychange', function(){
     if (document.hidden && speaking) stopSpeak();
