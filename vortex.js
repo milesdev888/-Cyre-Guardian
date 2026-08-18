@@ -124,7 +124,7 @@
     var g = ctx.createRadialGradient(0,0, rim*0.5, 0,0, rim*1.7);
     g.addColorStop(0, 'rgba(7,8,11,1)');
     g.addColorStop(0.55, 'rgba(7,8,11,1)');
-    g.addColorStop(0.72, 'rgba(238,250,255,' + (0.6 + 0.22*Math.sin(t*1.4)) + ')');
+    g.addColorStop(0.72, 'rgba(238,250,255,' + (0.78 + 0.14*Math.sin(t*1.4)) + ')');
     g.addColorStop(1, 'rgba(95,208,255,0)');
     ctx.fillStyle = g;
     ctx.beginPath();
