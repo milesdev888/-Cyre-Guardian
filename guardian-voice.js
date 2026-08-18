@@ -122,9 +122,8 @@
      used for playback (one identical, high-quality voice for every visitor).
      Falls back to browser speech synthesis when the file is absent. */
   var voiceFile = new Audio('/guardian-voice.mp3');
-  var hasFile = false;
+  var hasFile = true; // optimistic — attempt the file first, fall back only if it truly errors
   voiceFile.preload = 'auto';
-  voiceFile.addEventListener('canplaythrough', function(){ hasFile = true; });
   voiceFile.addEventListener('error', function(){ hasFile = false; });
   voiceFile.addEventListener('ended', function(){ stopSpeak(); });
 
@@ -136,16 +135,7 @@
     btn.textContent = '\u25B8 Hear Guardian';
   }
 
-  btn.addEventListener('click', function(){
-    if (speaking){ stopSpeak(); return; }
-    speaking = true;
-    btn.textContent = '\u25A0 Stop';
-    morph(true);
-    if (hasFile){
-      voiceFile.currentTime = 0;
-      voiceFile.play().catch(stopSpeak);
-      return;
-    }
+  function speakWithSynth(){
     if (!window.speechSynthesis){ stopSpeak(); btn.textContent = 'Voice unavailable'; return; }
     var idx = 0;
     function next(){
@@ -159,6 +149,22 @@
       speechSynthesis.speak(u);
     }
     next();
+  }
+
+  btn.addEventListener('click', function(){
+    if (speaking){ stopSpeak(); return; }
+    speaking = true;
+    btn.textContent = '\u25A0 Stop';
+    morph(true);
+    if (hasFile){
+      voiceFile.currentTime = 0;
+      voiceFile.play().then(function(){ /* playing */ }).catch(function(){
+        hasFile = false;
+        speakWithSynth();
+      });
+      return;
+    }
+    speakWithSynth();
   });
 
   document.addEventListener('visibilitychange', function(){
