@@ -1,6 +1,15 @@
 (function(){
   if (document.getElementById('cy-banner')) return;
 
+  // Glass theme loader (Hedra design, crystal-recolored)
+  if (!document.getElementById('cy-glass')){
+    var gl = document.createElement('link');
+    gl.id = 'cy-glass';
+    gl.rel = 'stylesheet';
+    gl.href = '/theme-glass.css';
+    document.head.appendChild(gl);
+  }
+
   var css = document.createElement('style');
   css.textContent =
     '#cy-banner{position:relative;overflow:hidden;background:#07080b;border-top:1px solid #1f2634;border-bottom:1px solid #1f2634}' +
@@ -58,6 +67,20 @@
     btn.appendChild(document.createTextNode('$C7 Token'));
     wrapA.appendChild(btn);
     ctaRow.appendChild(wrapA);
+  }
+
+  // Telemetry HUD bar under the hero (claims-safe values only)
+  var hero = document.querySelector('.hero');
+  if (hero && !document.getElementById('cy-hud')){
+    var hud = document.createElement('div');
+    hud.id = 'cy-hud';
+    hud.innerHTML = '<div class="wrap"><div class="hud-bar">' +
+      '<div class="hud-item"><span class="hud-label">Guardian</span><span class="hud-val">Online <span class="up">\u25B2 LIVE</span></span></div>' +
+      '<div class="hud-item"><span class="hud-label">Use Case 01 \u2014 Auto</span><span class="hud-val">Live demo</span></div>' +
+      '<div class="hud-item"><span class="hud-label">$C7 Launch</span><span class="hud-val">Targeting August</span></div>' +
+      '<div class="hud-item"><span class="hud-label">Network</span><span class="hud-val">Solana</span></div>' +
+    '</div></div>';
+    hero.parentNode.insertBefore(hud, hero.nextSibling);
   }
 
   // Use Case 01 link strip
