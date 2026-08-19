@@ -2,7 +2,6 @@
   const hero = document.querySelector('.hero');
   if (!hero) return;
 
-  // Create canvas
   const canvas = document.createElement('canvas');
   canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;';
   hero.style.position = 'relative';
@@ -12,8 +11,15 @@
   const ctx = canvas.getContext('2d');
   let width, height, dpr;
   const nodes = [];
-  const NODE_COUNT = 55;
-  const CONNECTION_DIST = 160;
+  const NODE_COUNT = 58;
+  const CONNECTION_DIST = 155;
+
+  // Colors: Cyan, Silver, Gold
+  const COLORS = [
+    { r: 0, g: 210, b: 255 },    // Cyan
+    { r: 190, g: 210, b: 230 },  // Silver
+    { r: 255, g: 200, b: 80 }    // Gold
+  ];
 
   function resize() {
     const rect = hero.getBoundingClientRect();
@@ -31,31 +37,37 @@
     constructor() {
       this.reset(true);
     }
-    reset(initial = false) {
+    reset() {
       this.x = Math.random() * width;
       this.y = Math.random() * height;
-      this.vx = (Math.random() - 0.5) * 0.35;
-      this.vy = (Math.random() - 0.5) * 0.35;
-      this.radius = Math.random() * 1.8 + 0.8;
-      this.alpha = Math.random() * 0.5 + 0.25;
+      this.vx = (Math.random() - 0.5) * 0.32;
+      this.vy = (Math.random() - 0.5) * 0.32;
+      this.radius = Math.random() * 1.7 + 0.7;
+      this.alpha = Math.random() * 0.45 + 0.3;
+
+      // Randomly pick cyan / silver / gold
+      const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+      this.r = color.r;
+      this.g = color.g;
+      this.b = color.b;
     }
     update() {
       this.x += this.vx;
       this.y += this.vy;
-
       if (this.x < 0 || this.x > width) this.vx *= -1;
       if (this.y < 0 || this.y > height) this.vy *= -1;
     }
     draw() {
+      // Main dot
       ctx.beginPath();
       ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(0, 210, 255, ${this.alpha})`;
+      ctx.fillStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${this.alpha})`;
       ctx.fill();
 
-      // soft glow
+      // Soft glow
       ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius * 3.5, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(0, 180, 255, ${this.alpha * 0.12})`;
+      ctx.arc(this.x, this.y, this.radius * 3.2, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${this.alpha * 0.13})`;
       ctx.fill();
     }
   }
@@ -75,12 +87,12 @@
         const dist = Math.sqrt(dx * dx + dy * dy);
 
         if (dist < CONNECTION_DIST) {
-          const alpha = (1 - dist / CONNECTION_DIST) * 0.18;
+          const alpha = (1 - dist / CONNECTION_DIST) * 0.16;
           ctx.beginPath();
           ctx.moveTo(nodes[i].x, nodes[i].y);
           ctx.lineTo(nodes[j].x, nodes[j].y);
-          ctx.strokeStyle = `rgba(0, 200, 255, ${alpha})`;
-          ctx.lineWidth = 0.7;
+          ctx.strokeStyle = `rgba(0, 190, 255, ${alpha})`;
+          ctx.lineWidth = 0.65;
           ctx.stroke();
         }
       }
@@ -90,18 +102,17 @@
   function animate() {
     ctx.clearRect(0, 0, width, height);
 
-    // very subtle vignette
+    // Soft vignette
     const gradient = ctx.createRadialGradient(
       width / 2, height / 2, 0,
-      width / 2, height / 2, Math.max(width, height) * 0.7
+      width / 2, height / 2, Math.max(width, height) * 0.72
     );
     gradient.addColorStop(0, 'rgba(0,0,0,0)');
-    gradient.addColorStop(1, 'rgba(5,10,25,0.35)');
+    gradient.addColorStop(1, 'rgba(5,10,25,0.38)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
 
     drawConnections();
-
     nodes.forEach(node => {
       node.update();
       node.draw();
