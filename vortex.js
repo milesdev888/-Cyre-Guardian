@@ -19,8 +19,8 @@
     ]
   };
 
-  var CYAN = [79,227,208], GOLD = [95,208,255], HOT = [238,250,255];
-  var RED = [255,77,94], GREEN = [61,220,132];
+  var CYAN = [0, 210, 255], GOLD = [100, 200, 255], HOT = [180, 240, 255];
+var RED = [255, 90, 110], GREEN = [0, 230, 180];
   var RED_WORDS = { 'FLAG':1, 'HOLD':1, 'RISK 0.94':1 };
   var GREEN_WORDS = { 'SETTLED':1, 'SIG VALID':1, 'ATTEST':1 };
 
@@ -42,8 +42,8 @@
 
   var veil = document.createElement('div');
   veil.style.cssText = 'position:absolute;inset:0;z-index:1;pointer-events:none;background:' +
-    'radial-gradient(closest-side at 50% 50%, rgba(7,8,11,.55) 0%, rgba(7,8,11,.2) 42%, rgba(7,8,11,0) 74%),' +
-    'linear-gradient(to bottom, rgba(7,8,11,.55) 0%, rgba(7,8,11,.05) 30%, rgba(7,8,11,.05) 70%, #07080b 100%)';
+  'radial-gradient(closest-side at 50% 50%, rgba(5,10,25,.4) 0%, rgba(5,10,25,.15) 45%, rgba(5,10,25,0) 75%),' +
+  'linear-gradient(to bottom, rgba(5,10,25,.5) 0%, rgba(5,10,25,.08) 40%, transparent 70%)';
   hero.insertBefore(veil, cv.nextSibling);
 
   var ctx = cv.getContext('2d');
