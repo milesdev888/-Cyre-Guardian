@@ -142,7 +142,7 @@ function render(d){
       + '<div class="addr">' + esc(d.address) + '</div></div>'
     + '</div>'
     + '<div class="facts">'
-      + fact('age', (p.ageIsMinimum ? '&gt;' : '') + p.ageDays + 'd')
+      + fact('age', (p.ageIsMinimum && p.ageDays < 1) ? 'n/a' : (p.ageIsMinimum ? '&gt;' : '') + p.ageDays + 'd')
       + fact('balance', p.balanceSol + ' SOL')
       + fact('last 24h', p.last24h)
       + fact('failed', p.failedPercent + '%')
