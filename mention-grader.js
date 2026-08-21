@@ -64,6 +64,17 @@ function extractTweets(x) {
   if (Array.isArray(x)) return x;
   if (x && Array.isArray(x.data)) return x.data;
   if (x && x.tweets && Array.isArray(x.tweets)) return x.tweets;
+  // bridge text format: "@author [ISO date] (id 123): text..." per mention
+  if (typeof x === "string") {
+    const out = [];
+    const re = /@(\w+) \[([^\]]+)\] \(id (\d+)\):\s*([\s\S]*?)(?=\n@\w+ \[|\s*$)/g;
+    let m;
+    while ((m = re.exec(x)) !== null) {
+      if (m[1].toLowerCase() === "cyredev888") continue; // never reply to ourselves
+      out.push({ author: m[1], created_at: m[2], id: m[3], text: m[4] });
+    }
+    return out;
+  }
   return [];
 }
 
