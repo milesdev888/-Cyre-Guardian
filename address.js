@@ -28,6 +28,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'That does not look like a Solana address.' });
   }
 
+  // lightweight usage log — visible in Vercel function logs (Observability tab)
+  console.log(JSON.stringify({ evt: 'check', addr: address.slice(0,4) + '..' + address.slice(-4), t: new Date().toISOString() }));
+
   try {
     const [sigs, bal] = await Promise.all([
       rpc('getSignaturesForAddress', [address, { limit: 1000 }]),
