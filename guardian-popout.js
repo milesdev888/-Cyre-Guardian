@@ -106,7 +106,7 @@
     fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ message: text })
+      body: JSON.stringify({ messages: [{ role: 'user', content: text }] })
     })
       .then(function (r) {
         if (!r.ok) throw new Error('bad');
