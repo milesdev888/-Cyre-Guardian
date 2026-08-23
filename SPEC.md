@@ -1,1 +1,1 @@
-LOAD_FROM_FILE:/workspace/watch-rebase/SPEC.md
+@file:///workspace/watch-rebase/SPEC.md
