@@ -10,6 +10,14 @@
     document.head.appendChild(gl);
   }
 
+  // AI vibe layer (theme + Tools nav + Guardian pop-out + core bolt-ons)
+  if (!document.querySelector('script[src="/ai-vibe-loader.js"]')){
+    var av = document.createElement('script');
+    av.src = '/ai-vibe-loader.js';
+    av.defer = true;
+    (document.body || document.documentElement).appendChild(av);
+  }
+
   var css = document.createElement('style');
   css.textContent =
     '#cy-banner{position:relative;overflow:hidden;background:#07080b;border-top:1px solid #1f2634;border-bottom:1px solid #1f2634}' +
