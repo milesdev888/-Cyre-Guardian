@@ -1,1 +1,1 @@
-PLACEHOLDER
+LOAD_FROM_FILE:/workspace/watch-rebase/api/watch.js

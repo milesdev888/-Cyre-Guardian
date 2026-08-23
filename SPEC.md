@@ -1,1 +1,1 @@
-LOAD_FROM_FILE:/workspace/cyre-hero-morph/out/SPEC.md
+LOAD_FROM_FILE:/workspace/watch-rebase/SPEC.md
