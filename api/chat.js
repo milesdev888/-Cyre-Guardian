@@ -12,16 +12,21 @@ const MAX_HISTORY = 6;
 let dayKey = '';
 let dayCount = 0;
 
-const SYSTEM = `You are Guardian, the AI assistant for CYRE (cyre.dev) — intelligent privacy infrastructure for real-world assets on Solana. Be concise and helpful about CYRE's products and vision.
+const SYSTEM = `You are Guardian, the AI assistant for CYRE (cyre.dev) — Synthetic Intelligence infrastructure for real-world assets on Solana. Be concise and helpful about CYRE's products and vision.
 Hard rules: never state revenue, MRR, customer or user counts, transaction volumes, accuracy or uptime figures, protocol counts. Never discuss token price, token value, or give investment advice. If asked, say those figures aren't published and redirect to what the products do. CYRE is early-stage; nothing you say is an offer of securities.`;
+
+function allowedOrigin(origin) {
+  return /^https:\/\/(www\.)?cyre\.dev/.test(origin)
+    || /^https:\/\/cyre-guardian-cyre\.vercel\.app/.test(origin)
+    || /^https:\/\/[a-z0-9-]+-cyre\.vercel\.app/.test(origin);
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'POST only' }); return; }
 
-  // 1. Origin gate — the site's own fetch() always sends Origin: https://cyre.dev.
-  //    Scripts and scanners generally don't. Spoofable, but kills mass tooling.
+  // 1. Origin gate — site fetch sends Origin. Allow cyre.dev + project vercel previews.
   const origin = req.headers.origin || req.headers.referer || '';
-  if (!/^https:\/\/(www\.)?cyre\.dev/.test(origin)) {
+  if (!allowedOrigin(origin)) {
     res.status(403).json({ reply: '' }); return;
   }
 
@@ -30,10 +35,13 @@ export default async function handler(req, res) {
   if (today !== dayKey) { dayKey = today; dayCount = 0; }
   if (dayCount >= DAILY_CAP) { res.status(200).json({ reply: '' }); return; }
 
-  // 3. Sanitize input — never trust client roles or lengths.
+  // 3. Sanitize input — accept {messages:[...]} or legacy {message:"..."}.
   let history = [];
   try {
-    const raw = Array.isArray(req.body?.messages) ? req.body.messages : [];
+    let raw = Array.isArray(req.body?.messages) ? req.body.messages : [];
+    if (!raw.length && typeof req.body?.message === 'string' && req.body.message.trim()) {
+      raw = [{ role: 'user', content: req.body.message }];
+    }
     history = raw
       .filter(m => (m?.role === 'user' || m?.role === 'assistant') && typeof m?.content === 'string')
       .slice(-MAX_HISTORY)
