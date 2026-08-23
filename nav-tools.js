@@ -1,5 +1,5 @@
 /* nav-tools.js — bolt-on Tools/Product dropdown + secondary-page tool strip
-   Links: Check / Score / Auto / Tokenomics / Roadmap / Airdrop
+   Links: Watch / Check / Score / Auto / Tokenomics / Roadmap / Airdrop
    Styled by theme-ai-vibe.css (cyan/violet glass). */
 (function () {
   'use strict';
@@ -7,6 +7,7 @@
   window.__cyAiNavTools = true;
 
   var LINKS = [
+    { href: '/watch', label: 'Watch', hint: 'Monitor' },
     { href: '/check', label: 'Check', hint: 'Address' },
     { href: '/score', label: 'Score', hint: 'Wallet' },
     { href: '/auto', label: 'Auto', hint: 'Use case' },
