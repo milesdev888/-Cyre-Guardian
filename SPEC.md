@@ -44,13 +44,13 @@ cyre.dev/tokenomics and @Cyredev888.
 
 | File | What it is |
 |---|---|
-| `index.html` | **Homepage redesign** (Aug 2026): self-contained cinematic AI page — headline "The chain has a witness.", eyebrow **Synthetic Intelligence · RWA fraud-watch**, cyan `#5fd0ff` + violet `#9b7bff` + sparse gold particle accents, **wireframe/particle Guardian head** (idle morph dust→mesh→photo→dust; soft eye bloom on mesh, no cartoon eyes), orbit rings, compact status chips LIVE / RISK LOW / WATCHING beside head, cyan-glow Check CTA + transparent outline Talk to Guardian, single nav (no duplicate Tools strip), Watchlist/Forensics/Passport cards, trust strip (no fake metrics). Hero morph may show `/guardian2.jpg` during photo phase; FAB/popout still uses `/guardian2.jpg`. Loads `homepage.css`, `vortex.js`, `guardian-head.js`, `guardian-popout.js`, `access-form.js`, `rwa-widget.js`, `ai-presence.js`, `footer-polish.js`. |
+| `index.html` | **Homepage redesign** (Aug 2026): self-contained cinematic AI page — headline "The chain has a witness.", eyebrow **Synthetic Intelligence · RWA fraud-watch**, cyan `#5fd0ff` + violet `#9b7bff` + sparse gold particle accents, **wireframe/particle Guardian head** (idle morph dust→mesh→photo→dust; soft eye bloom on mesh, no cartoon eyes), orbit rings, compact status chips LIVE / RISK LOW / WATCHING beside head, cyan-glow Check CTA + transparent outline Talk to Guardian, single nav (no duplicate Tools strip), Watchlist/Forensics/Passport/Signals cards, trust strip (no fake metrics). Hero morph may show `/guardian2.jpg` during photo phase; FAB/popout still uses `/guardian2.jpg`. Loads `homepage.css`, `vortex.js`, `guardian-head.js`, `guardian-popout.js`, `access-form.js`, `rwa-widget.js`, `ai-presence.js`, `footer-polish.js`. |
 | `index-legacy.html` | Pre-redesign CYRE 7 shell snapshot for rollback. Do not serve as `/`. |
 | `theme-glass.css` | Crystal glassmorphism skin (loaded by launch-banner.js). Delete = revert skin. |
 | `theme-purple-deep.css` | Darker-purple mood overrides: deeper violet `#7048dc`, shadow boosts, hero ambient shift. Loaded by `index.html` (after homepage.css) + injected by `ai-vibe-loader.js`. |
 | `theme-blue.css` | Blue token overrides + avatar swap (`.portrait img` / `.g-av img` → /guardian2.jpg). |
 | `guardian-popout.js` | FAB (`/guardian2.jpg` + LIVE) → glass panel with `/guardian-video.mp4` + chat POST `/api/chat`. Does not replace `guardian-voice.js`. |
-| `nav-tools.js` | Tools dropdown/strip: Watch, Passport, Check, Score, Auto, Forensics, Tokenomics, Roadmap, Airdrop (cyan/violet glass menus). |
+| `nav-tools.js` | Tools dropdown/strip: Watch, Passport, Check, Score, Auto, Forensics, Signals, Tokenomics, Roadmap, Airdrop (cyan/violet glass menus). |
 | `ai-vibe-loader.js` | Injects `theme-ai-vibe.css` + `theme-purple-deep.css`; ensures nav-tools, guardian-popout, ai-presence, rwa/vortex/voice/access. Loaded by `launch-banner.js` (+ one-line on secondary pages). |
 | `ai-presence.js` | SUPER AI idle: denser glow, orbit breathe/pulse, `.portrait` / orb rings (works with wireframe head wrap); reduced-motion safe. Loaded by `ai-vibe-loader.js`. |
 | `footer-polish.js` | Footer Docs/Security → `/roadmap`; Privacy/Terms/Support → mailto. |
@@ -73,6 +73,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `airdrop.html` | 3M $C7, tabs Community (2M) / Creators (1M, #creators deep link), Guardian warning. |
 | `auto.html` | Use Case 01 — tokenized dealer lot demo (synthetic). Kept at `/auto`; product Forensics lives at `/forensics`. |
 | `forensics.html` | Forensics v1 — single-address RWA pattern board → cyre.dev/forensics. Measured only; `Cache-Control: no-store`. |
+| `signals.html` | Signals v1 — public RWA pattern feed board → cyre.dev/signals. Default list empty (same Watch policy); measured hits only; `Cache-Control: no-store` on `/api/signals`. |
 | `watcher.js` | Render cron `guardian-watcher` (*/15): anomaly detector → drafts/tweets. Stateless window dedup. |
 | `mention-grader.js` | Render cron `guardian-mention-grader` (*/10): @mention + address → public grade reply via bridge. |
 | `api/chat.js` | Guardian chat (Anthropic). HARDENED: origin-locked to cyre.dev, role-sanitized, haiku model, daily cap. Keep all guardrails. |
@@ -80,6 +81,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/watch.js` | GET /api/watch — `?address=` and optional `?list=` (≤10). Reuses address signals; fresh-window alerts; counters from this measured run only; `Cache-Control: no-store` (no CDN reuse). Marks noisy if last24h ≥ 200. No LLM. Env `SOLANA_RPC`. |
 | `api/passport.js` | GET /api/passport — `?address=`. Stable Passport JSON (`version`/`kind`/`address`/`fetchedAt`/`score`/`riskLevel`/`profile`/`signals`/`mintAffinity`/`window`/`disclaimer`). Same measured 1k-sig window as `/api/address`; one `getTokenAccountsByOwner` for SPEC seed mints → `mintAffinity` hold/touch yes|no vs seed (no weights); `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
 | `api/forensics.js` | GET /api/forensics — `?address=` (single). Measured patterns: dormant→active, burst, failure spike, mint-affinity hold/touch vs SPEC seed mints. Same 1k-sig window + one token-accounts call as Passport; collateral-loop + transfer-hook/eligibility friction named but `evaluated:false` in v1; `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
+| `api/signals.js` | GET /api/signals — optional `?address=` / `?list=` (≤10). Empty default → empty feed + message (quiet holders not yet filtered from SPEC seed mints; same Watch policy). Per address: Watch patterns (dormant→active, burst, failure spike) + mintAffinity via **per-mint** `getTokenAccountsByOwner` only (never programId dump). Response `{ ok, kind:'cyre-signals', version:1, disclaimer, window, items, counters }`; brief sleep between wallets; soft-fail RPC; `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
 | `api/rwa.mjs` | CoinGecko proxy, 60s cache, last-good fallback. Env `COINGECKO_API_KEY`. |
 | `cyre-token-256/512.png` | C7 emblem. 512 = mint metadata image URI (GitHub raw path, immutable). |
 | `vercel.json` | `{cleanUrls:true, trailingSlash:false}` — pages served extensionless. |
@@ -114,6 +116,20 @@ Alert patterns in Watch v1 (measured only): dormant→active, burst, failure spi
 
 Forensics is single-address only (quiet/cost-safe). Still patterns, not accusations.
 
+### Signals v1 — public pattern feed (patterns only; no verdicts)
+
+Public feed of recent/public measured pattern hits across an optional address list (≤10, same cap as Watch). Default list is **empty** until quiet holders are filtered from SPEC seed mints (same Watch policy).
+
+| Pattern | v1 status | Measured from |
+|---|---|---|
+| dormant→active | evaluated | 1k-sig `blockTime` gaps + idleDays (Watch family) |
+| burst | evaluated | lastHour / last24h counts in this run |
+| failure spike | evaluated | failed sig ratio (window + last-hour) |
+| mint-affinity | evaluated | **per-mint** `getTokenAccountsByOwner` hold/touch yes\|no vs SPEC seed mints (never programId full token dump — OOMs Vercel) |
+
+API always returns `kind:'cyre-signals'`, `version:1`, `disclaimer:'Patterns, not verdicts.'`, `Cache-Control: no-store`. No LLM. No invented metrics.
+
+
 Off-repo: `cyre-x-bridge` (Render web service — X API bridge, MCP connector + cron relay);
 `cyre-fraud-prediction` (separate repo/deploy, linked from the Fraud Prediction card);
 `cyre_dbc_config.jsonc` (local-only Meteora CLI config, holds the 60/25/10/3/2 math).
@@ -130,7 +146,7 @@ branch rather than stacking more skins on the legacy shell.
 **self-mounting JS at repo root** (+ one-line `<script>` includes). Scripts find their DOM anchor,
 inject markup/styles, fail cleanly, respect `prefers-reduced-motion`, and pause off-screen
 (IntersectionObserver). CSS skins load the same way. Revert = delete the file.
-Secondary pages (`watch`/`passport`/`forensics`/`check`/`score`/`auto`/…) stay standalone HTML and load `ai-vibe-loader.js` for
+Secondary pages (`watch`/`passport`/`forensics`/`signals`/`check`/`score`/`auto`/…) stay standalone HTML and load `ai-vibe-loader.js` for
 shared nav/popout/theme.
 
 ## 5. DESIGN SYSTEM — "crystal blue glass" (+ AI-vibe layer)
@@ -150,7 +166,7 @@ no leftover gold chrome in UI (`#d9b36c`/`#d4a84b` as button/nav accents), no wh
 - Signature: **darker-purple mood** (`theme-purple-deep.css` on top of AI-vibe) — deeper violet `#7048dc` ambient, violet-heavy particles; cyan `#5fd0ff` / violet `#9b7bff` / sparse gold `~12%` wireframe/particle Guardian head (canvas) with **dust→mesh→photo→dust** idle cycle (~22 s) + counter-rotating orbit rings; hero morph may show `/guardian2.jpg` during photo phase; FAB/popout still uses `/guardian2.jpg`
 - Hero status chips (system status, not wallet verdicts): **LIVE** / **RISK LOW** / **WATCHING**
 - Primary CTA: Check — cyan fill + outer glow (not violet gradient); Talk to Guardian — transparent outline
-- Single primary nav (Watch/Passport/Check/Score/Auto/Forensics/Tokenomics/Roadmap/Airdrop) — no duplicate Tools strip under nav
+- Single primary nav (Watch/Passport/Check/Score/Auto/Forensics/Signals/Tokenomics/Roadmap/Airdrop) — no duplicate Tools strip under nav
 - Compact status chips beside wireframe head (not large banners over the face)
 - Watchlist/Forensics/Passport cards kept in early viewport
 - Everything respects reduced-motion and keyboard focus.
@@ -169,13 +185,13 @@ no leftover gold chrome in UI (`#d9b36c`/`#d4a84b` as button/nav accents), no wh
 ## 7. VERIFY BEFORE DECLARING DONE (curl checklist)
 
 `curl -s -o /dev/null -w "%{http_code}"` each: `/` `/tokenomics` `/roadmap` `/airdrop`
-`/watch` `/passport` `/forensics` `/check` `/score` `/auto` `/theme-glass.css` `/launch-banner.js` `/vortex.js`
+`/watch` `/passport` `/forensics` `/signals` `/check` `/score` `/auto` `/theme-glass.css` `/launch-banner.js` `/vortex.js`
 `/guardian-voice.js` `/guardian-video.mp4` `/theme-ai-vibe.css` `/guardian-popout.js` `/nav-tools.js` `/ai-vibe-loader.js` `/ai-presence.js` `/homepage.css` `/guardian-head.js` `/cyre-token-256.png` `/cyre-token-512.png`
 — all 200. Then `/api/address?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
 → expect `score:24, riskLevel:LOW`. Then `/api/watch?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
 → expect `ok:true` with measured `counters` and a patterns-not-verdicts `disclaimer` (response must not be CDN-cached). Then `/api/passport?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
 → expect `ok:true`, `kind:"cyre-passport"`, measured `score`/`riskLevel`/`profile`, `disclaimer:"Patterns, not verdicts."`, and `Cache-Control: no-store`. Then `/api/forensics?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
-→ expect `ok:true`, `kind:"cyre-forensics"`, measured `patterns`/`counters`/`mintAffinity`, `disclaimer:"Patterns, not verdicts."`, and `Cache-Control: no-store`. Check served index.html references each script
+→ expect `ok:true`, `kind:"cyre-forensics"`, measured `patterns`/`counters`/`mintAffinity`, `disclaimer:"Patterns, not verdicts."`, and `Cache-Control: no-store`. Then `/api/signals` (empty) → expect `ok:true`, `kind:"cyre-signals"`, `version:1`, empty `items`, default-list-empty `message`, `disclaimer:"Patterns, not verdicts."`, and `Cache-Control: no-store`. Check served index.html references each script
 exactly once. Verify against `cyre.dev/` (root path — `/index.html` redirects).
 Mobile-upload gotchas: iOS renames downloads ("file 2.ext"), GitHub web-editor paste
 truncates silently, uploads sometimes don't replace — always re-fetch the raw file
@@ -184,7 +200,7 @@ after commit and diff.
 ## 8. CURRENT STATE + OPEN ITEMS (Aug 23 2026)
 
 Live & verified: glass/AI-vibe layer, vortex, talking Guardian, checker, score card,
-tokenomics/roadmap/airdrop/auto/forensics pages, clean URLs, hardened chat API, both crons
+tokenomics/roadmap/airdrop/auto/forensics/signals pages, clean URLs, hardened chat API, both crons
 (mention-grader in DRY_RUN), Guardian pop-out + AI presence.
 Homepage: mock visual match — Synthetic Intelligence branding, "The chain has a witness.",
 **darker-purple mood** (`theme-purple-deep.css`): deeper violet ambient; **dust→mesh→photo→dust ~22 s morph**
