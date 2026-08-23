@@ -1,5 +1,5 @@
-/* vortex.js — living AI particle / network mesh (cyan + violet + sparse gold)
-   Bolt-on hero background. prefers-reduced-motion → static mesh. */
+/* vortex.js — living AI particle / network mesh (violet-heavy + cyan accents + sparse gold ~12%)
+   Darker purple mood. Bolt-on hero background. prefers-reduced-motion → static mesh. */
 (function () {
   'use strict';
   var hero = document.querySelector('.hero');
@@ -32,12 +32,13 @@
   var t0 = 0;
   var visible = true;
 
-  // Cyan + violet + frost — cinematic AI energy; sparse gold/amber accents
+  // Violet-heavy palette — deeper purple mood; cyan accents; sparse gold ~12%
   var COLORS = [
-    { r: 95, g: 208, b: 255 },   // ice cyan #5fd0ff
-    { r: 155, g: 123, b: 255 },  // violet #9b7bff
-    { r: 79, g: 227, b: 208 },   // mint frost
-    { r: 200, g: 180, b: 255 }   // soft lilac
+    { r: 155, g: 123, b: 255 },  // violet #9b7bff (dominant)
+    { r: 112, g:  72, b: 220 },  // deep violet #7048dc
+    { r: 130, g:  95, b: 255 },  // mid-violet
+    { r:  95, g: 208, b: 255 },  // ice cyan #5fd0ff (accent)
+    { r:  79, g: 227, b: 208 }   // mint frost (sparse accent)
   ];
   var GOLD = { r: 212, g: 168, b: 75 }; // #d4a84b — premium sparse dots
   var GOLD_ALT = { r: 255, g: 180, b: 84 }; // #ffb454
@@ -129,9 +130,9 @@
         if (dist < CONNECTION_DIST) {
           var t = 1 - dist / CONNECTION_DIST;
           var alpha = t * 0.22;
-          // Blend cyan→violet along the edge
-          var r = (95 + 60 * t) | 0;
-          var g = (208 - 85 * t) | 0;
+    // Violet-dominant connection blend
+          var r = (155 - 43 * t) | 0;  // violet → deep violet
+          var g = (123 - 51 * t) | 0;
           var b = 255;
           ctx.beginPath();
           ctx.moveTo(nodes[i].x, nodes[i].y);
@@ -149,11 +150,12 @@
     t0 = now;
     ctx.clearRect(0, 0, width, height);
 
-    // Cinematic vignette + soft core bloom
+    // Cinematic vignette + violet-dominant core bloom
     var g = ctx.createRadialGradient(width * 0.55, height * 0.35, 0, width * 0.5, height * 0.5, Math.max(width, height) * 0.75);
-    g.addColorStop(0, 'rgba(95,208,255,0.06)');
-    g.addColorStop(0.45, 'rgba(155,123,255,0.03)');
-    g.addColorStop(1, 'rgba(5,6,10,0.55)');
+    g.addColorStop(0, 'rgba(112,72,220,0.08)');
+    g.addColorStop(0.35, 'rgba(155,123,255,0.05)');
+    g.addColorStop(0.65, 'rgba(95,208,255,0.02)');
+    g.addColorStop(1, 'rgba(5,6,10,0.60)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, width, height);
 

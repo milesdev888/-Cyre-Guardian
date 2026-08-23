@@ -1,0 +1,70 @@
+/* theme-purple-deep.css — darker purple mood overlay (founder mock) */
+:root{
+  --ai-ink:#05030a !important;
+  --ai-ink-2:#0a0614 !important;
+  --ai-panel:rgba(18,8,32,.74) !important;
+  --ai-panel-2:rgba(22,10,40,.8) !important;
+  --ai-line:rgba(155,123,255,.24) !important;
+  --ai-violet:#a78bfa !important;
+  --ai-glow:0 0 28px rgba(155,123,255,.32),0 0 48px rgba(107,63,160,.18) !important;
+  --ai-glow-sm:0 0 16px rgba(155,123,255,.24) !important;
+}
+body{
+  background:
+    radial-gradient(ellipse 80% 50% at 70% -10%,rgba(155,123,255,.22),transparent 55%),
+    radial-gradient(ellipse 70% 45% at 15% 20%,rgba(107,63,160,.18),transparent 50%),
+    radial-gradient(circle at 50% 100%,rgba(95,208,255,.05),transparent 55%),
+    linear-gradient(180deg,#0a0614 0%,#05030a 100%) !important;
+}
+body::before{background:radial-gradient(circle,rgba(155,123,255,.2) 0%,rgba(107,63,160,.1) 45%,transparent 70%) !important}
+body::after{background:radial-gradient(circle,rgba(107,63,160,.16) 0%,rgba(155,123,255,.06) 50%,transparent 70%) !important}
+
+/* darker purple mood — founder mock Aug 23 2026 */
+:root{
+  --bg:#07040f;
+  --bg2:#12081c;
+  --panel:rgba(18,8,32,.62);
+  --panel-strong:rgba(22,10,40,.82);
+  --line:rgba(155,123,255,.22);
+  --violet:#a78bfa;
+  --cyan:#5fd0ff;
+}
+body{
+  background:
+    radial-gradient(circle at top, rgba(155,123,255,.22), transparent 36%),
+    radial-gradient(circle at 80% 16%, rgba(107,63,160,.28), transparent 30%),
+    radial-gradient(circle at 20% 85%, rgba(95,208,255,.08), transparent 26%),
+    linear-gradient(180deg, #0a0614 0%, #05030a 42%, #10081c 100%) !important;
+}
+.bg-grid::before{
+  background:radial-gradient(circle, rgba(155,123,255,.18), transparent 68%);
+}
+.bg-grid::after{
+  background:radial-gradient(circle, rgba(107,63,160,.2), transparent 70%);
+}
+.glow{
+  background:radial-gradient(circle at 50% 40%, rgba(155,123,255,.42), rgba(95,208,255,.12) 45%, rgba(107,63,160,.08) 68%, transparent 78%);
+}
+.head-wrap{
+  border-color:rgba(155,123,255,.38);
+  box-shadow:0 0 0 1px rgba(255,255,255,.04), 0 0 70px rgba(155,123,255,.34), 0 0 110px rgba(107,63,160,.22);
+  background:
+    radial-gradient(circle at 50% 28%, rgba(155,123,255,.2), transparent 42%),
+    linear-gradient(180deg, rgba(18,8,36,.45), rgba(5,2,12,.94));
+}
+.orbit-ring{border-color:rgba(155,123,255,.28)}
+.orbit-ring.r2{border-color:rgba(167,139,250,.32)}
+.orbit-ring.r3{border-color:rgba(95,208,255,.28)}
+.status-chip{
+  background:rgba(12,6,24,.88);
+  border-color:rgba(155,123,255,.2);
+  box-shadow:0 8px 20px rgba(0,0,0,.4), 0 0 18px rgba(155,123,255,.12);
+}
+.kicker{
+  border-color:rgba(155,123,255,.28);
+  background:rgba(155,123,255,.1);
+  color:#c4b5fd;
+}
+.card::before{
+  background:linear-gradient(90deg, transparent, rgba(155,123,255,.75), transparent);
+}
