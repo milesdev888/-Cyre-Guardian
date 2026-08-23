@@ -11,7 +11,7 @@
     '.axm input,.axm textarea{width:100%;box-sizing:border-box;background:#12161f;border:1px solid #1f2634;border-radius:8px;color:#e8ecf3;font:400 14px Inter,sans-serif;padding:11px 12px;margin:0 0 14px;outline:none;}' +
     '.axm input:focus,.axm textarea:focus{border-color:#4fe3d0;}' +
     '.axm textarea{min-height:70px;resize:vertical;}' +
-    '.axm .axb{width:100%;background:#d9b36c;color:#07080b;border:0;border-radius:999px;padding:13px;font:500 14px Inter,sans-serif;cursor:pointer;}' +
+    '.axm .axb{width:100%;background:#5fd0ff;color:#07080b;border:0;border-radius:999px;padding:13px;font:500 14px Inter,sans-serif;cursor:pointer;}' +
     '.axm .axb:disabled{opacity:.6;cursor:wait;}' +
     '.axm .axx{position:absolute;top:14px;right:16px;background:none;border:0;color:#8892a4;font-size:20px;cursor:pointer;line-height:1;}' +
     '.axm .axe{font-size:13px;color:#ff7a7a;margin:0 0 10px;display:none;}' +
@@ -90,14 +90,62 @@
 
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
 
+  function isAccessCta(el){
+    if (!el) return false;
+    var txt = (el.textContent || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    if (txt.indexOf('request early access') !== -1) return true;
+    if (txt === 'request access' || txt === 'contact sales') return true;
+    if (el.getAttribute){ var h = el.getAttribute('href'); if (h === '#guardian' || h === '#access') return true; }
+    if (el.closest && el.closest('.tier') && (txt.indexOf('request access') !== -1 || txt.indexOf('contact sales') !== -1)) return true;
+    return false;
+  }
+
   document.addEventListener('click', function(e){
+    if (e.target.closest && e.target.closest('.axm-bg,.axm')) return;
     var el = e.target.closest('a,button');
-    if (!el) return;
-    var txt = (el.textContent || '').toLowerCase();
-    if (txt.indexOf('request early access') !== -1 || txt.trim() === 'request access'){
-      e.preventDefault();
+    if (!isAccessCta(el)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    open();
+  }, true);
+
+  function retargetAccessHrefs(){
+    var nodes = document.querySelectorAll('a[href="#guardian"]');
+    for (var i = 0; i < nodes.length; i++){
+      var a = nodes[i];
+      var txt = (a.textContent || '').toLowerCase();
+      if (txt.indexOf('request') !== -1 || (a.className || '').indexOf('req') !== -1){
+        a.setAttribute('href', '#access');
+        a.setAttribute('role', 'button');
+      }
+    }
+  }
+
+  function hashAccess(){
+    if (location.hash === '#guardian' || location.hash === '#access'){
+      if (location.hash === '#guardian'){
+        history.replaceState(null, '', '#access');
+      }
       open();
     }
-  }, true);
+  }
+  function bootCtas(){
+    retargetAccessHrefs();
+    hashAccess();
+  }
+  window.addEventListener('hashchange', hashAccess);
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', bootCtas);
+  } else {
+    bootCtas();
+  }
+
+  (function ensureFooterPolish(){
+    if (document.querySelector('script[src="/footer-polish.js"]')) return;
+    var s = document.createElement('script');
+    s.src = '/footer-polish.js';
+    s.defer = true;
+    (document.body || document.documentElement).appendChild(s);
+  })();
+
 })();
- 
