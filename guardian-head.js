@@ -1,6 +1,6 @@
-/* guardian-head.js — dust → purple mesh head → her photo → dust
-   Cycle ~22s. Mesh matches founder particle-head mock; photo = /guardian2.jpg.
-   No cartoon eyes. prefers-reduced-motion → static mesh. FAB popout unchanged. */
+/* guardian-head.js — dust → robot → her photo → dust
+   Soft, no bright eyes / no eye bloom. Robot=/robot.jpg, her=/guardian2.jpg.
+   prefers-reduced-motion → static soft mesh. FAB popout unchanged. */
 (function () {
   var canvas = document.getElementById('guardian-head');
   if (!canvas || !canvas.getContext) return;
@@ -9,7 +9,7 @@
   var dpr = Math.min(Math.max(window.devicePixelRatio || 1, 2.5), 4);
   var W = 640, H = 800, points = [], facets = [];
   var t0 = performance.now(), raf = 0, visible = true;
-  var faceImg = null, faceReady = false;
+  var robotImg = null, herImg = null, robotReady = false, herReady = false;
 
   var COL = {
     cyan:   [95,  208, 255],
@@ -70,9 +70,7 @@
         dx: x + Math.cos(da) * ds,
         dy: y + Math.sin(da) * ds * 0.55,
         dz: z + (Math.random() - 0.5) * ds * 0.7,
-        hue: pickHue(), s: 0.7 + Math.random() * 1.5, facet: Math.random(),
-        // soft eye glow seeds (near eye sockets when formed)
-        eye: (Math.abs(x) > 0.18 && Math.abs(x) < 0.42 && y > -0.05 && y < 0.22 && z > 0.35) ? 1 : 0
+        hue: pickHue(), s: 0.7 + Math.random() * 1.5, facet: Math.random()
       });
     }
     return out;
@@ -90,21 +88,20 @@
     return out;
   }
 
-  points = seed(720);
-  facets = buildFacets(points, 180);
+  points = seed(640);
+  facets = buildFacets(points, 140);
 
-  try {
-    faceImg = new Image();
-    faceImg.decoding = 'async';
-    faceImg.onload = function () { faceReady = true; };
-    faceImg.onerror = function () {
-      // fallback to robot plate if portrait missing
-      faceImg = new Image();
-      faceImg.onload = function () { faceReady = true; };
-      faceImg.src = '/robot.jpg';
-    };
-    faceImg.src = '/guardian2.jpg';
-  } catch (e) { faceReady = false; }
+  function loadImg(src, onOk) {
+    try {
+      var im = new Image();
+      im.decoding = 'async';
+      im.onload = function () { onOk(im); };
+      im.onerror = function () { onOk(null); };
+      im.src = src;
+    } catch (e) { onOk(null); }
+  }
+  loadImg('/robot.jpg', function (im) { robotImg = im; robotReady = !!im; });
+  loadImg('/guardian2.jpg', function (im) { herImg = im; herReady = !!im; });
 
   function resize() {
     var rect = canvas.getBoundingClientRect();
@@ -119,37 +116,35 @@
     if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = 'high';
   }
 
-  /* dust → mesh → photo → dust
-     0–16% dust | 16–30% dust→mesh | 30–48% mesh hold | 48–60% mesh→photo
-     60–82% photo hold | 82–100% photo→dust */
-  var PERIOD = 22;
+  /* dust → robot → her → dust  (~24s)
+     0–14% dust | 14–28% dust→robot | 28–48% robot | 48–62% robot→her
+     62–82% her | 82–100% her→dust */
+  var PERIOD = 24;
   function phaseWeights(elapsed) {
-    if (reduce) return { dust: 0, mesh: 1, photo: 0 };
+    if (reduce) return { dust: 0, form: 1, robot: 0, her: 0 };
     var p = (elapsed % PERIOD) / PERIOD;
-    var dust = 0, mesh = 0, photo = 0;
-    if (p < 0.16) {
+    var dust = 0, form = 0, robot = 0, her = 0;
+    if (p < 0.14) {
       dust = 1;
-    } else if (p < 0.30) {
-      var t = smoothstep((p - 0.16) / 0.14);
-      dust = 1 - t; mesh = t;
+    } else if (p < 0.28) {
+      var t = smoothstep((p - 0.14) / 0.14);
+      dust = 1 - t; form = t; robot = t;
     } else if (p < 0.48) {
-      mesh = 1;
-    } else if (p < 0.60) {
-      var t2 = smoothstep((p - 0.48) / 0.12);
-      mesh = 1 - t2; photo = t2;
+      form = 1; robot = 1;
+    } else if (p < 0.62) {
+      var t2 = smoothstep((p - 0.48) / 0.14);
+      form = 1; robot = 1 - t2; her = t2;
     } else if (p < 0.82) {
-      photo = 1;
+      form = 1; her = 1;
     } else {
       var t3 = smoothstep((p - 0.82) / 0.18);
-      photo = 1 - t3; dust = t3;
+      form = 1 - t3; her = 1 - t3; dust = t3;
     }
-    return { dust: dust, mesh: mesh, photo: photo };
+    return { dust: dust, form: form, robot: robot, her: her };
   }
 
-  function formAmount(w) { return w.mesh + w.photo; }
-
   function projectPoint(p, rot, breathe, w) {
-    var fa = formAmount(w);
+    var fa = w.form;
     var x0 = lerp(p.dx, p.gx, fa);
     var y0 = lerp(p.dy, p.gy, fa);
     var z0 = lerp(p.dz, p.gz, fa);
@@ -164,119 +159,100 @@
       x: W * 0.5 + xr * persp * W * 0.38,
       y: H * 0.48 + yr * persp * H * 0.34,
       z: zr, a: Math.max(0.12, Math.min(1, (zr + 1.1) / 1.8)),
-      hue: p.hue, s: p.s * persp, facet: p.facet, eye: p.eye
+      hue: p.hue, s: p.s * persp, facet: p.facet
     };
   }
 
-  function drawDustGlow(w) {
-    if (w.dust < 0.05) return;
-    var g = ctx.createRadialGradient(W * 0.5, H * 0.48, 5, W * 0.5, H * 0.5, W * 0.52);
-    g.addColorStop(0, 'rgba(112,72,220,' + (0.12 * w.dust).toFixed(3) + ')');
-    g.addColorStop(0.5, 'rgba(155,123,255,' + (0.07 * w.dust).toFixed(3) + ')');
-    g.addColorStop(1, 'rgba(5,8,18,0)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  }
-
-  function drawMeshAura(w) {
-    var m = w.mesh;
-    if (m < 0.05) return;
-    var g = ctx.createRadialGradient(W * 0.5, H * 0.42, 8, W * 0.5, H * 0.48, W * 0.42);
-    g.addColorStop(0, 'rgba(155,123,255,' + (0.16 * m).toFixed(3) + ')');
-    g.addColorStop(0.45, 'rgba(95,208,255,' + (0.08 * m).toFixed(3) + ')');
-    g.addColorStop(1, 'rgba(5,8,18,0)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  }
-
-  /* Soft cyan eye bloom from particles only — never solid white cartoon ovals */
-  function drawEyeBloom(projected, w) {
-    var m = w.mesh * (1 - w.photo * 0.85);
-    if (m < 0.15) return;
-    var i, a;
-    for (i = 0; i < projected.length; i++) {
-      a = projected[i];
-      if (!a.eye) continue;
-      var rad = (10 + dpr * 6) * m * a.a;
-      var eg = ctx.createRadialGradient(a.x, a.y, 0, a.x, a.y, rad);
-      eg.addColorStop(0, 'rgba(220,245,255,' + (0.55 * m * a.a).toFixed(3) + ')');
-      eg.addColorStop(0.35, 'rgba(95,208,255,' + (0.28 * m * a.a).toFixed(3) + ')');
-      eg.addColorStop(1, 'rgba(95,208,255,0)');
-      ctx.beginPath(); ctx.fillStyle = eg;
-      ctx.arc(a.x, a.y, rad, 0, Math.PI * 2); ctx.fill();
-    }
-  }
-
-  function drawHerPhoto(w) {
-    if (!faceReady || !faceImg || w.photo < 0.05) return;
-    var alpha = Math.pow(clamp(w.photo, 0, 1), 0.85);
-    var iw = faceImg.naturalWidth || 600, ih = faceImg.naturalHeight || 600;
+  function drawPortrait(img, ready, weight, maxAlpha) {
+    if (!ready || !img || weight < 0.05) return;
+    var alpha = Math.pow(clamp(weight, 0, 1), 0.9) * maxAlpha;
+    var iw = img.naturalWidth || 600, ih = img.naturalHeight || 600;
     var size = Math.min(W, H) * 0.82, dw = size, dh = size * (ih / iw);
     if (dh > H * 0.88) { dh = H * 0.88; dw = dh * (iw / ih); }
     var dx = (W - dw) * 0.5, dy = H * 0.06;
-    // Full portrait — no ellipse clip, no circle rim/stroke in the middle
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.globalCompositeOperation = 'source-over';
-    ctx.drawImage(faceImg, dx, dy, dw, dh);
+    ctx.drawImage(img, dx, dy, dw, dh);
+    // Soft dim overlay — kills hot spots / bright baked-in eyes without drawing eyes
+    ctx.globalAlpha = alpha * 0.28;
+    ctx.fillStyle = 'rgba(8,6,18,1)';
+    ctx.fillRect(dx, dy, dw, dh);
+    // Extra soft shade over upper face (eye band) only
+    ctx.globalAlpha = alpha * 0.22;
+    var eg = ctx.createLinearGradient(0, dy + dh * 0.28, 0, dy + dh * 0.52);
+    eg.addColorStop(0, 'rgba(5,8,18,0)');
+    eg.addColorStop(0.45, 'rgba(5,8,18,0.85)');
+    eg.addColorStop(1, 'rgba(5,8,18,0)');
+    ctx.fillStyle = eg;
+    ctx.fillRect(dx, dy + dh * 0.22, dw, dh * 0.4);
     ctx.restore();
   }
 
   function drawFacets(projected, w) {
-    var m = w.mesh * (1 - w.photo * 0.7);
+    var m = w.form * (1 - Math.max(w.robot, w.her) * 0.75);
     if (m < 0.08) return;
     var i, f, a, b, c, alpha;
-    ctx.lineWidth = Math.max(0.7, dpr * (0.8 + m * 0.7));
+    ctx.lineWidth = Math.max(0.6, dpr * (0.7 + m * 0.5));
     for (i = 0; i < facets.length; i++) {
       f = facets[i]; a = projected[f.i0]; b = projected[f.i1]; c = projected[f.i2];
       if (!a || !b || !c) continue;
-      alpha = m * 0.26 * Math.min(a.a, b.a, c.a);
+      alpha = m * 0.18 * Math.min(a.a, b.a, c.a);
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.closePath();
-      ctx.fillStyle = 'rgba(112,72,220,' + (alpha * 0.28).toFixed(3) + ')'; ctx.fill();
-      ctx.strokeStyle = hueColor(f.hue, alpha * 1.45); ctx.stroke();
+      ctx.fillStyle = 'rgba(112,72,220,' + (alpha * 0.2).toFixed(3) + ')'; ctx.fill();
+      ctx.strokeStyle = hueColor(f.hue, alpha); ctx.stroke();
     }
   }
 
   function drawFrame(now) {
     var elapsed = (now - t0) / 1000;
     var w = phaseWeights(elapsed);
-    var fa = formAmount(w);
-    var rot = reduce ? 0.35 : Math.sin(elapsed * 0.22) * 0.5 + elapsed * 0.07;
-    var breathe = reduce ? 1 : 1 + Math.sin(elapsed * 0.9) * 0.018;
+    var rot = reduce ? 0.35 : Math.sin(elapsed * 0.22) * 0.45 + elapsed * 0.06;
+    var breathe = reduce ? 1 : 1 + Math.sin(elapsed * 0.9) * 0.016;
     var projected = [], i, j, a, b, dx, dy, dist, alpha, col;
-    // hide particles under photo
-    var particleAlpha = (1 - w.photo * 0.92) * (0.35 + fa * 0.65 + w.dust * 0.4);
-    var linkAlphaScale = (1 - w.photo * 0.9) * (0.25 + w.mesh * 0.75);
+    var faceAmt = Math.max(w.robot, w.her);
+    var particleAlpha = (1 - faceAmt * 0.9) * (0.32 + w.form * 0.55 + w.dust * 0.4);
+    var linkAlphaScale = (1 - faceAmt * 0.88) * (0.2 + w.form * 0.55 + w.dust * 0.35);
 
     ctx.clearRect(0, 0, W, H);
 
+    // Softer ambient — no hot white core
     var g = ctx.createRadialGradient(W * 0.5, H * 0.42, 10, W * 0.5, H * 0.48, W * 0.44);
-    g.addColorStop(0, 'rgba(112,72,220,' + (0.12 + fa * 0.08).toFixed(3) + ')');
-    g.addColorStop(0.4, 'rgba(155,123,255,' + (0.07 + fa * 0.04).toFixed(3) + ')');
+    g.addColorStop(0, 'rgba(112,72,220,' + (0.08 + w.form * 0.05).toFixed(3) + ')');
+    g.addColorStop(0.45, 'rgba(155,123,255,' + (0.05 + w.form * 0.03).toFixed(3) + ')');
     g.addColorStop(1, 'rgba(5,8,18,0)');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
     for (i = 0; i < points.length; i++) projected.push(projectPoint(points[i], rot, breathe, w));
 
-    drawDustGlow(w);
-    drawMeshAura(w);
-    drawFacets(projected, w);
-    drawEyeBloom(projected, w);
-    drawHerPhoto(w);
+    if (w.dust > 0.05) {
+      var dg = ctx.createRadialGradient(W * 0.5, H * 0.48, 5, W * 0.5, H * 0.5, W * 0.52);
+      dg.addColorStop(0, 'rgba(112,72,220,' + (0.1 * w.dust).toFixed(3) + ')');
+      dg.addColorStop(0.5, 'rgba(155,123,255,' + (0.05 * w.dust).toFixed(3) + ')');
+      dg.addColorStop(1, 'rgba(5,8,18,0)');
+      ctx.fillStyle = dg; ctx.fillRect(0, 0, W, H);
+    }
 
-    ctx.lineWidth = Math.max(0.55, dpr * 0.8);
-    var maxDist = (34 - w.photo * 12 + w.dust * 16) * dpr;
-    var step = w.photo > 0.55 ? 3 : 1;
+    drawFacets(projected, w);
+    // Robot then her — dimmed, no drawn eyes
+    drawPortrait(robotImg, robotReady, w.robot, 0.72);
+    drawPortrait(herImg, herReady, w.her, 0.88);
+
+    ctx.lineWidth = Math.max(0.5, dpr * 0.7);
+    var maxDist = (32 - faceAmt * 14 + w.dust * 14) * dpr;
+    var step = faceAmt > 0.5 ? 3 : 1;
     for (i = 0; i < projected.length; i += step) {
       a = projected[i]; var linked = 0;
-      for (j = i + 1; j < projected.length && linked < 9; j++) {
+      for (j = i + 1; j < projected.length && linked < 8; j++) {
         b = projected[j]; dx = a.x - b.x; if (dx > maxDist || dx < -maxDist) continue;
         dy = a.y - b.y; if (dy > maxDist || dy < -maxDist) continue;
         dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > maxDist || dist < 2) continue;
-        alpha = (1 - dist / maxDist) * Math.min(a.a, b.a) * 0.55 * linkAlphaScale;
+        alpha = (1 - dist / maxDist) * Math.min(a.a, b.a) * 0.42 * linkAlphaScale;
         if (alpha < 0.02) continue;
-        if (a.hue === 3 || b.hue === 3) col = rgba(COL.gold, alpha * 0.8);
-        else if (a.hue === 0 || b.hue === 0) col = rgba(COL.cyan, alpha);
-        else col = rgba(COL.violet, alpha * 1.15);
+        if (a.hue === 3 || b.hue === 3) col = rgba(COL.gold, alpha * 0.75);
+        else if (a.hue === 0 || b.hue === 0) col = rgba(COL.cyan, alpha * 0.85);
+        else col = rgba(COL.violet, alpha);
         ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
         linked++;
       }
@@ -284,15 +260,11 @@
 
     for (i = 0; i < projected.length; i++) {
       a = projected[i];
-      var sz = a.s * (1.05 + dpr * 0.4) * (0.75 + w.dust * 0.45 + w.mesh * 0.35);
-      if (w.photo > 0.35) sz *= 1 - w.photo * 0.55;
-      var baseA = (a.hue === 3 ? 0.5 : 0.4) + a.a * 0.5;
-      if (a.eye && w.mesh > 0.3) {
-        baseA += 0.35 * w.mesh;
-        sz *= 1.35;
-      }
+      var sz = a.s * (0.95 + dpr * 0.35) * (0.7 + w.dust * 0.4 + w.form * 0.25);
+      if (faceAmt > 0.35) sz *= 1 - faceAmt * 0.55;
+      var baseA = (a.hue === 3 ? 0.42 : 0.32) + a.a * 0.4;
       ctx.beginPath();
-      ctx.fillStyle = hueColor(a.hue, baseA * Math.max(0.05, particleAlpha));
+      ctx.fillStyle = hueColor(a.hue, baseA * Math.max(0.04, particleAlpha));
       ctx.arc(a.x, a.y, sz, 0, Math.PI * 2);
       ctx.fill();
     }
