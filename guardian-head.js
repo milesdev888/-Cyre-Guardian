@@ -99,7 +99,7 @@
 
   function drawParticles(cx, cy, rx, ry, w, now) {
     var particleAlpha = 1 - w.ma * 0.60 - w.robot * 0.55;
-    particleAlpha = clamp(particleAlpha, 0.03, 1);
+    particleAlpha = clamp(particleAlpha, 0, 1);
     for (var i = 0; i < points.length; i++) {
       var p = points[i];
       var pulse = 0.5 + 0.5 * Math.sin(now * 0.0018 + p.pulse);
