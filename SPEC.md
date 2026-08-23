@@ -44,7 +44,7 @@ cyre.dev/tokenomics and @Cyredev888.
 
 | File | What it is |
 |---|---|
-| `index.html` | **Homepage redesign** (Aug 2026): self-contained cinematic AI page — headline "The chain has a witness.", eyebrow **Synthetic Intelligence · RWA fraud-watch**, cyan `#5fd0ff` + violet `#9b7bff`, portrait orb `/guardian2.jpg`, vortex mesh, status chips, Watchlist/Forensics/Passport cards, trust strip (no fake metrics). Loads `vortex.js`, `guardian-popout.js`, `access-form.js`, `rwa-widget.js`, `ai-presence.js`, `footer-polish.js`. |
+| `index.html` | **Homepage redesign** (Aug 2026): self-contained cinematic AI page — headline "The chain has a witness.", eyebrow **Synthetic Intelligence · RWA fraud-watch**, cyan `#5fd0ff` + violet `#9b7bff`, **wireframe/particle Guardian head** (canvas idle breathe/slow rotate; photo orb removed from hero), orbit rings, status chips LIVE / RISK LOW / WATCHING, glowing Check CTA + outline Talk to Guardian, Watchlist/Forensics/Passport cards, trust strip (no fake metrics). Portrait `/guardian2.jpg` lives in Guardian FAB popout only. Loads `vortex.js`, `guardian-popout.js`, `access-form.js`, `rwa-widget.js`, `ai-presence.js`, `footer-polish.js`. |
 | `index-legacy.html` | Pre-redesign CYRE 7 shell snapshot for rollback. Do not serve as `/`. |
 | `theme-glass.css` | Crystal glassmorphism skin (loaded by launch-banner.js). Delete = revert skin. |
 | `theme-blue.css` | Blue token overrides + avatar swap (`.portrait img` / `.g-av img` → /guardian2.jpg). |
@@ -52,13 +52,13 @@ cyre.dev/tokenomics and @Cyredev888.
 | `guardian-popout.js` | FAB (`/guardian2.jpg` + LIVE) → glass panel with `/guardian-video.mp4` + chat POST `/api/chat`. Does not replace `guardian-voice.js`. |
 | `nav-tools.js` | Tools dropdown/strip: Check, Score, Auto, Tokenomics, Roadmap, Airdrop (cyan/violet glass menus). |
 | `ai-vibe-loader.js` | Injects theme + ensures nav-tools, guardian-popout, ai-presence, rwa/vortex/voice/access. Loaded by `launch-banner.js` (+ one-line on secondary pages). |
-| `ai-presence.js` | SUPER AI idle: denser glow, orbit breathe/pulse, portrait/orb rings; reduced-motion safe. Loaded by `ai-vibe-loader.js`. |
+| `ai-presence.js` | SUPER AI idle: denser glow, orbit breathe/pulse, `.portrait` / orb rings (works with wireframe head wrap); reduced-motion safe. Loaded by `ai-vibe-loader.js`. |
 | `footer-polish.js` | Footer Docs/Security → `/roadmap`; Privacy/Terms/Support → mailto. |
 | `launch-banner.js` | Self-mounting: 3D word-funnel canvas banner (robot core), $C7 + Roadmap nav links, hero $C7 button (emblem), glass CSS loader, AI-vibe loader hook, claims-safe HUD bar. |
 | `vortex.js` | Living cyan+violet particle/network mesh behind hero; continuous motion; static frame if `prefers-reduced-motion`. |
 | `guardian-voice.js` | "Hear Guardian": tap → talking video → mp3 → speech-synth fallback chain; robot morph. |
 | `guardian-video.mp4` | 480² talking-Guardian clip (preload=none). |
-| `guardian2.jpg` | Guardian portrait (blue girlbot, 600²). `robot.jpg` = robot face for morph/funnel core. |
+| `guardian2.jpg` | Guardian portrait (blue girlbot, 600²) — **FAB / popout / secondary avatars only**, not homepage hero. `robot.jpg` = robot face for morph/funnel core. |
 | `check-link.js` | Adds "Check an address" + "Grade your wallet" buttons to hero CTA row. |
 | `access-form.js` | Early-access modal → Formspree `xqpzddvy`. |
 | `rwa-widget.js` | Live RWA market strip under hero (pinned CoinGecko ids; keep "Data by CoinGecko"). Styled by AI-vibe theme. |
@@ -108,7 +108,9 @@ no leftover gold (`#d9b36c`/`#d4a84b`), no white bootstrap menus, no mismatched 
 - Status: red `rgb(255,77,94)` = FLAG/HOLD/RISK · green `rgb(61,220,132)` = SETTLED/SIG VALID/ATTEST · amber `#ffb454` = MEDIUM risk
 - Type: Sora (display 700–800) · Inter (body) · IBM Plex Mono (data)
 - Glass: blur 14–20px panels, `rgba(95,208,255,.18)` borders, pill radius 999px, gradient CTAs, two fixed blur blobs, sticky frosted pill nav
-- Signature: circular Guardian portrait + counter-rotating orbit rings (r1 50s / r2 36s / r3 pulse) with satellite dots
+- Signature: cyan/violet **wireframe/particle Guardian head** (canvas) + counter-rotating orbit rings with satellite dots; portrait photo reserved for FAB popout
+- Hero status chips (system status, not wallet verdicts): **LIVE** / **RISK LOW** / **WATCHING**
+- Primary CTA: Check with strong cyan glow; Talk to Guardian outline
 - Everything respects reduced-motion and keyboard focus.
 
 ## 6. LIVE SERVICES
@@ -139,8 +141,9 @@ after commit and diff.
 Live & verified: glass/AI-vibe layer, vortex, talking Guardian, checker, score card,
 tokenomics/roadmap/airdrop/auto pages, clean URLs, hardened chat API, both crons
 (mention-grader in DRY_RUN), Guardian pop-out + AI presence.
-Homepage: full mock redesign shipped — Synthetic Intelligence branding, "The chain has a witness.",
-portrait orb, living mesh, status chips, feature cards, trust strip; legacy shell at `index-legacy.html`.
+Homepage: mock visual match — Synthetic Intelligence branding, "The chain has a witness.",
+wireframe/particle head hero (not photo orb), LIVE/RISK LOW/WATCHING chips, glowing Check CTA,
+living mesh, feature cards, trust strip; photo Guardian stays in FAB popout; legacy shell at `index-legacy.html`.
 Open before launch: devnet DBC rehearsal (verify 60/25/10/3/2 leftover math),
 www.cyre.dev attach, mention-grader DRY_RUN→false after draft review, Anthropic
 spend limit + credit top-up (chat in demo mode until then), guardian-voice.mp3,
