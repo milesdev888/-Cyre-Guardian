@@ -19,12 +19,15 @@
   }
   onceLink('cy-ai-vibe', '/theme-ai-vibe.css');
   function boot() {
+    // Core bolt-ons (may be missing after index restores)
     onceScript('cy-rwa-widget', '/rwa-widget.js');
     onceScript('cy-vortex', '/vortex.js');
     onceScript('cy-guardian-voice', '/guardian-voice.js');
     onceScript('cy-access-form', '/access-form.js');
+    // AI vibe layer
     onceScript('cy-nav-tools', '/nav-tools.js');
     onceScript('cy-guardian-popout', '/guardian-popout.js');
+    onceScript('cy-ai-presence', '/ai-presence.js');
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
