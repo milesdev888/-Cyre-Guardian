@@ -1,5 +1,6 @@
 // api/forensics.js — CYRE Forensics v1
 // General RWA forensics from measured 1k-sig window (same as Watch/Passport).
+// Mint affinity: per-seed getTokenAccountsByOwner (avoids CEX token-dump OOM).
 // No LLM in the hot path. Patterns, not verdicts. No invented metrics.
 // Env: SOLANA_RPC (same as /api/address)
 
@@ -9,7 +10,6 @@ const DAY = 86400;
 const HOUR = 3600;
 const DISCLAIMER = 'Patterns, not verdicts.';
 
-const TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
 // SPEC Watch seed mints — hold/touch affinity only (no weights/scores).
 const SEED_MINTS = [
   { symbol: 'USDY', mint: 'A1KLoBrKBde8Ty9qtNQUtq3C2ortoC3u7twggz7sEto6' },
@@ -31,36 +31,6 @@ async function rpc(method, params) {
   return d.result;
 }
 
-function buildMintAffinity(tokenAccounts) {
-  const byMint = new Map();
-  const list = Array.isArray(tokenAccounts) ? tokenAccounts : [];
-  for (const acc of list) {
-    const info =
-      acc &&
-      acc.account &&
-      acc.account.data &&
-      acc.account.data.parsed &&
-      acc.account.data.parsed.info;
-    if (!info || !info.mint) continue;
-    const amountRaw = info.tokenAmount && info.tokenAmount.amount;
-    let amount = 0;
-    if (typeof amountRaw === 'string') amount = Number(amountRaw);
-    else if (typeof amountRaw === 'number') amount = amountRaw;
-    const prev = byMint.get(info.mint) || { touch: false, hold: false };
-    prev.touch = true;
-    if (amount > 0) prev.hold = true;
-    byMint.set(info.mint, prev);
-  }
-  return SEED_MINTS.map(({ symbol, mint }) => {
-    const hit = byMint.get(mint);
-    return {
-      symbol,
-      mint,
-      hold: !!(hit && hit.hold),
-      touch: !!(hit && hit.touch)
-    };
-  });
-}
 
 function buildForensics(address, list, bal, mintAffinity) {
   const now = Math.floor(Date.now() / 1000);
@@ -230,27 +200,56 @@ export default async function handler(req, res) {
     });
   }
 
+  res.setHeader('Cache-Control', 'no-store'); // fresh measured run only — never CDN-reuse
+
   try {
-    const [sigs, bal, tokenAccounts] = await Promise.all([
+    // Per-mint affinity only — never dump all token accounts (CEX/hot wallets OOM Vercel
+    // → FUNCTION_INVOCATION_FAILED). Same measured hold/touch semantics as before.
+    const [sigs, bal] = await Promise.all([
       rpc('getSignaturesForAddress', [address, { limit: 1000 }]),
-      rpc('getBalance', [address]),
-      rpc('getTokenAccountsByOwner', [
-        address,
-        { programId: TOKEN_PROGRAM },
-        { encoding: 'jsonParsed' }
-      ]).catch(() => null)
+      rpc('getBalance', [address])
     ]);
     const list = Array.isArray(sigs) ? sigs : [];
-    const accounts =
-      tokenAccounts && Array.isArray(tokenAccounts.value)
-        ? tokenAccounts.value
-        : Array.isArray(tokenAccounts)
-          ? tokenAccounts
-          : [];
-    const mintAffinity = buildMintAffinity(accounts);
+
+    const mintAffinity = await Promise.all(
+      SEED_MINTS.map(async ({ symbol, mint }) => {
+        try {
+          const raw = await rpc('getTokenAccountsByOwner', [
+            address,
+            { mint },
+            { encoding: 'jsonParsed' }
+          ]);
+          const accounts =
+            raw && Array.isArray(raw.value)
+              ? raw.value
+              : Array.isArray(raw)
+                ? raw
+                : [];
+          let hold = false;
+          let touch = false;
+          for (const acc of accounts) {
+            const info =
+              acc &&
+              acc.account &&
+              acc.account.data &&
+              acc.account.data.parsed &&
+              acc.account.data.parsed.info;
+            if (!info) continue;
+            touch = true;
+            const amountRaw = info.tokenAmount && info.tokenAmount.amount;
+            let amount = 0;
+            if (typeof amountRaw === 'string') amount = Number(amountRaw);
+            else if (typeof amountRaw === 'number') amount = amountRaw;
+            if (amount > 0) hold = true;
+          }
+          return { symbol, mint, hold, touch };
+        } catch (_) {
+          return { symbol, mint, hold: false, touch: false };
+        }
+      })
+    );
     const body = buildForensics(address, list, bal, mintAffinity);
 
-    res.setHeader('Cache-Control', 'no-store'); // fresh measured run only — never CDN-reuse
     return res.status(200).json({
       ok: true,
       ...body
