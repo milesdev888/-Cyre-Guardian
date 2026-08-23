@@ -90,13 +90,53 @@
 
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
 
+  function isAccessCta(el){
+    if (!el) return false;
+    var txt = (el.textContent || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    if (txt.indexOf('request early access') !== -1) return true;
+    if (txt === 'request access' || txt === 'contact sales') return true;
+    if (el.getAttribute){ var h = el.getAttribute('href'); if (h === '#guardian' || h === '#access') return true; }
+    if (el.closest && el.closest('.tier') && (txt.indexOf('request access') !== -1 || txt.indexOf('contact sales') !== -1)) return true;
+    return false;
+  }
+
   document.addEventListener('click', function(e){
+    if (e.target.closest && e.target.closest('.axm-bg,.axm')) return;
     var el = e.target.closest('a,button');
-    if (!el) return;
-    var txt = (el.textContent || '').toLowerCase();
-    if (txt.indexOf('request early access') !== -1 || txt.trim() === 'request access'){
-      e.preventDefault();
+    if (!isAccessCta(el)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    open();
+  }, true);
+
+  function retargetAccessHrefs(){
+    var nodes = document.querySelectorAll('a[href="#guardian"]');
+    for (var i = 0; i < nodes.length; i++){
+      var a = nodes[i];
+      var txt = (a.textContent || '').toLowerCase();
+      if (txt.indexOf('request') !== -1 || (a.className || '').indexOf('req') !== -1){
+        a.setAttribute('href', '#access');
+        a.setAttribute('role', 'button');
+      }
+    }
+  }
+
+  function hashAccess(){
+    if (location.hash === '#guardian' || location.hash === '#access'){
+      if (location.hash === '#guardian'){
+        history.replaceState(null, '', '#access');
+      }
       open();
     }
-  }, true);
+  }
+  function bootCtas(){
+    retargetAccessHrefs();
+    hashAccess();
+  }
+  window.addEventListener('hashchange', hashAccess);
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', bootCtas);
+  } else {
+    bootCtas();
+  }
 })();
