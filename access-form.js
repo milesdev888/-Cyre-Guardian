@@ -139,4 +139,13 @@
   } else {
     bootCtas();
   }
+
+  (function ensureFooterPolish(){
+    if (document.querySelector('script[src="/footer-polish.js"]')) return;
+    var s = document.createElement('script');
+    s.src = '/footer-polish.js';
+    s.defer = true;
+    (document.body || document.documentElement).appendChild(s);
+  })();
+
 })();
