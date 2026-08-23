@@ -30,7 +30,7 @@
     '<div class="cyb-in">' +
       '<h2>Step into the <span>signal</span>.</h2>' +
       '<p>Every transaction tells a story before it settles. Guardian reads it in real time \u2014 so the pattern is visible before the loss.</p>' +
-      '<a class="cyb-cta" href="#guardian">Request early access</a>' +
+      '<a class="cyb-cta" href="#access">Request early access</a>' +
     '</div>';
 
   // $CYRE nav tab — inserted before "Request access"
