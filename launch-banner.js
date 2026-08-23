@@ -77,7 +77,7 @@
     hud.innerHTML = '<div class="wrap"><div class="hud-bar">' +
       '<div class="hud-item"><span class="hud-label">Guardian</span><span class="hud-val">Online <span class="up">\u25B2 LIVE</span></span></div>' +
       '<div class="hud-item"><span class="hud-label">Use Case 01 \u2014 Auto</span><span class="hud-val">Live demo</span></div>' +
-      '<div class="hud-item"><span class="hud-label">$C7 Launch</span><span class="hud-val">Targeting August</span></div>' +
+      '<div class="hud-item"><span class="hud-label">$C7 Launch</span><span class="hud-val">upcoming</span></div>' +
       '<div class="hud-item"><span class="hud-label">Network</span><span class="hud-val">Solana</span></div>' +
     '</div></div>';
     hero.parentNode.insertBefore(hud, hero.nextSibling);
@@ -86,7 +86,7 @@
   // Use Case 01 link strip
   var uc = document.createElement('a');
   uc.id = 'cy-usecase';
-  uc.href = '/auto.html';
+  uc.href = '/auto';
   uc.style.cssText = 'display:block;background:#0d1017;border-top:1px solid #1f2634;border-bottom:1px solid #1f2634;padding:18px 24px;text-align:center;text-decoration:none;font-family:Inter,system-ui,sans-serif;font-size:15px;color:#e8ecf3';
   uc.innerHTML = '<span style="font-family:\'JetBrains Mono\',Menlo,monospace;font-size:12px;color:#4fe3d0;letter-spacing:.1em;margin-right:14px">USE CASE 01 \u2014 AUTO</span>' +
     'Guardian watches a tokenized dealer lot <span style="color:var(--gold,#5fd0ff)">\u2192</span>';
