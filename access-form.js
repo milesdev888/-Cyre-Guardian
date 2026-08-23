@@ -11,7 +11,7 @@
     '.axm input,.axm textarea{width:100%;box-sizing:border-box;background:#12161f;border:1px solid #1f2634;border-radius:8px;color:#e8ecf3;font:400 14px Inter,sans-serif;padding:11px 12px;margin:0 0 14px;outline:none;}' +
     '.axm input:focus,.axm textarea:focus{border-color:#4fe3d0;}' +
     '.axm textarea{min-height:70px;resize:vertical;}' +
-    '.axm .axb{width:100%;background:#d9b36c;color:#07080b;border:0;border-radius:999px;padding:13px;font:500 14px Inter,sans-serif;cursor:pointer;}' +
+    '.axm .axb{width:100%;background:#5fd0ff;color:#07080b;border:0;border-radius:999px;padding:13px;font:500 14px Inter,sans-serif;cursor:pointer;}' +
     '.axm .axb:disabled{opacity:.6;cursor:wait;}' +
     '.axm .axx{position:absolute;top:14px;right:16px;background:none;border:0;color:#8892a4;font-size:20px;cursor:pointer;line-height:1;}' +
     '.axm .axe{font-size:13px;color:#ff7a7a;margin:0 0 10px;display:none;}' +
@@ -100,4 +100,3 @@
     }
   }, true);
 })();
- 
