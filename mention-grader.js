@@ -10,6 +10,8 @@
 //   INTERVAL_MIN  dedup window in minutes, match cron schedule (default 10)
 //   DRY_RUN       "true" (default) = log replies only, never post
 //   MAX_PER_RUN   default 5
+//   BRAIN         "true" enables the Guardian voice line via guardian-brain.js
+//   ANTHROPIC_API_KEY + BRAIN_MAX_PER_RUN — see guardian-brain.js
 
 const BRIDGE = process.env.BRIDGE_URL;
 const CYRE_API = process.env.CYRE_API || "https://cyre.dev/api/address";
@@ -17,6 +19,8 @@ const INTERVAL_MIN = parseInt(process.env.INTERVAL_MIN || "10", 10);
 const DRY_RUN = (process.env.DRY_RUN || "true").toLowerCase() !== "false";
 const MAX_PER_RUN = parseInt(process.env.MAX_PER_RUN || "5", 10);
 const B58 = /[1-9A-HJ-NP-Za-km-z]{32,44}/g;
+let brain = { voiceLine: async () => null, _enabled: () => false };
+try { brain = require("./guardian-brain.js"); } catch (e) { console.log("[grader] brain module absent — template voice only"); }
 
 if (!BRIDGE) { console.error("FATAL: BRIDGE_URL not set"); process.exit(1); }
 
@@ -129,7 +133,15 @@ function buildReply(addr, d) {
     try { d = await gradeAddress(addr); }
     catch (e) { console.error("[grader] grade failed for", shortAddr(addr), e.message); continue; }
 
-    const reply = buildReply(addr, d);
+    const p = d.profile || {};
+    const brainLine = await brain.voiceLine({
+      grade: grade(d.score), archetype: archetype(p), degenLevel: degen(p),
+      riskLevel: d.riskLevel || "n/a", ageDays: p.ageDays || 0,
+      ageIsMinimum: !!p.ageIsMinimum, last24h: p.last24h || 0,
+      failedPercent: p.failedPercent || 0, transactionsSeen: p.transactionsSeen || 0,
+      idleDays: p.idleDays || 0
+    });
+    const reply = buildReply(addr, d, brainLine);
     console.log("[grader] DRAFT for tweet", id, "\n" + reply + "\n---");
 
     if (!DRY_RUN) {
