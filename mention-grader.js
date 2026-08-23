@@ -66,7 +66,7 @@ function shortAddr(a){ return a.slice(0,4) + "…" + a.slice(-4); }
 function extractTweets(x) {
   // tolerate several bridge response shapes
   if (Array.isArray(x)) return x;
-  if (x && Array.isArray(x.data)) return x;
+  if (x && Array.isArray(x.data)) return x.data;
   if (x && x.tweets && Array.isArray(x.tweets)) return x.tweets;
   // bridge text format: "@author [ISO date] (id 123): text..." per mention
   if (typeof x === "string") {
