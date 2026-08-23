@@ -1,4 +1,4 @@
-/* vortex.js — living AI particle / network mesh (cyan + violet)
+/* vortex.js — living AI particle / network mesh (cyan + violet + sparse gold)
    Bolt-on hero background. prefers-reduced-motion → static mesh. */
 (function () {
   'use strict';
@@ -32,13 +32,15 @@
   var t0 = 0;
   var visible = true;
 
-  // Cyan + violet + frost — cinematic AI energy
+  // Cyan + violet + frost — cinematic AI energy; sparse gold/amber accents
   var COLORS = [
-    { r: 95, g: 208, b: 255 },
-    { r: 155, g: 123, b: 255 },
-    { r: 79, g: 227, b: 208 },
-    { r: 200, g: 180, b: 255 }
+    { r: 95, g: 208, b: 255 },   // ice cyan #5fd0ff
+    { r: 155, g: 123, b: 255 },  // violet #9b7bff
+    { r: 79, g: 227, b: 208 },   // mint frost
+    { r: 200, g: 180, b: 255 }   // soft lilac
   ];
+  var GOLD = { r: 212, g: 168, b: 75 }; // #d4a84b — premium sparse dots
+  var GOLD_ALT = { r: 255, g: 180, b: 84 }; // #ffb454
 
   function resize() {
     var rect = hero.getBoundingClientRect();
@@ -66,7 +68,17 @@
     this.alpha = 0.28 + Math.random() * 0.5;
     this.pulse = Math.random() * Math.PI * 2;
     this.pulseSp = 0.8 + Math.random() * 1.4;
-    var c = COLORS[(Math.random() * COLORS.length) | 0];
+    var c;
+    // ~12% gold dots — premium mix, not casino overload
+    if (Math.random() < 0.12) {
+      c = Math.random() < 0.55 ? GOLD : GOLD_ALT;
+      this.gold = true;
+      this.radius = 0.85 + Math.random() * 1.6;
+      this.alpha = 0.38 + Math.random() * 0.42;
+    } else {
+      c = COLORS[(Math.random() * COLORS.length) | 0];
+      this.gold = false;
+    }
     this.r = c.r; this.g = c.g; this.b = c.b;
   };
   Node.prototype.update = function (dt) {
@@ -90,9 +102,11 @@
     var breath = 1 + (reduce ? 0 : 0.18 * Math.sin(this.pulse));
     var rad = this.radius * breath;
     var a = this.alpha * (0.85 + (reduce ? 0.15 : 0.15 * Math.sin(this.pulse * 0.7)));
+    var glow = this.gold ? 5.2 : 4.2;
+    var glowA = this.gold ? a * 0.16 : a * 0.12;
     ctx.beginPath();
-    ctx.arc(this.x, this.y, rad * 4.2, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(' + this.r + ',' + this.g + ',' + this.b + ',' + (a * 0.12).toFixed(3) + ')';
+    ctx.arc(this.x, this.y, rad * glow, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(' + this.r + ',' + this.g + ',' + this.b + ',' + glowA.toFixed(3) + ')';
     ctx.fill();
     ctx.beginPath();
     ctx.arc(this.x, this.y, rad, 0, Math.PI * 2);
