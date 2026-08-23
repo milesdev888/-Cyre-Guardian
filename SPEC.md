@@ -49,10 +49,11 @@ cyre.dev/tokenomics and @Cyredev888.
 | `theme-ai-vibe.css` | AI-vibe skin: deeper black, cyan `#5fd0ff` + violet `#9b7bff`, bloom/glow, glass. Tools dropdowns, HUD chips, RWA ticker. No gold leftovers. `prefers-reduced-motion` safe. |
 | `guardian-popout.js` | FAB (`/guardian2.jpg` + LIVE) → glass panel with `/guardian-video.mp4` + chat POST `/api/chat`. Does not replace `guardian-voice.js`. |
 | `nav-tools.js` | Tools dropdown/strip: Check, Score, Auto, Tokenomics, Roadmap, Airdrop (cyan/violet glass menus). |
-| `ai-vibe-loader.js` | Injects theme + ensures nav-tools, guardian-popout, rwa/vortex/voice/access. Loaded by `launch-banner.js`. |
+| `ai-vibe-loader.js` | Injects theme + ensures nav-tools, guardian-popout, ai-presence, rwa/vortex/voice/access. Loaded by `launch-banner.js` (+ one-line on secondary pages). |
+| `ai-presence.js` | SUPER AI idle: denser glow, orbit breathe/pulse, portrait/orb rings; reduced-motion safe. Loaded by `ai-vibe-loader.js`. |
 | `footer-polish.js` | Footer Docs/Security → `/roadmap`; Privacy/Terms/Support → mailto. |
 | `launch-banner.js` | Self-mounting: 3D word-funnel canvas banner (robot core), $C7 + Roadmap nav links, hero $C7 button (emblem), glass CSS loader, AI-vibe loader hook, claims-safe HUD bar. |
-| `vortex.js` | Hero background canvas — tilted glyph vortex, red/green status words, breathing ice rim. |
+| `vortex.js` | Living cyan+violet particle/network mesh behind hero; continuous motion; static frame if `prefers-reduced-motion`. |
 | `guardian-voice.js` | "Hear Guardian": tap → talking video → mp3 → speech-synth fallback chain; robot morph. |
 | `guardian-video.mp4` | 480² talking-Guardian clip (preload=none). |
 | `guardian2.jpg` | Guardian portrait (blue girlbot, 600²). `robot.jpg` = robot face for morph/funnel core. |
@@ -118,7 +119,7 @@ no leftover gold (`#d9b36c`/`#d4a84b`), no white bootstrap menus, no mismatched 
 
 `curl -s -o /dev/null -w "%{http_code}"` each: `/` `/tokenomics` `/roadmap` `/airdrop`
 `/check` `/score` `/auto` `/theme-glass.css` `/launch-banner.js` `/vortex.js`
-`/guardian-voice.js` `/guardian-video.mp4` `/theme-ai-vibe.css` `/guardian-popout.js` `/nav-tools.js` `/ai-vibe-loader.js` `/cyre-token-256.png` `/cyre-token-512.png`
+`/guardian-voice.js` `/guardian-video.mp4` `/theme-ai-vibe.css` `/guardian-popout.js` `/nav-tools.js` `/ai-vibe-loader.js` `/ai-presence.js` `/cyre-token-256.png` `/cyre-token-512.png`
 — all 200. Then `/api/address?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
 → expect `score:24, riskLevel:LOW`. Check served index.html references each script
 exactly once. Verify against `cyre.dev/` (root path — `/index.html` redirects).
@@ -131,7 +132,7 @@ after commit and diff.
 Live & verified: full glass reskin, vortex, funnel banner, talking Guardian, checker
 (capped-age fix settled), score card, tokenomics/roadmap/airdrop/auto pages, clean
 URLs, hardened chat API, both crons built (mention-grader in DRY_RUN).
-In PR (stacks on polish/professional-quick-wins): AI-vibe theme + Guardian video pop-out + Tools nav + RWA/HUD ticker restyle.
+In PR #4 (stacks on polish): AI-vibe + Guardian pop-out + SUPER AI presence (living mesh, orb idle, denser glow) + Tools/RWA/HUD restyle.
 Open before launch: devnet DBC rehearsal (verify 60/25/10/3/2 leftover math),
 www.cyre.dev attach, mention-grader DRY_RUN→false after draft review, Anthropic
 spend limit + credit top-up (chat in demo mode until then), guardian-voice.mp3,
