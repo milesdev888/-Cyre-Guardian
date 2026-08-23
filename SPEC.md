@@ -50,7 +50,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `theme-purple-deep.css` | Darker-purple mood overrides: deeper violet `#7048dc`, shadow boosts, hero ambient shift. Loaded by `index.html` (after homepage.css) + injected by `ai-vibe-loader.js`. |
 | `theme-blue.css` | Blue token overrides + avatar swap (`.portrait img` / `.g-av img` → /guardian2.jpg). |
 | `guardian-popout.js` | FAB (`/guardian2.jpg` + LIVE) → glass panel with `/guardian-video.mp4` + chat POST `/api/chat`. Does not replace `guardian-voice.js`. |
-| `nav-tools.js` | Tools dropdown/strip: Watch, Passport, Check, Score, Auto, Forensics, Signals, Tokenomics, Roadmap, Airdrop (cyan/violet glass menus). |
+| `nav-tools.js` | Tools dropdown/strip: Watch, Passport, Check, Score, Oracle, Forensics, Signals, Tokenomics, Roadmap, Airdrop (cyan/violet glass menus). |
 | `ai-vibe-loader.js` | Injects `theme-ai-vibe.css` + `theme-purple-deep.css`; ensures nav-tools, guardian-popout, ai-presence, rwa/vortex/voice/access. Loaded by `launch-banner.js` (+ one-line on secondary pages). |
 | `ai-presence.js` | SUPER AI idle: denser glow, orbit breathe/pulse, `.portrait` / orb rings (works with wireframe head wrap); reduced-motion safe. Loaded by `ai-vibe-loader.js`. |
 | `footer-polish.js` | Footer Docs/Security → `/roadmap`; Privacy/Terms/Support → mailto. |
@@ -71,9 +71,10 @@ cyre.dev/tokenomics and @Cyredev888.
 | `tokenomics.html` | Donut + locks + CA box ("TBA — only here and @Cyredev888"). |
 | `roadmap.html` | 4 phases: Shipped / Now / Next / Exploring (agent-economy items = research framing). |
 | `airdrop.html` | 3M $C7, tabs Community (2M) / Creators (1M, #creators deep link), Guardian warning. |
-| `auto.html` | Use Case 01 — tokenized dealer lot demo (synthetic). Kept at `/auto`; product Forensics lives at `/forensics`. |
+| `auto.html` | Use Case 01 — tokenized dealer lot demo (synthetic). **Archived demo** at `/auto` with soft banner → `/oracle`. Primary product feed monitor is Oracle Pulse. |
 | `forensics.html` | Forensics v1 — single-address RWA pattern board → cyre.dev/forensics. Measured only; `Cache-Control: no-store`. |
 | `signals.html` | Signals v1 — public RWA pattern feed board → cyre.dev/signals. Default list empty (same Watch policy); measured hits only; `Cache-Control: no-store` on `/api/signals`. |
+| `oracle.html` | Oracle Pulse v1 — mint/oracle-level RWA feed monitor → cyre.dev/oracle (prefer `/oracle` over `/pulse`). Feed board (not wallet paste). Patterns: stale / spike / divergence only. |
 | `watcher.js` | Render cron `guardian-watcher` (*/15): anomaly detector → drafts/tweets. Stateless window dedup. |
 | `mention-grader.js` | Render cron `guardian-mention-grader` (*/10): @mention + address → public grade reply via bridge. |
 | `api/chat.js` | Guardian chat (Anthropic). HARDENED: origin-locked to cyre.dev, role-sanitized, haiku model, daily cap. Keep all guardrails. |
@@ -82,6 +83,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/passport.js` | GET /api/passport — `?address=`. Stable Passport JSON (`version`/`kind`/`address`/`fetchedAt`/`score`/`riskLevel`/`profile`/`signals`/`mintAffinity`/`window`/`disclaimer`). Same measured 1k-sig window as `/api/address`; one `getTokenAccountsByOwner` for SPEC seed mints → `mintAffinity` hold/touch yes|no vs seed (no weights); `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
 | `api/forensics.js` | GET /api/forensics — `?address=` (single). Measured patterns: dormant→active, burst, failure spike, mint-affinity hold/touch vs SPEC seed mints. Same 1k-sig window + one token-accounts call as Passport; collateral-loop + transfer-hook/eligibility friction named but `evaluated:false` in v1; `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
 | `api/signals.js` | GET /api/signals — optional `?address=` / `?list=` (≤10). Empty default → empty feed + message (quiet holders not yet filtered from SPEC seed mints; same Watch policy). Per address: Watch patterns (dormant→active, burst, failure spike) + mintAffinity via **per-mint** `getTokenAccountsByOwner` only (never programId dump). Response `{ ok, kind:'cyre-signals', version:1, disclaimer, window, items, counters }`; brief sleep between wallets; soft-fail RPC; `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
+| `api/oracle.js` | GET /api/oracle — Oracle Pulse v1. NestUSD **Pyth Lazer** seeds (fetch only with `PYTH_LAZER_API_KEY`); equity Hermes peers optional when primary measured. Response `{ ok, kind:'cyre-oracle', version:1, disclaimer, fetchedAt, feeds, patterns }`; patterns stale/spike/divergence cite measured numbers only; USDY/OUSG/syrupUSDC deferred (no verified public feed); `Cache-Control: no-store`. No LLM. |
 | `api/rwa.mjs` | CoinGecko proxy, 60s cache, last-good fallback. Env `COINGECKO_API_KEY`. |
 | `cyre-token-256/512.png` | C7 emblem. 512 = mint metadata image URI (GitHub raw path, immutable). |
 | `vercel.json` | `{cleanUrls:true, trailingSlash:false}` — pages served extensionless. |
@@ -129,6 +131,35 @@ Public feed of recent/public measured pattern hits across an optional address li
 
 API always returns `kind:'cyre-signals'`, `version:1`, `disclaimer:'Patterns, not verdicts.'`, `Cache-Control: no-store`. No LLM. No invented metrics.
 
+### Oracle Pulse v1 — RWA feed monitor (patterns only; no verdicts)
+
+Replaces Auto as the primary product slot for mint/oracle-level monitoring — **not** another wallet paste tool. Prefer `/oracle` over `/pulse`. Auto remains at `/auto` as an archived synthetic demo with a soft banner linking here.
+
+Watches SPEC seed–related price feeds (same mint table as Watch). **Primary source: NestUSD Pyth Lazer seeds** (API key required). Do **not** invent Hermes hex IDs for these seeds.
+
+| Endpoint | Use |
+|---|---|
+| `POST https://pyth-lazer.dourolabs.app/v1/latest_price` | NestUSD Lazer latest (Bearer `PYTH_LAZER_API_KEY`) |
+| `POST https://pyth-lazer.dourolabs.app/v1/price` | NestUSD Lazer sample ~1h ago for move window |
+| `GET https://hermes.pyth.network/v2/updates/price/latest?ids[]=…` | Optional equity Hermes peers for divergence **only when** Lazer primary is measured |
+| Chainlink Data Streams | Optional later for divergence (not wired in v1) |
+
+Research NestUSD Lazer seeds (verified IDs only):
+
+| Seed | Mint | NestUSD Lazer (v1) | Notes |
+|---|---|---|---|
+| AAPLx | `XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp` | Pyth Lazer **1792** | Equity Hermes peer optional when primary measured |
+| TSLAx | `XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB` | Pyth Lazer **1847** | Equity Hermes peer optional when primary measured |
+| SPYx | `XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W` | Pyth Lazer **1843** | Equity Hermes peer optional when primary measured |
+| USDY | `A1KLoBrKBde8Ty9qtNQUtq3C2ortoC3u7twggz7sEto6` | **deferred** | No verified public feed |
+| OUSG | `i7u4r16TcsJTgq1kAG8opmVZyVnAKBwLKu6ZPMwzxNc` | **deferred** | No verified public feed |
+| syrupUSDC | `AvZZF1YaZDziPY2RCK4oJrRVrbN3mTD9NL24hPeaZeUj` | **deferred** | No verified public feed |
+
+Patterns (thresholds): **stale** (>300s age), **spike** (≥±2% / 3600s), **divergence** (≥1.5% peer spread when peer measured). Cite measured numbers only. Missing key / Lazer miss / deferred seeds → `evaluated:false` deferred rows (same posture as Forensics). Never invent prices when `PYTH_LAZER_API_KEY` is unset.
+
+`api/oracle.js`: NestUSD Lazer IDs above; fetch only with `PYTH_LAZER_API_KEY`; equity Hermes peers optional when primary measured; `Cache-Control: no-store`; `kind:'cyre-oracle'`.
+
+API always returns `kind:'cyre-oracle'`, `version:1`, `disclaimer:'Patterns, not verdicts.'`, `Cache-Control: no-store`. No health scores. No LLM.
 
 Off-repo: `cyre-x-bridge` (Render web service — X API bridge, MCP connector + cron relay);
 `cyre-fraud-prediction` (separate repo/deploy, linked from the Fraud Prediction card);
@@ -146,7 +177,7 @@ branch rather than stacking more skins on the legacy shell.
 **self-mounting JS at repo root** (+ one-line `<script>` includes). Scripts find their DOM anchor,
 inject markup/styles, fail cleanly, respect `prefers-reduced-motion`, and pause off-screen
 (IntersectionObserver). CSS skins load the same way. Revert = delete the file.
-Secondary pages (`watch`/`passport`/`forensics`/`signals`/`check`/`score`/`auto`/…) stay standalone HTML and load `ai-vibe-loader.js` for
+Secondary pages (`watch`/`passport`/`forensics`/`signals`/`oracle`/`check`/`score`/`auto`/…) stay standalone HTML and load `ai-vibe-loader.js` for
 shared nav/popout/theme.
 
 ## 5. DESIGN SYSTEM — "crystal blue glass" (+ AI-vibe layer)
@@ -166,7 +197,7 @@ no leftover gold chrome in UI (`#d9b36c`/`#d4a84b` as button/nav accents), no wh
 - Signature: **darker-purple mood** (`theme-purple-deep.css` on top of AI-vibe) — deeper violet `#7048dc` ambient, violet-heavy particles; cyan `#5fd0ff` / violet `#9b7bff` / sparse gold `~12%` wireframe/particle Guardian head (canvas) with **dust→mesh→photo→dust** idle cycle (~22 s) + counter-rotating orbit rings; hero morph may show `/guardian2.jpg` during photo phase; FAB/popout still uses `/guardian2.jpg`
 - Hero status chips (system status, not wallet verdicts): **LIVE** / **RISK LOW** / **WATCHING**
 - Primary CTA: Check — cyan fill + outer glow (not violet gradient); Talk to Guardian — transparent outline
-- Single primary nav (Watch/Passport/Check/Score/Auto/Forensics/Signals/Tokenomics/Roadmap/Airdrop) — no duplicate Tools strip under nav
+- Single primary nav (Watch/Passport/Check/Score/Oracle/Forensics/Signals/Tokenomics/Roadmap/Airdrop; Auto demoted to archived demo) — no duplicate Tools strip under nav
 - Compact status chips beside wireframe head (not large banners over the face)
 - Watchlist/Forensics/Passport cards kept in early viewport
 - Everything respects reduced-motion and keyboard focus.
@@ -185,13 +216,13 @@ no leftover gold chrome in UI (`#d9b36c`/`#d4a84b` as button/nav accents), no wh
 ## 7. VERIFY BEFORE DECLARING DONE (curl checklist)
 
 `curl -s -o /dev/null -w "%{http_code}"` each: `/` `/tokenomics` `/roadmap` `/airdrop`
-`/watch` `/passport` `/forensics` `/signals` `/check` `/score` `/auto` `/theme-glass.css` `/launch-banner.js` `/vortex.js`
+`/watch` `/passport` `/forensics` `/signals` `/oracle` `/check` `/score` `/auto` `/theme-glass.css` `/launch-banner.js` `/vortex.js`
 `/guardian-voice.js` `/guardian-video.mp4` `/theme-ai-vibe.css` `/guardian-popout.js` `/nav-tools.js` `/ai-vibe-loader.js` `/ai-presence.js` `/homepage.css` `/guardian-head.js` `/cyre-token-256.png` `/cyre-token-512.png`
 — all 200. Then `/api/address?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
 → expect `score:24, riskLevel:LOW`. Then `/api/watch?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
 → expect `ok:true` with measured `counters` and a patterns-not-verdicts `disclaimer` (response must not be CDN-cached). Then `/api/passport?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
 → expect `ok:true`, `kind:"cyre-passport"`, measured `score`/`riskLevel`/`profile`, `disclaimer:"Patterns, not verdicts."`, and `Cache-Control: no-store`. Then `/api/forensics?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
-→ expect `ok:true`, `kind:"cyre-forensics"`, measured `patterns`/`counters`/`mintAffinity`, `disclaimer:"Patterns, not verdicts."`, and `Cache-Control: no-store`. Then `/api/signals` (empty) → expect `ok:true`, `kind:"cyre-signals"`, `version:1`, empty `items`, default-list-empty `message`, `disclaimer:"Patterns, not verdicts."`, and `Cache-Control: no-store`. Check served index.html references each script
+→ expect `ok:true`, `kind:"cyre-forensics"`, measured `patterns`/`counters`/`mintAffinity`, `disclaimer:"Patterns, not verdicts."`, and `Cache-Control: no-store`. Then `/api/signals` (empty) → expect `ok:true`, `kind:"cyre-signals"`, `version:1`, empty `items`, default-list-empty `message`, `disclaimer:"Patterns, not verdicts."`, and `Cache-Control: no-store`. Then `/api/oracle` → expect `ok:true`, `kind:"cyre-oracle"`, `version:1`, `disclaimer:"Patterns, not verdicts."`, `feeds`/`patterns` arrays, and `Cache-Control: no-store`. Check served index.html references each script
 exactly once. Verify against `cyre.dev/` (root path — `/index.html` redirects).
 Mobile-upload gotchas: iOS renames downloads ("file 2.ext"), GitHub web-editor paste
 truncates silently, uploads sometimes don't replace — always re-fetch the raw file
@@ -200,7 +231,7 @@ after commit and diff.
 ## 8. CURRENT STATE + OPEN ITEMS (Aug 23 2026)
 
 Live & verified: glass/AI-vibe layer, vortex, talking Guardian, checker, score card,
-tokenomics/roadmap/airdrop/auto/forensics/signals pages, clean URLs, hardened chat API, both crons
+tokenomics/roadmap/airdrop/auto/forensics/signals/oracle pages, clean URLs, hardened chat API, both crons
 (mention-grader in DRY_RUN), Guardian pop-out + AI presence.
 Homepage: mock visual match — Synthetic Intelligence branding, "The chain has a witness.",
 **darker-purple mood** (`theme-purple-deep.css`): deeper violet ambient; **dust→mesh→photo→dust ~22 s morph**
