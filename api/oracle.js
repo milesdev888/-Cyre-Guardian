@@ -1,26 +1,423 @@
-// api/oracle.js — CYRE Oracle Pulse v1 (NestUSD Lazer seeds; no invented Hermes hex)
-const LAZER='https://pyth-lazer.dourolabs.app';
-const HERMES='https://hermes.pyth.network';
-const DISCLAIMER='Patterns, not verdicts.';
-const MOVE_WINDOW_SEC=3600, STALE_THRESHOLD_SEC=300, SPIKE_THRESHOLD_PCT=2, DIVERGENCE_THRESHOLD_PCT=1.5;
-const SEED_FEEDS=[
-  {symbol:'USDY',mint:'A1KLoBrKBde8Ty9qtNQUtq3C2ortoC3u7twggz7sEto6',source:'deferred',feedId:null,feedLabel:null,peer:null,deferDetail:'USDY deferred — no verified public feed.'},
-  {symbol:'OUSG',mint:'i7u4r16TcsJTgq1kAG8opmVZyVnAKBwLKu6ZPMwzxNc',source:'deferred',feedId:null,feedLabel:null,peer:null,deferDetail:'OUSG deferred — no verified public feed.'},
-  {symbol:'syrupUSDC',mint:'AvZZF1YaZDziPY2RCK4oJrRVrbN3mTD9NL24hPeaZeUj',source:'deferred',feedId:null,feedLabel:null,peer:null,deferDetail:'syrupUSDC deferred — no verified public feed.'},
-  {symbol:'AAPLx',mint:'XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp',source:'pyth-lazer',feedId:1792,feedLabel:'NestUSD Lazer AAPLx',peer:{symbol:'AAPL',feedId:'49f6b65cb1de6b10eaf75e7c03ca029c306d0357e91b5311b175084a5ad55688',feedLabel:'Equity.US.AAPL/USD',source:'hermes'}},
-  {symbol:'TSLAx',mint:'XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB',source:'pyth-lazer',feedId:1847,feedLabel:'NestUSD Lazer TSLAx',peer:{symbol:'TSLA',feedId:'16dad506d7db8da01c87581c87ca897a012a153557d4d578c3b9c9e1bc0632f1',feedLabel:'Equity.US.TSLA/USD',source:'hermes'}},
-  {symbol:'SPYx',mint:'XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W',source:'pyth-lazer',feedId:1843,feedLabel:'NestUSD Lazer SPYx',peer:{symbol:'SPY',feedId:'19e09bb805456ada3979a7d1cbb4b6d63babc3a0f8e8a9509f68afa5c4c11cd5',feedLabel:'Equity.US.SPY/USD',source:'hermes'}}
+// api/oracle.js — CYRE Oracle Pulse v1
+// Mint/oracle-level RWA feed monitor via public Hermes HTTP.
+// Patterns only: stale / spike / divergence — no health scores, no verdicts.
+// Soft-fail; Cache-Control: no-store; no LLM.
+// Endpoints documented in SPEC.md (Hermes latest + historical publish_time).
+
+const HERMES = 'https://hermes.pyth.network';
+const DISCLAIMER = 'Patterns, not verdicts.';
+const MOVE_WINDOW_SEC = 3600;
+const STALE_THRESHOLD_SEC = 300;
+const SPIKE_THRESHOLD_PCT = 2;
+const DIVERGENCE_THRESHOLD_PCT = 1.5;
+
+// SPEC Watch seed mints → Pyth Hermes feed IDs (researched Aug 2026).
+// Unknown / unmatched issuer feeds stay deferred (evaluated:false).
+const SEED_FEEDS = [
+  {
+    symbol: 'USDY',
+    mint: 'A1KLoBrKBde8Ty9qtNQUtq3C2ortoC3u7twggz7sEto6',
+    source: 'pyth',
+    feedId: 'e393449f6aff8a4b6d3e1165a7c9ebec103685f3b41e60db4277b5b6d10e7326',
+    feedLabel: 'Crypto.USDY/USD',
+    peer: null
+  },
+  {
+    symbol: 'OUSG',
+    mint: 'i7u4r16TcsJTgq1kAG8opmVZyVnAKBwLKu6ZPMwzxNc',
+    source: 'deferred',
+    feedId: null,
+    feedLabel: null,
+    peer: null,
+    deferDetail:
+      'No public Pyth/Switchboard feed ID matched for OUSG in Hermes lookup (Aug 2026). Issuer feed deferred.'
+  },
+  {
+    symbol: 'syrupUSDC',
+    mint: 'AvZZF1YaZDziPY2RCK4oJrRVrbN3mTD9NL24hPeaZeUj',
+    source: 'pyth',
+    feedId: '2ad31d1c4a85fbf2156ce57fab4104124c5ef76a6386375ecfc8da1ed5ce1486',
+    feedLabel: 'Crypto.SYRUPUSDC/USDC.RR',
+    peer: null
+  },
+  {
+    symbol: 'AAPLx',
+    mint: 'XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp',
+    source: 'pyth',
+    feedId: '978e6cc68a119ce066aa830017318563a9ed04ec3a0a6439010fc11296a58675',
+    feedLabel: 'Crypto.AAPLX/USD',
+    peer: {
+      symbol: 'AAPL',
+      feedId: '49f6b65cb1de6b10eaf75e7c03ca029c306d0357e91b5311b175084a5ad55688',
+      feedLabel: 'Equity.US.AAPL/USD'
+    }
+  },
+  {
+    symbol: 'TSLAx',
+    mint: 'XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB',
+    source: 'pyth',
+    feedId: '47a156470288850a440df3a6ce85a55917b813a19bb5b31128a33a986566a362',
+    feedLabel: 'Crypto.TSLAX/USD',
+    peer: {
+      symbol: 'TSLA',
+      feedId: '16dad506d7db8da01c87581c87ca897a012a153557d4d578c3b9c9e1bc0632f1',
+      feedLabel: 'Equity.US.TSLA/USD'
+    }
+  },
+  {
+    symbol: 'SPYx',
+    mint: 'XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W',
+    source: 'pyth',
+    feedId: '2817b78438c769357182c04346fddaad1178c82f4048828fe0997c3c64624e14',
+    feedLabel: 'Crypto.SPYX/USD',
+    peer: {
+      symbol: 'SPY',
+      feedId: '19e09bb805456ada3979a7d1cbb4b6d63babc3a0f8e8a9509f68afa5c4c11cd5',
+      feedLabel: 'Equity.US.SPY/USD'
+    }
+  }
 ];
-function toNumScaled(price,expo){if(price==null||expo==null)return null;const p=Number(price),e=Number(expo);return (Number.isFinite(p)&&Number.isFinite(e))?p*Math.pow(10,e):null;}
-function pctMove(from,to){if(from==null||to==null||from===0)return null;return ((to-from)/Math.abs(from))*100;}
-function pctSpread(a,b){if(a==null||b==null)return null;const mid=(Math.abs(a)+Math.abs(b))/2;return mid===0?null:(Math.abs(a-b)/mid)*100;}
-function lazerKey(){return process.env.PYTH_LAZER_API_KEY||process.env.PYTH_PRO_API_KEY||'';}
-function parseLazerFeeds(json){const map=Object.create(null);const body=json&&(json.parsed||json);const feeds=(body&&body.priceFeeds)||(json&&json.priceFeeds)||[];for(const row of feeds){if(!row)continue;const id=Number(row.priceFeedId!=null?row.priceFeedId:row.price_feed_id);if(!Number.isFinite(id))continue;const price=row.price,expo=row.exponent!=null?row.exponent:row.expo,conf=row.confidence!=null?row.confidence:row.conf;let publishTime=null;const fut=row.feedUpdateTimestamp!=null?row.feedUpdateTimestamp:row.feed_update_timestamp;const tus=row.timestampUs!=null?row.timestampUs:row.timestamp_us;const raw=fut!=null?fut:tus;if(raw!=null){const n=Number(raw);if(Number.isFinite(n))publishTime=n>1e12?Math.floor(n/1e6):Math.floor(n);}map[id]={price:toNumScaled(price,expo),conf:toNumScaled(conf,expo),publishTime};}return map;}
-async function lazerLatest(ids,apiKey){if(!ids.length||!apiKey)return{ok:false,map:Object.create(null),detail:'no key or ids'};const r=await fetch(LAZER+'/v1/latest_price',{method:'POST',headers:{accept:'application/json','content-type':'application/json',authorization:'Bearer '+apiKey},body:JSON.stringify({priceFeedIds:ids,properties:['price','confidence','feedUpdateTimestamp','exponent'],channel:'fixed_rate@200ms',ignoreInvalidFeeds:true})});if(!r.ok){const t=await r.text().catch(()=>'');return{ok:false,map:Object.create(null),detail:'Lazer latest HTTP '+r.status+(t?': '+t.slice(0,80):'')};}try{return{ok:true,map:parseLazerFeeds(await r.json()),detail:null};}catch(e){return{ok:false,map:Object.create(null),detail:'Lazer latest parse failed'};}}
-async function lazerAt(unixSec,ids,apiKey){if(!ids.length||!apiKey)return Object.create(null);const r=await fetch(LAZER+'/v1/price',{method:'POST',headers:{accept:'application/json','content-type':'application/json',authorization:'Bearer '+apiKey},body:JSON.stringify({priceFeedIds:ids,properties:['price','confidence','feedUpdateTimestamp','exponent'],channel:'fixed_rate@200ms',timestamp:Math.floor(unixSec)*1e6,ignoreInvalidFeeds:true})});if(!r.ok)return Object.create(null);try{return parseLazerFeeds(await r.json());}catch(_){return Object.create(null);}}
-function parseHermes(json){const map=Object.create(null);for(const row of ((json&&json.parsed)||[])){if(!row||!row.id||!row.price)continue;const id=String(row.id).replace(/^0x/,'').toLowerCase();map[id]={price:toNumScaled(row.price.price,row.price.expo),conf:toNumScaled(row.price.conf,row.price.expo),publishTime:Number(row.price.publish_time)||null};}return map;}
-async function hermesLatest(ids){if(!ids.length)return Object.create(null);const qs=ids.map(id=>'ids[]='+encodeURIComponent(id)).join('&');const r=await fetch(HERMES+'/v2/updates/price/latest?'+qs,{headers:{accept:'application/json'}});if(!r.ok)return Object.create(null);try{return parseHermes(await r.json());}catch(_){return Object.create(null);}}
-function deferredFeed(seed,extraDetail){return{symbol:seed.symbol,mint:seed.mint,source:seed.source==='pyth-lazer'?'pyth-lazer':'deferred',feedId:seed.feedId!=null?seed.feedId:null,feedLabel:seed.feedLabel||null,price:null,conf:null,publishTime:null,lastUpdateAgeSec:null,moveWindow:null,peerSpread:null,evaluated:false,detail:extraDetail||seed.deferDetail||'Feed not evaluated in this run.'};}
-function buildFeed(seed,lazerLatestMap,lazerPriorMap,hermesMap,nowSec,lazerStatus){if(seed.source==='deferred'||seed.feedId==null)return deferredFeed(seed);if(!lazerStatus.keyPresent)return deferredFeed(seed,'Lazer ID '+seed.feedId+' documented (NestUSD). Needs PYTH_LAZER_API_KEY (public 403). Never invent prices.');const row=lazerLatestMap[seed.feedId]||null;if(!row||row.price==null)return deferredFeed(seed,'Lazer miss for ID '+seed.feedId+(lazerStatus.detail?' ('+lazerStatus.detail+')':''));const price=row.price,conf=row.conf,publishTime=row.publishTime;const lastUpdateAgeSec=publishTime!=null?Math.max(0,nowSec-publishTime):null;const prior=lazerPriorMap[seed.feedId]||null;const priorPrice=prior&&prior.price!=null?prior.price:null;const movePct=pctMove(priorPrice,price);const moveWindow=movePct==null?null:{windowSec:MOVE_WINDOW_SEC,fromPrice:priorPrice,toPrice:price,movePct:Number(movePct.toFixed(4))};let peerSpread=null;if(seed.peer&&seed.peer.feedId){const peerObj=hermesMap[String(seed.peer.feedId).replace(/^0x/,'').toLowerCase()]||null;const peerPrice=peerObj&&peerObj.price!=null?peerObj.price:null;const spread=pctSpread(price,peerPrice);if(spread!=null&&peerPrice!=null)peerSpread={peerSymbol:seed.peer.symbol,peerFeedId:seed.peer.feedId,peerPrice,spreadPct:Number(spread.toFixed(4))};}return{symbol:seed.symbol,mint:seed.mint,source:'pyth-lazer',feedId:seed.feedId,feedLabel:seed.feedLabel||null,price,conf,publishTime,lastUpdateAgeSec,moveWindow,peerSpread,evaluated:true};}
-function buildPatterns(feeds){const patterns=[];for(const f of feeds){if(!f.evaluated){patterns.push({id:'deferred_'+f.symbol,pattern:'deferred',symbol:f.symbol,triggered:false,evaluated:false,detail:f.detail||'Feed not evaluated.'});if(f.symbol==='AAPLx'||f.symbol==='TSLAx'||f.symbol==='SPYx')patterns.push({id:'divergence_'+f.symbol,pattern:'divergence',symbol:f.symbol,triggered:false,evaluated:false,detail:'Divergence deferred until Lazer primary measured (or Chainlink later).'});continue;}const age=f.lastUpdateAgeSec;patterns.push({id:'stale_'+f.symbol,pattern:'stale',symbol:f.symbol,triggered:age!=null&&age>STALE_THRESHOLD_SEC,evaluated:true,detail:age==null?'No publishTime for '+f.symbol+'.':'lastUpdateAgeSec='+age+' (threshold '+STALE_THRESHOLD_SEC+'s).',measured:{lastUpdateAgeSec:age,thresholdSec:STALE_THRESHOLD_SEC}});const move=f.moveWindow&&typeof f.moveWindow.movePct==='number'?f.moveWindow.movePct:null;patterns.push({id:'spike_'+f.symbol,pattern:'spike',symbol:f.symbol,triggered:move!=null&&Math.abs(move)>=SPIKE_THRESHOLD_PCT,evaluated:move!=null,detail:move==null?'Move window not measured for '+f.symbol+'.':'moveWindow='+move+'% over '+MOVE_WINDOW_SEC+'s (threshold ±'+SPIKE_THRESHOLD_PCT+'%).',measured:{movePct:move,windowSec:MOVE_WINDOW_SEC,thresholdPct:SPIKE_THRESHOLD_PCT}});if(f.peerSpread&&typeof f.peerSpread.spreadPct==='number'){const spread=f.peerSpread.spreadPct;patterns.push({id:'divergence_'+f.symbol,pattern:'divergence',symbol:f.symbol,triggered:spread>=DIVERGENCE_THRESHOLD_PCT,evaluated:true,detail:'peerSpread='+spread+'% vs '+f.peerSpread.peerSymbol+' (threshold '+DIVERGENCE_THRESHOLD_PCT+'%).',measured:{spreadPct:spread,peerSymbol:f.peerSpread.peerSymbol,peerPrice:f.peerSpread.peerPrice,feedPrice:f.price,thresholdPct:DIVERGENCE_THRESHOLD_PCT}});}else if(f.symbol==='AAPLx'||f.symbol==='TSLAx'||f.symbol==='SPYx'){patterns.push({id:'divergence_'+f.symbol,pattern:'divergence',symbol:f.symbol,triggered:false,evaluated:false,detail:'Peer equity unavailable — divergence deferred.'});}}return patterns;}
-export default async function handler(req,res){res.setHeader('Cache-Control','no-store');const fetchedAt=new Date().toISOString();const nowSec=Math.floor(Date.now()/1000);const priorSec=nowSec-MOVE_WINDOW_SEC;try{const apiKey=lazerKey();const lazerIds=[],peerIds=[];for(const s of SEED_FEEDS){if(s.source==='pyth-lazer'&&s.feedId!=null)lazerIds.push(Number(s.feedId));if(s.peer&&s.peer.feedId)peerIds.push(s.peer.feedId);}let lazerLatestMap=Object.create(null),lazerPriorMap=Object.create(null),hermesMap=Object.create(null);const lazerStatus={keyPresent:!!apiKey,detail:null};if(apiKey){const latest=await lazerLatest(lazerIds,apiKey);lazerLatestMap=latest.map;lazerStatus.detail=latest.detail;try{lazerPriorMap=await lazerAt(priorSec,lazerIds,apiKey);}catch(e){console.error('oracle lazer prior',e&&e.message);}try{hermesMap=await hermesLatest(peerIds);}catch(e){console.error('oracle hermes peers',e&&e.message);}}else{lazerStatus.detail='PYTH_LAZER_API_KEY unset (Lazer 403).';}const feeds=SEED_FEEDS.map(s=>buildFeed(s,lazerLatestMap,lazerPriorMap,hermesMap,nowSec,lazerStatus));const patterns=buildPatterns(feeds);const evaluatedFeeds=feeds.filter(f=>f.evaluated).length;const triggered=patterns.filter(p=>p.evaluated!==false&&p.triggered).length;return res.status(200).json({ok:true,kind:'cyre-oracle',version:1,disclaimer:DISCLAIMER,fetchedAt,window:{moveWindowSec:MOVE_WINDOW_SEC,staleThresholdSec:STALE_THRESHOLD_SEC,spikeThresholdPct:SPIKE_THRESHOLD_PCT,divergenceThresholdPct:DIVERGENCE_THRESHOLD_PCT},endpoints:{lazerLatest:LAZER+'/v1/latest_price',lazerAt:LAZER+'/v1/price',hermesLatestPeers:HERMES+'/v2/updates/price/latest?ids[]=… (equity peers only)'},researchSeeds:{note:'NestUSD Lazer seeds; USDY/OUSG/syrupUSDC deferred.',lazer:{AAPLx:1792,TSLAx:1847,SPYx:1843},deferred:['USDY','OUSG','syrupUSDC']},counters:{feedsConfigured:feeds.length,feedsEvaluated:evaluatedFeeds,patternsTriggered:triggered},feeds,patterns});}catch(e){console.error('oracle',e&&e.message);res.setHeader('Cache-Control','no-store');return res.status(200).json({ok:false,kind:'cyre-oracle',version:1,disclaimer:DISCLAIMER,fetchedAt,error:'Could not read oracle feeds. Retry shortly.',feeds:[],patterns:[]});}}
+
+function toNum(priceObj) {
+  if (!priceObj || priceObj.price == null || priceObj.expo == null) return null;
+  const p = Number(priceObj.price);
+  const e = Number(priceObj.expo);
+  if (!Number.isFinite(p) || !Number.isFinite(e)) return null;
+  return p * Math.pow(10, e);
+}
+
+function confNum(priceObj) {
+  if (!priceObj || priceObj.conf == null || priceObj.expo == null) return null;
+  const c = Number(priceObj.conf);
+  const e = Number(priceObj.expo);
+  if (!Number.isFinite(c) || !Number.isFinite(e)) return null;
+  return c * Math.pow(10, e);
+}
+
+function pctMove(from, to) {
+  if (from == null || to == null || from === 0) return null;
+  return ((to - from) / Math.abs(from)) * 100;
+}
+
+function pctSpread(a, b) {
+  if (a == null || b == null) return null;
+  const mid = (Math.abs(a) + Math.abs(b)) / 2;
+  if (mid === 0) return null;
+  return (Math.abs(a - b) / mid) * 100;
+}
+
+function parseHermes(json) {
+  const map = Object.create(null);
+  const parsed = (json && json.parsed) || [];
+  for (const row of parsed) {
+    if (!row || !row.id) continue;
+    const id = String(row.id).replace(/^0x/, '').toLowerCase();
+    map[id] = row.price || null;
+  }
+  return map;
+}
+
+async function hermesLatest(ids) {
+  if (!ids.length) return Object.create(null);
+  const qs = ids.map((id) => 'ids[]=' + encodeURIComponent(id)).join('&');
+  const r = await fetch(HERMES + '/v2/updates/price/latest?' + qs, {
+    headers: { accept: 'application/json' }
+  });
+  if (!r.ok) throw new Error('Hermes latest HTTP ' + r.status);
+  return parseHermes(await r.json());
+}
+
+async function hermesAt(publishTime, ids) {
+  if (!ids.length) return Object.create(null);
+  const qs = ids.map((id) => 'ids[]=' + encodeURIComponent(id)).join('&');
+  const r = await fetch(
+    HERMES + '/v2/updates/price/' + publishTime + '?' + qs,
+    { headers: { accept: 'application/json' } }
+  );
+  if (!r.ok) return Object.create(null);
+  try {
+    return parseHermes(await r.json());
+  } catch (_) {
+    return Object.create(null);
+  }
+}
+
+function deferredFeed(seed) {
+  return {
+    symbol: seed.symbol,
+    mint: seed.mint,
+    source: 'deferred',
+    feedId: null,
+    price: null,
+    conf: null,
+    publishTime: null,
+    lastUpdateAgeSec: null,
+    moveWindow: null,
+    peerSpread: null,
+    evaluated: false,
+    detail:
+      seed.deferDetail ||
+      'Feed ID unknown — deferred (same posture as Forensics deferred patterns).'
+  };
+}
+
+function buildFeed(seed, latestMap, priorMap, nowSec) {
+  if (seed.source === 'deferred' || !seed.feedId) return deferredFeed(seed);
+
+  const id = seed.feedId.toLowerCase();
+  const priceObj = latestMap[id] || null;
+  if (!priceObj) {
+    return {
+      symbol: seed.symbol,
+      mint: seed.mint,
+      source: seed.source,
+      feedId: seed.feedId,
+      feedLabel: seed.feedLabel || null,
+      price: null,
+      conf: null,
+      publishTime: null,
+      lastUpdateAgeSec: null,
+      moveWindow: null,
+      peerSpread: null,
+      evaluated: false,
+      detail: 'Hermes returned no latest price for this feed ID in this run.'
+    };
+  }
+
+  const price = toNum(priceObj);
+  const conf = confNum(priceObj);
+  const publishTime = Number(priceObj.publish_time) || null;
+  const lastUpdateAgeSec =
+    publishTime != null ? Math.max(0, nowSec - publishTime) : null;
+
+  const priorObj = priorMap[id] || null;
+  const priorPrice = toNum(priorObj);
+  const movePct = pctMove(priorPrice, price);
+  const moveWindow =
+    movePct == null
+      ? null
+      : {
+          windowSec: MOVE_WINDOW_SEC,
+          fromPrice: priorPrice,
+          toPrice: price,
+          movePct: Number(movePct.toFixed(4))
+        };
+
+  let peerSpread = null;
+  if (seed.peer && seed.peer.feedId) {
+    const peerObj = latestMap[seed.peer.feedId.toLowerCase()] || null;
+    const peerPrice = toNum(peerObj);
+    const spread = pctSpread(price, peerPrice);
+    if (spread != null && peerPrice != null) {
+      peerSpread = {
+        peerSymbol: seed.peer.symbol,
+        peerFeedId: seed.peer.feedId,
+        peerPrice,
+        spreadPct: Number(spread.toFixed(4))
+      };
+    }
+  }
+
+  return {
+    symbol: seed.symbol,
+    mint: seed.mint,
+    source: seed.source,
+    feedId: seed.feedId,
+    feedLabel: seed.feedLabel || null,
+    price,
+    conf,
+    publishTime,
+    lastUpdateAgeSec,
+    moveWindow,
+    peerSpread,
+    evaluated: true
+  };
+}
+
+function buildPatterns(feeds) {
+  const patterns = [];
+
+  for (const f of feeds) {
+    if (!f.evaluated) {
+      patterns.push({
+        id: 'deferred_' + f.symbol,
+        pattern: 'deferred',
+        symbol: f.symbol,
+        triggered: false,
+        evaluated: false,
+        detail: f.detail || 'Feed not evaluated in this run.'
+      });
+      continue;
+    }
+
+    const age = f.lastUpdateAgeSec;
+    const staleTriggered = age != null && age > STALE_THRESHOLD_SEC;
+    patterns.push({
+      id: 'stale_' + f.symbol,
+      pattern: 'stale',
+      symbol: f.symbol,
+      triggered: staleTriggered,
+      evaluated: true,
+      detail:
+        age == null
+          ? 'No publishTime measured for ' + f.symbol + '.'
+          : 'lastUpdateAgeSec=' +
+            age +
+            ' (threshold ' +
+            STALE_THRESHOLD_SEC +
+            's).',
+      measured: {
+        lastUpdateAgeSec: age,
+        thresholdSec: STALE_THRESHOLD_SEC
+      }
+    });
+
+    const move =
+      f.moveWindow && typeof f.moveWindow.movePct === 'number'
+        ? f.moveWindow.movePct
+        : null;
+    const spikeTriggered =
+      move != null && Math.abs(move) >= SPIKE_THRESHOLD_PCT;
+    patterns.push({
+      id: 'spike_' + f.symbol,
+      pattern: 'spike',
+      symbol: f.symbol,
+      triggered: spikeTriggered,
+      evaluated: move != null,
+      detail:
+        move == null
+          ? 'Move window not measured for ' +
+            f.symbol +
+            ' (no prior Hermes sample).'
+          : 'moveWindow=' +
+            move +
+            '% over ' +
+            MOVE_WINDOW_SEC +
+            's (threshold ±' +
+            SPIKE_THRESHOLD_PCT +
+            '%).',
+      measured: {
+        movePct: move,
+        windowSec: MOVE_WINDOW_SEC,
+        thresholdPct: SPIKE_THRESHOLD_PCT
+      }
+    });
+
+    if (f.peerSpread && typeof f.peerSpread.spreadPct === 'number') {
+      const spread = f.peerSpread.spreadPct;
+      const divTriggered = spread >= DIVERGENCE_THRESHOLD_PCT;
+      patterns.push({
+        id: 'divergence_' + f.symbol,
+        pattern: 'divergence',
+        symbol: f.symbol,
+        triggered: divTriggered,
+        evaluated: true,
+        detail:
+          'peerSpread=' +
+          spread +
+          '% vs ' +
+          f.peerSpread.peerSymbol +
+          ' (threshold ' +
+          DIVERGENCE_THRESHOLD_PCT +
+          '%).',
+        measured: {
+          spreadPct: spread,
+          peerSymbol: f.peerSpread.peerSymbol,
+          peerPrice: f.peerSpread.peerPrice,
+          feedPrice: f.price,
+          thresholdPct: DIVERGENCE_THRESHOLD_PCT
+        }
+      });
+    } else if (f.symbol === 'AAPLx' || f.symbol === 'TSLAx' || f.symbol === 'SPYx') {
+      patterns.push({
+        id: 'divergence_' + f.symbol,
+        pattern: 'divergence',
+        symbol: f.symbol,
+        triggered: false,
+        evaluated: false,
+        detail:
+          'Peer equity feed unavailable in this run — divergence not measured.'
+      });
+    }
+  }
+
+  return patterns;
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  const fetchedAt = new Date().toISOString();
+  const nowSec = Math.floor(Date.now() / 1000);
+  const priorSec = nowSec - MOVE_WINDOW_SEC;
+
+  try {
+    const primaryIds = [];
+    const peerIds = [];
+    for (const s of SEED_FEEDS) {
+      if (s.feedId) primaryIds.push(s.feedId);
+      if (s.peer && s.peer.feedId) peerIds.push(s.peer.feedId);
+    }
+    const allLatestIds = primaryIds.concat(peerIds);
+
+    let latestMap = Object.create(null);
+    let priorMap = Object.create(null);
+    try {
+      latestMap = await hermesLatest(allLatestIds);
+    } catch (e) {
+      console.error('oracle hermes latest', e && e.message);
+    }
+    try {
+      priorMap = await hermesAt(priorSec, primaryIds);
+    } catch (e) {
+      console.error('oracle hermes prior', e && e.message);
+    }
+
+    const feeds = SEED_FEEDS.map((s) =>
+      buildFeed(s, latestMap, priorMap, nowSec)
+    );
+    const patterns = buildPatterns(feeds);
+    const evaluatedFeeds = feeds.filter((f) => f.evaluated).length;
+    const triggered = patterns.filter(
+      (p) => p.evaluated !== false && p.triggered
+    ).length;
+
+    return res.status(200).json({
+      ok: true,
+      kind: 'cyre-oracle',
+      version: 1,
+      disclaimer: DISCLAIMER,
+      fetchedAt,
+      window: {
+        moveWindowSec: MOVE_WINDOW_SEC,
+        staleThresholdSec: STALE_THRESHOLD_SEC,
+        spikeThresholdPct: SPIKE_THRESHOLD_PCT,
+        divergenceThresholdPct: DIVERGENCE_THRESHOLD_PCT
+      },
+      endpoints: {
+        hermesLatest: HERMES + '/v2/updates/price/latest?ids[]=…',
+        hermesAt:
+          HERMES + '/v2/updates/price/{unixPublishTime}?ids[]=…'
+      },
+      counters: {
+        feedsConfigured: feeds.length,
+        feedsEvaluated: evaluatedFeeds,
+        patternsTriggered: triggered
+      },
+      feeds,
+      patterns
+    });
+  } catch (e) {
+    console.error('oracle', e && e.message);
+    res.setHeader('Cache-Control', 'no-store');
+    return res.status(200).json({
+      ok: false,
+      kind: 'cyre-oracle',
+      version: 1,
+      disclaimer: DISCLAIMER,
+      fetchedAt,
+      error: 'Could not read oracle feeds right now. Try again in a moment.',
+      feeds: [],
+      patterns: []
+    });
+  }
+}
