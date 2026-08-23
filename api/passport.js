@@ -8,6 +8,17 @@ const B58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const DAY = 86400;
 const DISCLAIMER = 'Patterns, not verdicts.';
 
+const TOKEN_PROGRAM = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA';
+// SPEC Watch seed mints — hold/touch affinity only (no weights/scores).
+const SEED_MINTS = [
+  { symbol: 'USDY', mint: 'A1KLoBrKBde8Ty9qtNQUtq3C2ortoC3u7twggz7sEto6' },
+  { symbol: 'OUSG', mint: 'i7u4r16TcsJTgq1kAG8opmVZyVnAKBwLKu6ZPMwzxNc' },
+  { symbol: 'syrupUSDC', mint: 'AvZZF1YaZDziPY2RCK4oJrRVrbN3mTD9NL24hPeaZeUj' },
+  { symbol: 'AAPLx', mint: 'XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp' },
+  { symbol: 'TSLAx', mint: 'XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB' },
+  { symbol: 'SPYx', mint: 'XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W' }
+];
+
 async function rpc(method, params) {
   const r = await fetch(RPC, {
     method: 'POST',
@@ -23,7 +34,34 @@ function signal(id, name, points, triggered, detail) {
   return { id, name, points, triggered, detail };
 }
 
-function buildMeasured(address, list, bal) {
+
+function buildMintAffinity(tokenAccounts) {
+  const byMint = new Map();
+  const list = Array.isArray(tokenAccounts) ? tokenAccounts : [];
+  for (const acc of list) {
+    const info = acc && acc.account && acc.account.data && acc.account.data.parsed && acc.account.data.parsed.info;
+    if (!info || !info.mint) continue;
+    const amountRaw = info.tokenAmount && info.tokenAmount.amount;
+    let amount = 0;
+    if (typeof amountRaw === 'string') amount = Number(amountRaw);
+    else if (typeof amountRaw === 'number') amount = amountRaw;
+    const prev = byMint.get(info.mint) || { touch: false, hold: false };
+    prev.touch = true;
+    if (amount > 0) prev.hold = true;
+    byMint.set(info.mint, prev);
+  }
+  return SEED_MINTS.map(({ symbol, mint }) => {
+    const hit = byMint.get(mint);
+    return {
+      symbol,
+      mint,
+      hold: !!(hit && hit.hold),
+      touch: !!(hit && hit.touch)
+    };
+  });
+}
+
+function buildMeasured(address, list, bal, mintAffinity) {
   const now = Math.floor(Date.now() / 1000);
   const sol = (bal && typeof bal.value === 'number' ? bal.value : 0) / 1e9;
   const fetchedAt = new Date().toISOString();
@@ -50,6 +88,12 @@ function buildMeasured(address, list, bal) {
       signals: [],
       signalsTriggered: 0,
       signalsEvaluated: 0,
+      mintAffinity: mintAffinity || [],
+      window: {
+        signaturesLimit: 1000,
+        signaturesFetched: 0,
+        lastChecked: fetchedAt
+      },
       message: 'No transaction history found for this address.',
       disclaimer: DISCLAIMER
     };
@@ -188,6 +232,12 @@ function buildMeasured(address, list, bal) {
     signals,
     signalsTriggered: signals.filter((s) => s.triggered).length,
     signalsEvaluated: signals.length,
+    mintAffinity: mintAffinity || [],
+    window: {
+      signaturesLimit: 1000,
+      signaturesFetched: list.length,
+      lastChecked: fetchedAt
+    },
     disclaimer: DISCLAIMER
   };
 }
@@ -205,12 +255,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    const [sigs, bal] = await Promise.all([
+    const [sigs, bal, tokenAccounts] = await Promise.all([
       rpc('getSignaturesForAddress', [address, { limit: 1000 }]),
-      rpc('getBalance', [address])
+      rpc('getBalance', [address]),
+      rpc('getTokenAccountsByOwner', [
+        address,
+        { programId: TOKEN_PROGRAM },
+        { encoding: 'jsonParsed' }
+      ]).catch(() => null)
     ]);
     const list = Array.isArray(sigs) ? sigs : [];
-    const passport = buildMeasured(address, list, bal);
+    const accounts =
+      tokenAccounts && Array.isArray(tokenAccounts.value)
+        ? tokenAccounts.value
+        : Array.isArray(tokenAccounts)
+          ? tokenAccounts
+          : [];
+    const mintAffinity = buildMintAffinity(accounts);
+    const passport = buildMeasured(address, list, bal, mintAffinity);
 
     res.setHeader('Cache-Control', 'no-store'); // fresh measured passport only — never CDN-reuse
     return res.status(200).json({
@@ -223,6 +285,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: false,
       error: 'Could not read chain data right now. Try again in a moment.',
+      mintAffinity: [],
       disclaimer: DISCLAIMER
     });
   }
