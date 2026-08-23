@@ -83,7 +83,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/passport.js` | GET /api/passport — `?address=`. Stable Passport JSON (`version`/`kind`/`address`/`fetchedAt`/`score`/`riskLevel`/`profile`/`signals`/`mintAffinity`/`window`/`disclaimer`). Same measured 1k-sig window as `/api/address`; one `getTokenAccountsByOwner` for SPEC seed mints → `mintAffinity` hold/touch yes|no vs seed (no weights); `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
 | `api/forensics.js` | GET /api/forensics — `?address=` (single). Measured patterns: dormant→active, burst, failure spike, mint-affinity hold/touch vs SPEC seed mints. Same 1k-sig window + one token-accounts call as Passport; collateral-loop + transfer-hook/eligibility friction named but `evaluated:false` in v1; `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
 | `api/signals.js` | GET /api/signals — optional `?address=` / `?list=` (≤10). Empty default → empty feed + message (quiet holders not yet filtered from SPEC seed mints; same Watch policy). Per address: Watch patterns (dormant→active, burst, failure spike) + mintAffinity via **per-mint** `getTokenAccountsByOwner` only (never programId dump). Response `{ ok, kind:'cyre-signals', version:1, disclaimer, window, items, counters }`; brief sleep between wallets; soft-fail RPC; `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
-| `api/oracle.js` | GET /api/oracle — Oracle Pulse v1. Watches SPEC seed–related price feeds via **public Hermes HTTP** (no LLM). Response `{ ok, kind:'cyre-oracle', version:1, disclaimer, fetchedAt, feeds, patterns }`; patterns stale/spike/divergence cite measured numbers only; deferred when feed ID unknown; `Cache-Control: no-store`. |
+| `api/oracle.js` | GET /api/oracle — Oracle Pulse v1. NestUSD **Pyth Lazer** seeds (fetch only with `PYTH_LAZER_API_KEY`); equity Hermes peers optional when primary measured. Response `{ ok, kind:'cyre-oracle', version:1, disclaimer, fetchedAt, feeds, patterns }`; patterns stale/spike/divergence cite measured numbers only; USDY/OUSG/syrupUSDC deferred (no verified public feed); `Cache-Control: no-store`. No LLM. |
 | `api/rwa.mjs` | CoinGecko proxy, 60s cache, last-good fallback. Env `COINGECKO_API_KEY`. |
 | `cyre-token-256/512.png` | C7 emblem. 512 = mint metadata image URI (GitHub raw path, immutable). |
 | `vercel.json` | `{cleanUrls:true, trailingSlash:false}` — pages served extensionless. |
@@ -135,23 +135,29 @@ API always returns `kind:'cyre-signals'`, `version:1`, `disclaimer:'Patterns, no
 
 Replaces Auto as the primary product slot for mint/oracle-level monitoring — **not** another wallet paste tool. Prefer `/oracle` over `/pulse`. Auto remains at `/auto` as an archived synthetic demo with a soft banner linking here.
 
-Watches SPEC seed–related price feeds (same mint table as Watch). Public Hermes only:
+Watches SPEC seed–related price feeds (same mint table as Watch). **Primary source: NestUSD Pyth Lazer seeds** (API key required). Do **not** invent Hermes hex IDs for these seeds.
 
 | Endpoint | Use |
 |---|---|
-| `GET https://hermes.pyth.network/v2/updates/price/latest?ids[]=…` | Latest price / conf / publish_time |
-| `GET https://hermes.pyth.network/v2/updates/price/{unix}?ids[]=…` | Sample ~1h ago for move window |
+| `POST https://pyth-lazer.dourolabs.app/v1/latest_price` | NestUSD Lazer latest (Bearer `PYTH_LAZER_API_KEY`) |
+| `POST https://pyth-lazer.dourolabs.app/v1/price` | NestUSD Lazer sample ~1h ago for move window |
+| `GET https://hermes.pyth.network/v2/updates/price/latest?ids[]=…` | Optional equity Hermes peers for divergence **only when** Lazer primary is measured |
+| Chainlink Data Streams | Optional later for divergence (not wired in v1) |
 
-| Seed | Mint | Hermes feed (v1) | Peer (divergence) |
+Research NestUSD Lazer seeds (verified IDs only):
+
+| Seed | Mint | NestUSD Lazer (v1) | Notes |
 |---|---|---|---|
-| USDY | `A1KLoBrKBde8Ty9qtNQUtq3C2ortoC3u7twggz7sEto6` | `Crypto.USDY/USD` `e393449f…7326` | — |
-| OUSG | `i7u4r16TcsJTgq1kAG8opmVZyVnAKBwLKu6ZPMwzxNc` | deferred (no Hermes match Aug 2026) | — |
-| syrupUSDC | `AvZZF1YaZDziPY2RCK4oJrRVrbN3mTD9NL24hPeaZeUj` | `Crypto.SYRUPUSDC/USDC.RR` `2ad31d1c…1486` | — |
-| AAPLx | `XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp` | `Crypto.AAPLX/USD` `978e6cc6…8675` | `Equity.US.AAPL/USD` `49f6b65c…5688` |
-| TSLAx | `XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB` | `Crypto.TSLAX/USD` `47a15647…a362` | `Equity.US.TSLA/USD` `16dad506…32f1` |
-| SPYx | `XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W` | `Crypto.SPYX/USD` `2817b784…4e14` | `Equity.US.SPY/USD` `19e09bb8…1cd5` |
+| AAPLx | `XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp` | Pyth Lazer **1792** | Equity Hermes peer optional when primary measured |
+| TSLAx | `XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB` | Pyth Lazer **1847** | Equity Hermes peer optional when primary measured |
+| SPYx | `XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W` | Pyth Lazer **1843** | Equity Hermes peer optional when primary measured |
+| USDY | `A1KLoBrKBde8Ty9qtNQUtq3C2ortoC3u7twggz7sEto6` | **deferred** | No verified public feed |
+| OUSG | `i7u4r16TcsJTgq1kAG8opmVZyVnAKBwLKu6ZPMwzxNc` | **deferred** | No verified public feed |
+| syrupUSDC | `AvZZF1YaZDziPY2RCK4oJrRVrbN3mTD9NL24hPeaZeUj` | **deferred** | No verified public feed |
 
-Patterns (thresholds): stale (>300s age), spike (≥±2% / 3600s), divergence (≥1.5% peer spread). Cite measured numbers only. Unknown feed IDs → `evaluated:false` deferred rows (same posture as Forensics).
+Patterns (thresholds): **stale** (>300s age), **spike** (≥±2% / 3600s), **divergence** (≥1.5% peer spread when peer measured). Cite measured numbers only. Missing key / Lazer miss / deferred seeds → `evaluated:false` deferred rows (same posture as Forensics). Never invent prices when `PYTH_LAZER_API_KEY` is unset.
+
+`api/oracle.js`: NestUSD Lazer IDs above; fetch only with `PYTH_LAZER_API_KEY`; equity Hermes peers optional when primary measured; `Cache-Control: no-store`; `kind:'cyre-oracle'`.
 
 API always returns `kind:'cyre-oracle'`, `version:1`, `disclaimer:'Patterns, not verdicts.'`, `Cache-Control: no-store`. No health scores. No LLM.
 
