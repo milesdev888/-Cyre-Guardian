@@ -36,14 +36,16 @@ cyre.dev/tokenomics and @Cyredev888.
    on /airdrop and must survive every redesign.
 6. **No secrets in the repo.** Keys live in Vercel/Render env vars only. The X bridge
    secret is in the connector URL and Render env — never in a file.
-7. **Never edit `index.html` directly** except one-line `<script>`/`<link>` includes.
-   See §4.
+7. **Homepage is a full redesign file** (`index.html`), not bolt-ons on the CYRE 7 shell.
+   Prefer shipping a clean self-contained homepage on a branch/PR. Rollback = `index-legacy.html`.
+   Secondary pages still use bolt-on scripts (§4). See §4.
 
 ## 3. FILE INVENTORY (repo root unless noted)
 
 | File | What it is |
 |---|---|
-| `index.html` | The site shell. Portraits use `/guardian2.jpg`. Touch only to add one-line includes. |
+| `index.html` | **Homepage redesign** (Aug 2026): self-contained cinematic AI page — headline "The chain has a witness.", eyebrow **Synthetic Intelligence · RWA fraud-watch**, cyan `#5fd0ff` + violet `#9b7bff`, portrait orb `/guardian2.jpg`, vortex mesh, status chips, Watchlist/Forensics/Passport cards, trust strip (no fake metrics). Loads `vortex.js`, `guardian-popout.js`, `access-form.js`, `rwa-widget.js`, `ai-presence.js`, `footer-polish.js`. |
+| `index-legacy.html` | Pre-redesign CYRE 7 shell snapshot for rollback. Do not serve as `/`. |
 | `theme-glass.css` | Crystal glassmorphism skin (loaded by launch-banner.js). Delete = revert skin. |
 | `theme-blue.css` | Blue token overrides + avatar swap (`.portrait img` / `.g-av img` → /guardian2.jpg). |
 | `theme-ai-vibe.css` | AI-vibe skin: deeper black, cyan `#5fd0ff` + violet `#9b7bff`, bloom/glow, glass. Tools dropdowns, HUD chips, RWA ticker. No gold leftovers. `prefers-reduced-motion` safe. |
@@ -78,15 +80,20 @@ Off-repo: `cyre-x-bridge` (Render web service — X API bridge, MCP connector + 
 `cyre-fraud-prediction` (separate repo/deploy, linked from the Fraud Prediction card);
 `cyre_dbc_config.jsonc` (local-only Meteora CLI config, holds the 60/25/10/3/2 math).
 
-## 4. THE BOLT-ON PATTERN (how every feature ships)
+## 4. HOMEPAGE + BOLT-ON PATTERN
 
-index.html is too large to regenerate and too fragile to hand-edit on mobile. So:
-every feature is a **self-mounting JS file at repo root** + at most ONE line in
-index.html (`<script src="/file.js" defer></script>` before `</body>`). Scripts find
-their anchor in the DOM, inject their own markup/styles, remove themselves cleanly on
-failure, respect `prefers-reduced-motion`, and pause off-screen (IntersectionObserver).
-CSS skins are bolt-on files loaded the same way. Revert anything = delete its file.
-New pages are standalone self-contained HTML files (own CSS inline) at root.
+**Homepage (Aug 2026 redesign):** `index.html` is a clean self-contained modern page matching
+founder-approved mocks — not the old CYRE 7 shell with bolt-ons. Brand: **Synthetic Intelligence**
+infrastructure for RWAs; hero kicker spells that out; headline stays "The chain has a witness."
+Rollback copy lives at `index-legacy.html`. Prefer regenerating/replacing the homepage file on a
+branch rather than stacking more skins on the legacy shell.
+
+**Bolt-ons (secondary pages + shared widgets):** Features that attach to many pages are still
+**self-mounting JS at repo root** (+ one-line `<script>` includes). Scripts find their DOM anchor,
+inject markup/styles, fail cleanly, respect `prefers-reduced-motion`, and pause off-screen
+(IntersectionObserver). CSS skins load the same way. Revert = delete the file.
+Secondary pages (`check`/`score`/`auto`/…) stay standalone HTML and load `ai-vibe-loader.js` for
+shared nav/popout/theme.
 
 ## 5. DESIGN SYSTEM — "crystal blue glass" (+ AI-vibe layer)
 
@@ -127,12 +134,13 @@ Mobile-upload gotchas: iOS renames downloads ("file 2.ext"), GitHub web-editor p
 truncates silently, uploads sometimes don't replace — always re-fetch the raw file
 after commit and diff.
 
-## 8. CURRENT STATE + OPEN ITEMS (Aug 22 2026)
+## 8. CURRENT STATE + OPEN ITEMS (Aug 23 2026)
 
-Live & verified: full glass reskin, vortex, funnel banner, talking Guardian, checker
-(capped-age fix settled), score card, tokenomics/roadmap/airdrop/auto pages, clean
-URLs, hardened chat API, both crons built (mention-grader in DRY_RUN).
-In PR #4 (stacks on polish): AI-vibe + Guardian pop-out + SUPER AI presence (living mesh, orb idle, denser glow) + Tools/RWA/HUD restyle.
+Live & verified: glass/AI-vibe layer, vortex, talking Guardian, checker, score card,
+tokenomics/roadmap/airdrop/auto pages, clean URLs, hardened chat API, both crons
+(mention-grader in DRY_RUN), Guardian pop-out + AI presence.
+Homepage: full mock redesign shipped — Synthetic Intelligence branding, "The chain has a witness.",
+portrait orb, living mesh, status chips, feature cards, trust strip; legacy shell at `index-legacy.html`.
 Open before launch: devnet DBC rehearsal (verify 60/25/10/3/2 leftover math),
 www.cyre.dev attach, mention-grader DRY_RUN→false after draft review, Anthropic
 spend limit + credit top-up (chat in demo mode until then), guardian-voice.mp3,
@@ -142,8 +150,7 @@ Vercel Analytics snippet on index.html (only check.html has it), stray root
 ## 9. AGENT LANES
 
 - **Grok** — creative assets (images/video — proven lane), content drafts, new
-  standalone pages ON BRANCHES. Reads this spec first. Never touches api/, crons,
-  index.html, or anything in §2.
+  standalone pages ON BRANCHES. Reads this spec first. Never touches api/, crons, or anything in §2. Homepage redesigns go on branches/PRs.
 - **Claude** — deploys, Render/X operations, code review of every PR, launch
   mechanics, this spec's upkeep.
 - **@claude (GitHub App)** — tagged in issues/PRs for scoped repo edits once Actions
