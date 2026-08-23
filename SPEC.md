@@ -50,7 +50,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `theme-blue.css` | Blue token overrides + avatar swap (`.portrait img` / `.g-av img` → /guardian2.jpg). |
 | `theme-ai-vibe.css` | AI-vibe skin: deeper black, cyan `#5fd0ff` + violet `#9b7bff`, bloom/glow, glass. Tools dropdowns, HUD chips, RWA ticker. No gold leftovers. `prefers-reduced-motion` safe. |
 | `guardian-popout.js` | FAB (`/guardian2.jpg` + LIVE) → glass panel with `/guardian-video.mp4` + chat POST `/api/chat`. Does not replace `guardian-voice.js`. |
-| `nav-tools.js` | Tools dropdown/strip: Check, Score, Auto, Tokenomics, Roadmap, Airdrop (cyan/violet glass menus). |
+| `nav-tools.js` | Tools dropdown/strip: Watch, Check, Score, Auto, Tokenomics, Roadmap, Airdrop (cyan/violet glass menus). |
 | `ai-vibe-loader.js` | Injects theme + ensures nav-tools, guardian-popout, ai-presence, rwa/vortex/voice/access. Loaded by `launch-banner.js` (+ one-line on secondary pages). |
 | `ai-presence.js` | SUPER AI idle: denser glow, orbit breathe/pulse, `.portrait` / orb rings (works with wireframe head wrap); reduced-motion safe. Loaded by `ai-vibe-loader.js`. |
 | `footer-polish.js` | Footer Docs/Security → `/roadmap`; Privacy/Terms/Support → mailto. |
@@ -64,6 +64,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `check-link.js` | Adds "Check an address" + "Grade your wallet" buttons to hero CTA row. |
 | `access-form.js` | Early-access modal → Formspree `xqpzddvy`. |
 | `rwa-widget.js` | Live RWA market strip under hero (pinned CoinGecko ids; keep "Data by CoinGecko"). Styled by AI-vibe theme. |
+| `watch.html` | Watch v1 — real-time wallet monitor + measured alerts board → cyre.dev/watch. Default list empty; quiet wallets only. |
 | `check.html` | Free Solana address checker → cyre.dev/check. |
 | `score.html` | Wallet Score Card — canvas dossier PNG + share loop → cyre.dev/score. |
 | `tokenomics.html` | Donut + locks + CA box ("TBA — only here and @Cyredev888"). |
@@ -73,10 +74,28 @@ cyre.dev/tokenomics and @Cyredev888.
 | `watcher.js` | Render cron `guardian-watcher` (*/15): anomaly detector → drafts/tweets. Stateless window dedup. |
 | `mention-grader.js` | Render cron `guardian-mention-grader` (*/10): @mention + address → public grade reply via bridge. |
 | `api/chat.js` | Guardian chat (Anthropic). HARDENED: origin-locked to cyre.dev, role-sanitized, haiku model, daily cap. Keep all guardrails. |
-| `api/address.mjs` | GET /api/address — 1,000-sig window, 6 explainable signals, LOW/MED/HIGH. Env `SOLANA_RPC`. |
+| `api/address.js` | GET /api/address — 1,000-sig window, 6 explainable signals, LOW/MED/HIGH. Env `SOLANA_RPC`. (Live file; SPEC formerly said `.mjs`.) |
+| `api/watch.js` | GET /api/watch — `?address=` and optional `?list=` (≤10). Reuses address signals; fresh-window alerts (dormant→active, burst, failure spike); counters from this measured run only; marks noisy if last24h ≥ 200. No LLM. Env `SOLANA_RPC`. |
 | `api/rwa.mjs` | CoinGecko proxy, 60s cache, last-good fallback. Env `COINGECKO_API_KEY`. |
 | `cyre-token-256/512.png` | C7 emblem. 512 = mint metadata image URI (GitHub raw path, immutable). |
 | `vercel.json` | `{cleanUrls:true, trailingSlash:false}` — pages served extensionless. |
+
+
+
+### Watch v1 — RWA mint/protocol interest set (not a default wallet list)
+
+Default watchlist is **empty**. Once `SOLANA_RPC` can pull holders without public-RPC 429s, seed ≤10 quiet wallets from top holders of these mints (drop known CEX/hot dumps; mark noisy if sig rate blows the quiet window):
+
+| Token | Mint | Notes |
+|---|---|---|
+| USDY | `A1KLoBrKBde8Ty9qtNQUtq3C2ortoC3u7twggz7sEto6` | Ondo treasuries |
+| OUSG | `i7u4r16TcsJTgq1kAG8opmVZyVnAKBwLKu6ZPMwzxNc` | Ondo |
+| syrupUSDC | `AvZZF1YaZDziPY2RCK4oJrRVrbN3mTD9NL24hPeaZeUj` | Maple credit |
+| AAPLx | `XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp` | xStocks equity (Kamino collateral) |
+| TSLAx | `XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB` | xStocks |
+| SPYx | `XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W` | xStocks ETF |
+
+Alert patterns in v1 (measured only): dormant→active, burst, failure spike. Later Forensics/Signals may add mint-affinity / collateral-loop / transfer-hook friction — still patterns, not accusations.
 
 Off-repo: `cyre-x-bridge` (Render web service — X API bridge, MCP connector + cron relay);
 `cyre-fraud-prediction` (separate repo/deploy, linked from the Fraud Prediction card);
@@ -94,7 +113,7 @@ branch rather than stacking more skins on the legacy shell.
 **self-mounting JS at repo root** (+ one-line `<script>` includes). Scripts find their DOM anchor,
 inject markup/styles, fail cleanly, respect `prefers-reduced-motion`, and pause off-screen
 (IntersectionObserver). CSS skins load the same way. Revert = delete the file.
-Secondary pages (`check`/`score`/`auto`/…) stay standalone HTML and load `ai-vibe-loader.js` for
+Secondary pages (`watch`/`check`/`score`/`auto`/…) stay standalone HTML and load `ai-vibe-loader.js` for
 shared nav/popout/theme.
 
 ## 5. DESIGN SYSTEM — "crystal blue glass" (+ AI-vibe layer)
@@ -114,7 +133,7 @@ no leftover gold chrome in UI (`#d9b36c`/`#d4a84b` as button/nav accents), no wh
 - Signature: cyan/violet/gold **wireframe/particle Guardian head** (canvas) with idle morph → glass/robot look + counter-rotating orbit rings; portrait photo reserved for FAB popout
 - Hero status chips (system status, not wallet verdicts): **LIVE** / **RISK LOW** / **WATCHING**
 - Primary CTA: Check — cyan fill + outer glow (not violet gradient); Talk to Guardian — transparent outline
-- Single primary nav (Check/Score/Auto/Tokenomics/Roadmap/Airdrop) — no duplicate Tools strip under nav
+- Single primary nav (Watch/Check/Score/Auto/Tokenomics/Roadmap/Airdrop) — no duplicate Tools strip under nav
 - Compact status chips beside wireframe head (not large banners over the face)
 - Watchlist/Forensics/Passport cards kept in early viewport
 - Everything respects reduced-motion and keyboard focus.
@@ -133,10 +152,11 @@ no leftover gold chrome in UI (`#d9b36c`/`#d4a84b` as button/nav accents), no wh
 ## 7. VERIFY BEFORE DECLARING DONE (curl checklist)
 
 `curl -s -o /dev/null -w "%{http_code}"` each: `/` `/tokenomics` `/roadmap` `/airdrop`
-`/check` `/score` `/auto` `/theme-glass.css` `/launch-banner.js` `/vortex.js`
+`/watch` `/check` `/score` `/auto` `/theme-glass.css` `/launch-banner.js` `/vortex.js`
 `/guardian-voice.js` `/guardian-video.mp4` `/theme-ai-vibe.css` `/guardian-popout.js` `/nav-tools.js` `/ai-vibe-loader.js` `/ai-presence.js` `/homepage.css` `/guardian-head.js` `/cyre-token-256.png` `/cyre-token-512.png`
 — all 200. Then `/api/address?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
-→ expect `score:24, riskLevel:LOW`. Check served index.html references each script
+→ expect `score:24, riskLevel:LOW`. Then `/api/watch?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
+→ expect `ok:true` with measured `counters` and a patterns-not-verdicts `disclaimer`. Check served index.html references each script
 exactly once. Verify against `cyre.dev/` (root path — `/index.html` redirects).
 Mobile-upload gotchas: iOS renames downloads ("file 2.ext"), GitHub web-editor paste
 truncates silently, uploads sometimes don't replace — always re-fetch the raw file
@@ -144,6 +164,7 @@ after commit and diff.
 
 ## 8. CURRENT STATE + OPEN ITEMS (Aug 23 2026)
 
+Watch v1 shipping on branch `feat/watch-v1` (api/watch + /watch); merge gated by founder.
 Live & verified: glass/AI-vibe layer, vortex, talking Guardian, checker, score card,
 tokenomics/roadmap/airdrop/auto pages, clean URLs, hardened chat API, both crons
 (mention-grader in DRY_RUN), Guardian pop-out + AI presence.
