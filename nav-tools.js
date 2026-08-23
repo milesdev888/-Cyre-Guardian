@@ -1,5 +1,5 @@
 /* nav-tools.js — bolt-on Tools/Product dropdown + secondary-page tool strip
-   Links: Watch / Passport / Check / Score / Auto / Forensics / Tokenomics / Roadmap / Airdrop
+   Links: Watch / Passport / Check / Score / Auto / Forensics / Signals / Tokenomics / Roadmap / Airdrop
    Styled by theme-ai-vibe.css (cyan/violet glass). */
 (function () {
   'use strict';
@@ -13,6 +13,7 @@
     { href: '/score', label: 'Score', hint: 'Wallet' },
     { href: '/auto', label: 'Auto', hint: 'Use case' },
     { href: '/forensics', label: 'Forensics', hint: 'Patterns' },
+    { href: '/signals', label: 'Signals', hint: 'Feed' },
     { href: '/tokenomics', label: 'Tokenomics', hint: '$C7' },
     { href: '/roadmap', label: 'Roadmap', hint: 'Plan' },
     { href: '/airdrop', label: 'Airdrop', hint: '3M' }
