@@ -66,7 +66,7 @@ function shortAddr(a){ return a.slice(0,4) + "…" + a.slice(-4); }
 function extractTweets(x) {
   // tolerate several bridge response shapes
   if (Array.isArray(x)) return x;
-  if (x && Array.isArray(x.data)) return x.data;
+  if (x && Array.isArray(x.data)) return x;
   if (x && x.tweets && Array.isArray(x.tweets)) return x.tweets;
   // bridge text format: "@author [ISO date] (id 123): text..." per mention
   if (typeof x === "string") {
@@ -89,14 +89,33 @@ async function gradeAddress(addr) {
   return d;
 }
 
-function buildReply(addr, d) {
+function politeArchetype(p) {
+  const a = archetype(p);
+  const map = {
+    "TERMINAL DEGEN": "Very active pattern",
+    "THE DEGEN": "Active pattern",
+    "THE MACHINE": "Automation-like pattern",
+    "THE WHALE": "Large-balance pattern",
+    "THE OG": "Long-history pattern",
+    "FRESH SPAWN": "New-wallet pattern",
+    "THE SLEEPER": "Quiet-then-active pattern",
+    "THE TOURIST": "Light-history pattern",
+    "THE REGULAR": "Steady pattern"
+  };
+  return map[a] || a;
+}
+
+function buildReply(addr, d, brainLine) {
   const p = d.profile || {};
-  return "Guardian's read on " + shortAddr(addr) + ":\n\n" +
+  let out =
+    "Thanks for tagging Guardian — a calm read on " + shortAddr(addr) + ":\n\n" +
     "Pattern grade: " + grade(d.score) + "\n" +
-    "Archetype: " + archetype(p) + "\n" +
-    "Degen level: " + degen(p) + "/100\n" +
-    "Risk band: " + (d.riskLevel || "n/a") + "\n\n" +
-    "Patterns, not verdicts. Full card → cyre.dev/score";
+    "Pattern style: " + politeArchetype(p) + "\n" +
+    "Activity intensity: " + degen(p) + "/100\n" +
+    "Risk band: " + (d.riskLevel || "n/a") + "\n\n";
+  if (brainLine) out += brainLine + "\n\n";
+  out += "Patterns, not verdicts. Full card → cyre.dev/score";
+  return out;
 }
 
 (async () => {
