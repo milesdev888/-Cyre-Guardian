@@ -1,19 +1,15 @@
-/* ai-vibe-loader.js — injects theme-ai-vibe.css + ensures nav-tools + guardian-popout */
+/* ai-vibe-loader.js — injects theme-ai-vibe.css + ensures nav/popout + core bolt-ons */
 (function () {
   'use strict';
-  function once(id, tag, attrs) {
-    if (document.getElementById(id)) return;
-    var el = document.createElement(tag);
+  function onceLink(id, href) {
+    if (document.getElementById(id) || document.querySelector('link[href="' + href + '"]')) return;
+    var el = document.createElement('link');
     el.id = id;
-    Object.keys(attrs).forEach(function (k) { el[k] = attrs[k]; });
-    if (tag === 'link' || tag === 'script') {
-      (tag === 'link' ? document.head : (document.body || document.documentElement)).appendChild(el);
-    }
+    el.rel = 'stylesheet';
+    el.href = href;
+    document.head.appendChild(el);
   }
-
-  once('cy-ai-vibe', 'link', { rel: 'stylesheet', href: '/theme-ai-vibe.css' });
-
-  function ensureScript(id, src) {
+  function onceScript(id, src) {
     if (document.getElementById(id) || document.querySelector('script[src="' + src + '"]')) return;
     var s = document.createElement('script');
     s.id = id;
@@ -21,12 +17,15 @@
     s.defer = true;
     (document.body || document.documentElement).appendChild(s);
   }
-
+  onceLink('cy-ai-vibe', '/theme-ai-vibe.css');
   function boot() {
-    ensureScript('cy-nav-tools', '/nav-tools.js');
-    ensureScript('cy-guardian-popout', '/guardian-popout.js');
+    onceScript('cy-rwa-widget', '/rwa-widget.js');
+    onceScript('cy-vortex', '/vortex.js');
+    onceScript('cy-guardian-voice', '/guardian-voice.js');
+    onceScript('cy-access-form', '/access-form.js');
+    onceScript('cy-nav-tools', '/nav-tools.js');
+    onceScript('cy-guardian-popout', '/guardian-popout.js');
   }
-
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
   } else {
