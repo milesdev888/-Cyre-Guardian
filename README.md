@@ -1,62 +1,27 @@
-# 🚀 CYRE Guardian
+# CYRE Guardian
 
-**Global Synthetic Intelligence Infrastructure**
+Guardian watches real-world asset activity on Solana and surfaces fraud **patterns** — not verdicts.
 
-Guardian AI fraud detection system protecting RWA assets on Solana and beyond.
+Give it an address. It watches. You decide.
 
-## 🎯 What is CYRE?
+Product home: [cyre.dev](https://cyre.dev)
 
-CYRE is the industry-leading fraud detection platform for blockchain and RWA protocols. Our Guardian AI monitors transactions in real-time with 94.7% accuracy, protecting assets across 42+ active protocols.
+## Live pages
 
-### 7 Golden Products
+- [Check an address](https://cyre.dev/check)
+- [Wallet score card](https://cyre.dev/score)
+- [Tokenomics ($C7)](https://cyre.dev/tokenomics)
+- [Roadmap](https://cyre.dev/roadmap)
+- [Airdrop](https://cyre.dev/airdrop)
 
-- **Fraud Prediction** - Real-time pattern detection ($125k/mo)
-- **Credit Scores** - Synthetic credit for RWA assets ($45k/mo)
-- **Behavior Passport** - Risk scoring engine ($32k/mo)
-- **Forensics Engine** - Investigation & chain analysis ($28k/mo)
-- **Futures Market** - Predictive analytics ($85k/mo)
-- **Sovereign AI** - Multi-chain surveillance ($145k/mo)
-- **Insurance Module** - Parametric insurance (coming soon)
+## Stance
 
-## 📊 Key Metrics
+- **Watch, don't calculate** — patterns and signals, never "scam" / "safe" labels
+- **$C7** is the CYRE token (symbol C7); not an investment offer
+- Founder merges every PR; `main` auto-deploys to cyre.dev
 
-- **127+** Fraud patterns detected
-- **94.7%** Detection accuracy
-- **42** Active protocols
-- **99.98%** System uptime
+## Repo notes
 
-## 💰 Pricing
+Bolt-on scripts at repo root mount into `index.html` with one-line includes. See `SPEC.md` before changing anything.
 
-- **Starter**: $500/mo (1M transactions)
-- **Pro**: $5,000/mo (50M transactions)
-- **Enterprise**: Custom pricing
-
-## 🔐 Security
-
-- SOC 2 Type II certified
-- Privacy-first architecture
-- End-to-end encryption
-- Zero-knowledge proofs
-
-## 🚀 Get Started
-
-1. Sign up for a free tier
-2. Connect your protocol
-3. Deploy Guardian AI
-4. Monitor real-time metrics
-
-## 📖 Documentation
-
-Full documentation available at [cyre.dev/docs](https://cyre.dev/docs)
-
-## 💬 Support
-
-- Email: support@cyre.dev
-- Discord: [Join Community](https://discord.gg/cyre)
-- Twitter: [@CYREGuardian](https://twitter.com/cyreguardian)
-
----
-
-**Made with ❤️ for RWA Security**
-
-© 2026 CYRE Guardian. All rights reserved.
+Contact: support@cyre.dev · X: [@Cyredev888](https://x.com/Cyredev888)

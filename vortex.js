@@ -14,11 +14,11 @@
   const NODE_COUNT = 58;
   const CONNECTION_DIST = 155;
 
-  // Colors: Cyan, Silver, Gold
+  // Colors: Cyan, Silver, Ice
   const COLORS = [
     { r: 0, g: 210, b: 255 },    // Cyan
     { r: 190, g: 210, b: 230 },  // Silver
-    { r: 255, g: 200, b: 80 }    // Gold
+    { r: 95, g: 208, b: 255 }   // Ice
   ];
 
   function resize() {
@@ -45,7 +45,7 @@
       this.radius = Math.random() * 1.7 + 0.7;
       this.alpha = Math.random() * 0.45 + 0.3;
 
-      // Randomly pick cyan / silver / gold
+      // Randomly pick cyan / silver / ice
       const color = COLORS[Math.floor(Math.random() * COLORS.length)];
       this.r = color.r;
       this.g = color.g;
