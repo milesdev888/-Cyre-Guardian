@@ -69,7 +69,7 @@ body{
   background:linear-gradient(90deg, transparent, rgba(155,123,255,.75), transparent);
 }
 
-/* Living blink — nav orb + kicker dot + hero "The" (founder highlight) */
+/* Living blink — nav orb + green kicker dot; hero The static */
 @keyframes blink-glow {
   0%, 100% {
     opacity: 1;
@@ -94,18 +94,6 @@ body{
     box-shadow: 0 0 6px rgba(61,220,132,.25), 0 0 12px rgba(61,220,132,.15);
   }
 }
-@keyframes blink-word {
-  0%, 100% {
-    color: inherit;
-    text-shadow: none;
-    opacity: 1;
-  }
-  50% {
-    color: #5fd0ff;
-    text-shadow: 0 0 18px rgba(95,208,255,.6), 0 0 36px rgba(155,123,255,.35);
-    opacity: .7;
-  }
-}
 .brand-orb{
   animation: blink-glow 1.8s ease-in-out infinite;
 }
@@ -116,7 +104,7 @@ body{
 }
 .hero-blink{
   display: inline;
-  animation: blink-word 1.8s ease-in-out infinite;
+  animation: none; /* founder: stop blinking The */
 }
 @media (prefers-reduced-motion: reduce){
   .brand-orb,
