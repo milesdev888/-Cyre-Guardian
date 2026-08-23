@@ -50,7 +50,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `theme-purple-deep.css` | Darker-purple mood overrides: deeper violet `#7048dc`, shadow boosts, hero ambient shift. Loaded by `index.html` (after homepage.css) + injected by `ai-vibe-loader.js`. |
 | `theme-blue.css` | Blue token overrides + avatar swap (`.portrait img` / `.g-av img` → /guardian2.jpg). |
 | `guardian-popout.js` | FAB (`/guardian2.jpg` + LIVE) → glass panel with `/guardian-video.mp4` + chat POST `/api/chat`. Does not replace `guardian-voice.js`. |
-| `nav-tools.js` | Tools dropdown/strip: Watch, Check, Score, Auto, Tokenomics, Roadmap, Airdrop (cyan/violet glass menus). |
+| `nav-tools.js` | Tools dropdown/strip: Watch, Passport, Check, Score, Auto, Tokenomics, Roadmap, Airdrop (cyan/violet glass menus). |
 | `ai-vibe-loader.js` | Injects `theme-ai-vibe.css` + `theme-purple-deep.css`; ensures nav-tools, guardian-popout, ai-presence, rwa/vortex/voice/access. Loaded by `launch-banner.js` (+ one-line on secondary pages). |
 | `ai-presence.js` | SUPER AI idle: denser glow, orbit breathe/pulse, `.portrait` / orb rings (works with wireframe head wrap); reduced-motion safe. Loaded by `ai-vibe-loader.js`. |
 | `footer-polish.js` | Footer Docs/Security → `/roadmap`; Privacy/Terms/Support → mailto. |
@@ -65,6 +65,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `access-form.js` | Early-access modal → Formspree `xqpzddvy`. |
 | `rwa-widget.js` | Live RWA market strip under hero (pinned CoinGecko ids; keep "Data by CoinGecko"). Styled by AI-vibe theme. |
 | `watch.html` | Watch v1 — real-time wallet monitor + measured alerts board → cyre.dev/watch. Default list empty; quiet wallets only. No CDN cache on `/api/watch` (fresh measured run). |
+| `passport.html` | Passport v1 — portable RWA profile from measured address signals → cyre.dev/passport. Share/download PNG dossier + JSON. Visible disclaimer: Patterns, not verdicts. No CDN cache on `/api/passport`. |
 | `check.html` | Free Solana address checker → cyre.dev/check. |
 | `score.html` | Wallet Score Card — canvas dossier PNG + share loop → cyre.dev/score. |
 | `tokenomics.html` | Donut + locks + CA box ("TBA — only here and @Cyredev888"). |
@@ -76,6 +77,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/chat.js` | Guardian chat (Anthropic). HARDENED: origin-locked to cyre.dev, role-sanitized, haiku model, daily cap. Keep all guardrails. |
 | `api/address.js` | GET /api/address — 1,000-sig window, 6 explainable signals, LOW/MED/HIGH. Env `SOLANA_RPC`. (Live file; SPEC formerly said `.mjs`.) |
 | `api/watch.js` | GET /api/watch — `?address=` and optional `?list=` (≤10). Reuses address signals; fresh-window alerts; counters from this measured run only; `Cache-Control: no-store` (no CDN reuse). Marks noisy if last24h ≥ 200. No LLM. Env `SOLANA_RPC`. |
+| `api/passport.js` | GET /api/passport — `?address=`. Stable Passport JSON (`version`/`kind`/`address`/`fetchedAt`/`score`/`riskLevel`/`profile`/`signals`/`mintAffinity`/`window`/`disclaimer`). Same measured 1k-sig window as `/api/address`; one `getTokenAccountsByOwner` for SPEC seed mints → `mintAffinity` hold/touch yes|no vs seed (no weights); `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
 | `api/rwa.mjs` | CoinGecko proxy, 60s cache, last-good fallback. Env `COINGECKO_API_KEY`. |
 | `cyre-token-256/512.png` | C7 emblem. 512 = mint metadata image URI (GitHub raw path, immutable). |
 | `vercel.json` | `{cleanUrls:true, trailingSlash:false}` — pages served extensionless. |
@@ -133,7 +135,7 @@ no leftover gold chrome in UI (`#d9b36c`/`#d4a84b` as button/nav accents), no wh
 - Signature: **darker-purple mood** (`theme-purple-deep.css` on top of AI-vibe) — deeper violet `#7048dc` ambient, violet-heavy particles; cyan `#5fd0ff` / violet `#9b7bff` / sparse gold `~12%` wireframe/particle Guardian head (canvas) with **dust→mesh→photo→dust** idle cycle (~22 s) + counter-rotating orbit rings; hero morph may show `/guardian2.jpg` during photo phase; FAB/popout still uses `/guardian2.jpg`
 - Hero status chips (system status, not wallet verdicts): **LIVE** / **RISK LOW** / **WATCHING**
 - Primary CTA: Check — cyan fill + outer glow (not violet gradient); Talk to Guardian — transparent outline
-- Single primary nav (Watch/Check/Score/Auto/Tokenomics/Roadmap/Airdrop) — no duplicate Tools strip under nav
+- Single primary nav (Watch/Passport/Check/Score/Auto/Tokenomics/Roadmap/Airdrop) — no duplicate Tools strip under nav
 - Compact status chips beside wireframe head (not large banners over the face)
 - Watchlist/Forensics/Passport cards kept in early viewport
 - Everything respects reduced-motion and keyboard focus.
@@ -152,11 +154,12 @@ no leftover gold chrome in UI (`#d9b36c`/`#d4a84b` as button/nav accents), no wh
 ## 7. VERIFY BEFORE DECLARING DONE (curl checklist)
 
 `curl -s -o /dev/null -w "%{http_code}"` each: `/` `/tokenomics` `/roadmap` `/airdrop`
-`/watch` `/check` `/score` `/auto` `/theme-glass.css` `/launch-banner.js` `/vortex.js`
+`/watch` `/passport` `/check` `/score` `/auto` `/theme-glass.css` `/launch-banner.js` `/vortex.js`
 `/guardian-voice.js` `/guardian-video.mp4` `/theme-ai-vibe.css` `/guardian-popout.js` `/nav-tools.js` `/ai-vibe-loader.js` `/ai-presence.js` `/homepage.css` `/guardian-head.js` `/cyre-token-256.png` `/cyre-token-512.png`
 — all 200. Then `/api/address?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
 → expect `score:24, riskLevel:LOW`. Then `/api/watch?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
-→ expect `ok:true` with measured `counters` and a patterns-not-verdicts `disclaimer` (response must not be CDN-cached). Check served index.html references each script
+→ expect `ok:true` with measured `counters` and a patterns-not-verdicts `disclaimer` (response must not be CDN-cached). Then `/api/passport?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
+→ expect `ok:true`, `kind:"cyre-passport"`, measured `score`/`riskLevel`/`profile`, `disclaimer:"Patterns, not verdicts."`, and `Cache-Control: no-store`. Check served index.html references each script
 exactly once. Verify against `cyre.dev/` (root path — `/index.html` redirects).
 Mobile-upload gotchas: iOS renames downloads ("file 2.ext"), GitHub web-editor paste
 truncates silently, uploads sometimes don't replace — always re-fetch the raw file
