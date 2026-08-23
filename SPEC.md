@@ -44,7 +44,7 @@ cyre.dev/tokenomics and @Cyredev888.
 
 | File | What it is |
 |---|---|
-| `index.html` | **Homepage redesign** (Aug 2026): self-contained cinematic AI page — headline "The chain has a witness.", eyebrow **Synthetic Intelligence · RWA fraud-watch**, cyan `#5fd0ff` + violet `#9b7bff`, **wireframe/particle Guardian head** (canvas idle breathe/slow rotate; photo orb removed from hero), orbit rings, compact status chips LIVE / RISK LOW / WATCHING beside head, cyan-glow Check CTA + transparent outline Talk to Guardian, single nav (no duplicate Tools strip), Watchlist/Forensics/Passport cards, trust strip (no fake metrics). Portrait `/guardian2.jpg` lives in Guardian FAB popout only. Loads `homepage.css`, `vortex.js`, `guardian-head.js`, `guardian-popout.js`, `access-form.js`, `rwa-widget.js`, `ai-presence.js`, `footer-polish.js`. |
+| `index.html` | **Homepage redesign** (Aug 2026): self-contained cinematic AI page — headline "The chain has a witness.", eyebrow **Synthetic Intelligence · RWA fraud-watch**, cyan `#5fd0ff` + violet `#9b7bff` + sparse gold particle accents, **wireframe/particle Guardian head** (idle morph to glass/robot; photo orb removed from hero), orbit rings, compact status chips LIVE / RISK LOW / WATCHING beside head, cyan-glow Check CTA + transparent outline Talk to Guardian, single nav (no duplicate Tools strip), Watchlist/Forensics/Passport cards, trust strip (no fake metrics). Portrait `/guardian2.jpg` lives in Guardian FAB popout only. Loads `homepage.css`, `vortex.js`, `guardian-head.js`, `guardian-popout.js`, `access-form.js`, `rwa-widget.js`, `ai-presence.js`, `footer-polish.js`. |
 | `index-legacy.html` | Pre-redesign CYRE 7 shell snapshot for rollback. Do not serve as `/`. |
 | `theme-glass.css` | Crystal glassmorphism skin (loaded by launch-banner.js). Delete = revert skin. |
 | `theme-blue.css` | Blue token overrides + avatar swap (`.portrait img` / `.g-av img` → /guardian2.jpg). |
@@ -55,9 +55,9 @@ cyre.dev/tokenomics and @Cyredev888.
 | `ai-presence.js` | SUPER AI idle: denser glow, orbit breathe/pulse, `.portrait` / orb rings (works with wireframe head wrap); reduced-motion safe. Loaded by `ai-vibe-loader.js`. |
 | `footer-polish.js` | Footer Docs/Security → `/roadmap`; Privacy/Terms/Support → mailto. |
 | `launch-banner.js` | Self-mounting: 3D word-funnel canvas banner (robot core), $C7 + Roadmap nav links, hero $C7 button (emblem), glass CSS loader, AI-vibe loader hook, claims-safe HUD bar. |
-| `vortex.js` | Living cyan+violet particle/network mesh behind hero; continuous motion; static frame if `prefers-reduced-motion`. |
+| `vortex.js` | Living cyan+violet particle/network mesh behind hero with sparse gold/amber accent dots (`#d4a84b` / `#ffb454`); continuous motion; static frame if `prefers-reduced-motion`. |
 | `homepage.css` | Homepage redesign styles (cyan Check glow, wireframe head stage, compact chips, single nav). |
-| `guardian-head.js` | Homepage hero wireframe/particle head canvas (breathe + slow rotate); static if `prefers-reduced-motion`. |
+| `guardian-head.js` | Homepage hero particle head canvas: ice/violet + sparse gold dots; idle morph particle cloud → glass/robot head (facets + soft `/robot.jpg` crossfade) and back; static particle frame if `prefers-reduced-motion`. |
 | `guardian-voice.js` | "Hear Guardian": tap → talking video → mp3 → speech-synth fallback chain; robot morph. |
 | `guardian-video.mp4` | 480² talking-Guardian clip (preload=none). |
 | `guardian2.jpg` | Guardian portrait (blue girlbot, 600²) — **FAB / popout / secondary avatars only**, not homepage hero. `robot.jpg` = robot face for morph/funnel core. |
@@ -101,7 +101,8 @@ shared nav/popout/theme.
 
 AI-vibe overlay (`theme-ai-vibe.css`): deeper ink `#05060a`, ice `#5fd0ff`, violet `#9b7bff`.
 Nav Tools dropdowns, secondary tool strips, HUD chips, and RWA ticker use this palette —
-no leftover gold (`#d9b36c`/`#d4a84b`), no white bootstrap menus, no mismatched mint.
+no leftover gold chrome in UI (`#d9b36c`/`#d4a84b` as button/nav accents), no white bootstrap menus, no mismatched mint.
+**Exception (hero particles only):** sparse gold/amber dots (`#d4a84b` / `#ffb454`) in `vortex.js` + `guardian-head.js` as a premium accent mix — keep density low.
 
 ### Base — crystal blue glass
 
@@ -110,7 +111,7 @@ no leftover gold (`#d9b36c`/`#d4a84b`), no white bootstrap menus, no mismatched 
 - Status: red `rgb(255,77,94)` = FLAG/HOLD/RISK · green `rgb(61,220,132)` = SETTLED/SIG VALID/ATTEST · amber `#ffb454` = MEDIUM risk
 - Type: Sora (display 700–800) · Inter (body) · IBM Plex Mono (data)
 - Glass: blur 14–20px panels, `rgba(95,208,255,.18)` borders, pill radius 999px, gradient CTAs, two fixed blur blobs, sticky frosted pill nav
-- Signature: cyan/violet **wireframe/particle Guardian head** (canvas) + counter-rotating orbit rings with satellite dots; portrait photo reserved for FAB popout
+- Signature: cyan/violet/gold **wireframe/particle Guardian head** (canvas) with idle morph → glass/robot look + counter-rotating orbit rings; portrait photo reserved for FAB popout
 - Hero status chips (system status, not wallet verdicts): **LIVE** / **RISK LOW** / **WATCHING**
 - Primary CTA: Check — cyan fill + outer glow (not violet gradient); Talk to Guardian — transparent outline
 - Single primary nav (Check/Score/Auto/Tokenomics/Roadmap/Airdrop) — no duplicate Tools strip under nav
@@ -147,7 +148,7 @@ Live & verified: glass/AI-vibe layer, vortex, talking Guardian, checker, score c
 tokenomics/roadmap/airdrop/auto pages, clean URLs, hardened chat API, both crons
 (mention-grader in DRY_RUN), Guardian pop-out + AI presence.
 Homepage: mock visual match — Synthetic Intelligence branding, "The chain has a witness.",
-wireframe/particle head hero (not photo orb), LIVE/RISK LOW/WATCHING chips, glowing Check CTA,
+wireframe/particle head hero with gold accents + glass/robot morph (not photo orb), LIVE/RISK LOW/WATCHING chips, glowing Check CTA,
 living mesh, feature cards, trust strip; photo Guardian stays in FAB popout; legacy shell at `index-legacy.html`.
 Open before launch: devnet DBC rehearsal (verify 60/25/10/3/2 leftover math),
 www.cyre.dev attach, mention-grader DRY_RUN→false after draft review, Anthropic
