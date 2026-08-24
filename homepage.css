@@ -178,6 +178,7 @@ img{max-width:100%;display:block}
 }
 @media (prefers-reduced-motion:reduce){
   .btn.b-app-glow,.nav-links a.nav-app,.card-cta-glow{animation:none}
+  .head-wrap.guardian-c7-wrap{animation:none}
 }
 .nav-links .req,
 .btn.b-main{
@@ -361,6 +362,39 @@ h1{
     radial-gradient(circle at 50% 28%, rgba(95,208,255,.16), transparent 42%),
     linear-gradient(180deg, rgba(8,14,32,.35), rgba(5,8,18,.92));
   animation:breathe 6s ease-in-out infinite;
+}
+.head-wrap.guardian-c7-wrap{
+  inset:4%;
+  overflow:visible;
+  border:none;
+  border-radius:50%;
+  background:transparent;
+  box-shadow:none;
+  animation:guardian-c7-float 7s ease-in-out infinite;
+}
+.guardian-c7{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
+  -webkit-mask-image:radial-gradient(circle at 50% 46%, #000 54%, transparent 70%);
+  mask-image:radial-gradient(circle at 50% 46%, #000 54%, transparent 70%);
+  filter:
+    drop-shadow(0 0 22px rgba(95,208,255,.5))
+    drop-shadow(0 0 48px rgba(95,208,255,.22))
+    drop-shadow(0 0 80px rgba(155,123,255,.14));
+  opacity:.96;
+}
+.orb-stage.guardian-c7-stage .glow{
+  inset:2%;
+  background:radial-gradient(circle at 50% 44%, rgba(95,208,255,.42), rgba(95,208,255,.12) 42%, transparent 72%);
+}
+.orb-stage.guardian-c7-stage .orbit-ring.r1{inset:0 8%;border-color:rgba(95,208,255,.28)}
+.orb-stage.guardian-c7-stage .orbit-ring.r2{inset:6% 4%;border-color:rgba(155,123,255,.24)}
+.orb-stage.guardian-c7-stage .orbit-ring.r3{inset:14% 10%;border-color:rgba(95,208,255,.2)}
+@keyframes guardian-c7-float{
+  0%,100%{transform:translateY(0) scale(1)}
+  50%{transform:translateY(-6px) scale(1.015)}
 }
 .head-wrap canvas{
   width:100%;
