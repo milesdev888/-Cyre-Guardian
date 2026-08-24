@@ -178,7 +178,9 @@ API always returns `kind:'cyre-oracle'`, `version:1`, `disclaimer:'Patterns, not
 
 Off-repo: `cyre-x-bridge` (Render web service — X API bridge, MCP connector + cron relay);
 `cyre-fraud-prediction` (separate repo/deploy, linked from the Fraud Prediction card);
-`cyre_dbc_config.jsonc` (local-only Meteora CLI config, holds the 60/25/10/3/2 math).
+`cyre_dbc_config.jsonc` (mainnet-draft Meteora CLI config, 60/25/10/5 leftover math);
+`cyre_dbc_config.devnet.jsonc` (tiny 2-SOL graduation for faucet rehearsal);
+`REHEARSAL.md` (step-by-step devnet launch dry-run).
 
 ## 4. HOMEPAGE + BOLT-ON PATTERN
 
@@ -253,7 +255,8 @@ Homepage: mock visual match — Synthetic Intelligence branding, "The chain has 
 (0–16% dust, 16–30% dust→mesh, 30–48% dense violet/cyan particle wireframe head with soft eye bloom / no cartoon eyes, 48–60% mesh→photo, 60–82% her photo `/guardian2.jpg` full-portrait crossfade (no circle crop/rim), 82–100% photo→dust; fallback `/robot.jpg` if portrait fails);
 violet-heavy particle field + cyan accents + sparse gold (~12%); LIVE/RISK LOW/WATCHING chips, glowing Check CTA (cyan),
 living mesh, feature cards, trust strip; hero morph may show `/guardian2.jpg` during photo phase; FAB/popout still uses `/guardian2.jpg`; legacy shell at `index-legacy.html`.
-Open before launch: devnet DBC rehearsal (verify 60/25/10/3/2 leftover math),
+Open before launch: **devnet DBC rehearsal** (`REHEARSAL.md` + `cyre_dbc_config.devnet.jsonc` —
+verify 65M leftover / 100% LP lock / 10M team vest),
 www.cyre.dev attach, mention-grader DRY_RUN→false after draft review, Anthropic
 spend limit + credit top-up (chat in demo mode until then), guardian-voice.mp3,
 Vercel Analytics snippet on index.html (only check.html has it), stray root
