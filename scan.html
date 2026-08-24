@@ -73,6 +73,14 @@ a{color:var(--ice)}
 .wallet-help-btns{display:flex;flex-wrap:wrap;gap:8px}
 .wallet-help-btns a{display:inline-flex;align-items:center;padding:10px 14px;border-radius:999px;border:1px solid rgba(95,208,255,.35);color:var(--text);font-size:13px;font-weight:600;text-decoration:none;background:rgba(13,16,23,.8)}
 .wallet-help-btns a.primary{background:linear-gradient(90deg,var(--ice),var(--cyan));color:#07080b;border:0}
+.proceed-actions a.btn-jup.is-disabled{opacity:.5;pointer-events:none}
+.swap-panel-external{display:none;margin-bottom:20px;padding:20px;border-radius:16px;border:1px solid rgba(255,190,80,.35);background:rgba(255,190,80,.08);text-align:center}
+.swap-panel-external p{margin:0 0 16px;color:var(--text);font-size:14px;line-height:1.6}
+.swap-panel-external .btn-jup{display:inline-flex;align-items:center;padding:16px 28px;border-radius:999px;font-weight:700;font-size:16px;color:#07080b;text-decoration:none;font-family:Sora,Inter,sans-serif;background:linear-gradient(90deg,var(--ice),var(--cyan));margin-bottom:12px}
+.swap-panel-external .swap-back{display:inline-block;margin-top:4px;background:transparent;border:0;color:var(--dim);font-size:13px;cursor:pointer;text-decoration:underline;font-family:Inter,sans-serif}
+.swap-panel-wallet-help{display:none;margin-bottom:14px;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,190,80,.28);background:rgba(255,190,80,.07)}
+.swap-panel-wallet-help.is-visible{display:block}
+.swap-panel-wallet-help p{margin:0;color:var(--text);font-size:13px;line-height:1.55}
 .scan-reminder{font-family:'IBM Plex Mono',Menlo,monospace;font-size:11px;letter-spacing:.04em;color:var(--dim);margin-top:14px;display:none}
 .fee-note{color:var(--dim);font-size:12px;line-height:1.65;margin-top:16px}
 :root{
@@ -106,8 +114,8 @@ a{color:var(--ice)}
     <ol>
       <li>Paste a token mint and tap <strong>Scan</strong></li>
       <li>Read the signals (HIGH patterns need an extra click-through)</li>
-      <li>Tap <strong>Swap on Jupiter</strong> — works on phone and desktop (recommended on mobile)</li>
-      <li>Or use <strong>Proceed to swap here</strong> if you have Phantom/Solflare installed on this browser</li>
+      <li>Tap <strong>Swap on Jupiter ↗</strong> — works on every phone and browser</li>
+      <li>Desktop with Phantom installed? Use <strong>Proceed to swap here</strong> for the embedded widget</li>
     </ol>
   </div>
 
@@ -131,7 +139,7 @@ a{color:var(--ice)}
       </div>
       <div class="proceed-actions">
         <a class="btn-jup is-primary" id="swap-jupiter-app" href="#" target="_blank" rel="noopener noreferrer">Swap on Jupiter ↗</a>
-        <button type="button" id="proceed-swap" class="ghost" disabled>Try swap widget here</button>
+        <button type="button" id="proceed-swap" disabled>Proceed to swap here</button>
       </div>
     </div>
   </div>
@@ -140,9 +148,15 @@ a{color:var(--ice)}
 
   <div class="swap-panel" id="swap-panel">
     <h2>Swap via Jupiter</h2>
-    <p class="swap-lede">Desktop with Phantom/Solflare extension? Connect below. On phone or no extension, use <strong>Swap on Jupiter</strong> above instead — the embedded widget often shows "No wallet found".</p>
+    <p class="swap-lede" id="swap-panel-lede">Connect your Phantom or Solflare extension below. CYRE does not hold funds or keys.</p>
+    <div class="swap-panel-external" id="swap-panel-external">
+      <p><strong>This browser can't connect a wallet.</strong> The embedded picker shows "No wallet found" on mobile Safari/Chrome. Tap below to swap on jup.ag — your scanned token is already filled in.</p>
+      <a class="btn-jup" id="swap-panel-jup-btn" href="#" target="_blank" rel="noopener noreferrer">Swap on Jupiter ↗</a>
+      <br>
+      <button type="button" class="swap-back" id="swap-back">← Back to scan results</button>
+    </div>
     <div class="swap-panel-wallet-help" id="swap-panel-wallet-help">
-      <p><strong>No wallet found?</strong> Use <a href="#" id="swap-panel-jup-link">Swap on Jupiter ↗</a> instead — it opens jup.ag where Phantom/Solflare connect reliably on mobile.</p>
+      <p><strong>No wallet found?</strong> Use <a href="#" id="swap-panel-jup-link">Swap on Jupiter ↗</a> instead.</p>
     </div>
     <div id="jup" aria-label="Jupiter swap widget"></div>
     <div class="scan-reminder" id="scan-reminder" aria-live="polite"></div>
