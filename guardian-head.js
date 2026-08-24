@@ -11,23 +11,24 @@
   var t0 = performance.now(), raf = 0, visible = true;
   var robotImg = null, herImg = null, robotReady = false, herReady = false;
 
+  /* Solana brand palette — purple #9945FF + green #14F195 */
   var COL = {
-    cyan:   [95,  208, 255],
-    violet: [155, 123, 255],
-    dviolet:[112,  72, 220],
-    gold:   [212, 168, 75]
+    green:  [20,  241, 149],
+    purple: [153,  69, 255],
+    dpurple:[120,  40, 220],
+    mint:   [20,  241, 149]
   };
 
   function pickHue() {
     var r = Math.random();
-    if (r < 0.10) return 3;
-    if (r < 0.28) return 0;
-    if (r < 0.60) return 1;
-    return 2;
+    if (r < 0.42) return 0; // Solana green
+    if (r < 0.78) return 1; // Solana purple
+    if (r < 0.92) return 2; // deep purple
+    return 3; // bright green accent
   }
   function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
   function hueColor(hue, a) {
-    var c = hue === 3 ? COL.gold : hue === 0 ? COL.cyan : hue === 1 ? COL.violet : COL.dviolet;
+    var c = hue === 0 ? COL.green : hue === 1 ? COL.purple : hue === 2 ? COL.dpurple : COL.mint;
     return rgba(c, a);
   }
   function dist3(a, b) {
@@ -243,9 +244,9 @@
         if (dist > maxDist || dist < 2) continue;
         alpha = (1 - dist / maxDist) * Math.min(a.a, b.a) * 0.42 * linkAlphaScale;
         if (alpha < 0.02) continue;
-        if (a.hue === 3 || b.hue === 3) col = rgba(COL.gold, alpha * 0.75);
-        else if (a.hue === 0 || b.hue === 0) col = rgba(COL.cyan, alpha * 0.85);
-        else col = rgba(COL.violet, alpha);
+        if (a.hue === 0 || b.hue === 0) col = rgba(COL.green, alpha * 0.95);
+        else if (a.hue === 3 || b.hue === 3) col = rgba(COL.mint, alpha * 0.9);
+        else col = rgba(COL.purple, alpha * 0.9);
         ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
         linked++;
       }
@@ -255,11 +256,18 @@
       a = projected[i];
       var sz = a.s * (0.95 + dpr * 0.35) * (0.7 + w.dust * 0.4 + w.form * 0.25);
       if (faceAmt > 0.35) sz *= 1 - faceAmt * 0.55;
-      var baseA = (a.hue === 3 ? 0.42 : 0.32) + a.a * 0.4;
+      var baseA = (a.hue === 0 || a.hue === 3 ? 0.58 : 0.48) + a.a * 0.5;
       ctx.beginPath();
-      ctx.fillStyle = hueColor(a.hue, baseA * Math.max(0.04, particleAlpha));
-      ctx.arc(a.x, a.y, sz, 0, Math.PI * 2);
+      ctx.fillStyle = hueColor(a.hue, baseA * Math.max(0.12, particleAlpha * 1.35));
+      ctx.arc(a.x, a.y, sz * 1.15, 0, Math.PI * 2);
       ctx.fill();
+      // bright Solana halo on denser points
+      if (particleAlpha > 0.2 && a.a > 0.45) {
+        ctx.beginPath();
+        ctx.fillStyle = hueColor(a.hue, 0.18 * particleAlpha);
+        ctx.arc(a.x, a.y, sz * 2.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
   }
 
