@@ -75,8 +75,11 @@ cyre.dev/tokenomics and @Cyredev888.
 | `forensics.html` | Forensics v1 — single-address RWA pattern board → cyre.dev/forensics. Measured only; `Cache-Control: no-store`. |
 | `signals.html` | Signals v1 — public RWA pattern feed board → cyre.dev/signals. Default list empty (same Watch policy); measured hits only; `Cache-Control: no-store` on `/api/signals`. |
 | `oracle.html` | Oracle Pulse v1 — mint/oracle-level RWA feed monitor → cyre.dev/oracle (prefer `/oracle` over `/pulse`). Feed board (not wallet paste). Patterns: stale / spike / divergence only. |
-| `watcher.js` | Render cron `guardian-watcher` (*/15): anomaly detector → drafts/tweets. Stateless window dedup. |
-| `mention-grader.js` | Render cron `guardian-mention-grader` (*/10): @mention + address → public grade reply via bridge. |
+| `watcher.js` | Render cron `guardian-watcher` (*/15): anomaly detector → tweets via bridge. Default live (`DRY_RUN=false`). |
+| `mention-grader.js` | Render cron `guardian-mention-grader` (*/10): @mention + address → grade reply via bridge. Default live. |
+| `bot-bridge.js` | Shared MCP client for crons (`callBridgeTool`, `postTweet`). |
+| `.github/workflows/guardian-mention-grader.yml` | GitHub Actions cron (*/10) — live when repo secret `BRIDGE_URL` is set. |
+| `.github/workflows/guardian-watcher.yml` | GitHub Actions cron (*/15) — live when `BRIDGE_URL` + optional `WATCHLIST` secrets set. |
 | `api/chat.js` | Guardian chat (Anthropic). HARDENED: origin-locked to cyre.dev, role-sanitized, haiku model, daily cap. Keep all guardrails. |
 | `api/address.js` | GET /api/address — 1,000-sig window, 6 explainable signals, LOW/MED/HIGH. Env `SOLANA_RPC`. (Live file; SPEC formerly said `.mjs`.) |
 | `api/watch.js` | GET /api/watch — `?address=` and optional `?list=` (≤10). Reuses address signals; fresh-window alerts; counters from this measured run only; `Cache-Control: no-store` (no CDN reuse). Marks noisy if last24h ≥ 200. No LLM. Env `SOLANA_RPC`. |
@@ -177,7 +180,7 @@ Three Render services power @Cyredev888 automation. Reference IaC: `render.yaml`
 | `guardian-mention-grader` | @mention + address → grade reply | `BRIDGE_URL` (full `/mcp/<secret>` path), `DRY_RUN=false` after draft review. Optional `BRAIN=true` + `ANTHROPIC_API_KEY`. |
 | `guardian-watcher` | On-chain anomaly drafts/tweets | `WATCHLIST` (quiet wallets only), `RPC`, `DRY_RUN=false` when ready. |
 
-Posting is founder-approval-gated (SPEC §2). Default `DRY_RUN=true` on both crons until explicitly flipped in Render Dashboard.
+Posting is founder-approval-gated (SPEC §2). Default `DRY_RUN=false` in code; set `DRY_RUN=true` on Render to log-only. GitHub Actions workflows (`.github/workflows/guardian-*.yml`) also run live when repo secret `BRIDGE_URL` is set.
 
 ## 4. HOMEPAGE + BOLT-ON PATTERN
 
@@ -246,14 +249,14 @@ after commit and diff.
 
 Live & verified: glass/AI-vibe layer, vortex, talking Guardian, checker, score card,
 tokenomics/roadmap/airdrop/auto/forensics/signals/oracle pages, clean URLs, hardened chat API, both crons
-(mention-grader in DRY_RUN), Guardian pop-out + AI presence.
+(mention-grader live when `DRY_RUN=false` or unset; GitHub Actions backup), Guardian pop-out + AI presence.
 Homepage: mock visual match — Synthetic Intelligence branding, "The chain has a witness.",
 **darker-purple mood** (`theme-purple-deep.css`): deeper violet ambient; **dust→mesh→photo→dust ~22 s morph**
 (0–16% dust, 16–30% dust→mesh, 30–48% dense violet/cyan particle wireframe head with soft eye bloom / no cartoon eyes, 48–60% mesh→photo, 60–82% her photo `/guardian2.jpg` full-portrait crossfade (no circle crop/rim), 82–100% photo→dust; fallback `/robot.jpg` if portrait fails);
 violet-heavy particle field + cyan accents + sparse gold (~12%); LIVE/RISK LOW/WATCHING chips, glowing Check CTA (cyan),
 living mesh, feature cards, trust strip; hero morph may show `/guardian2.jpg` during photo phase; FAB/popout still uses `/guardian2.jpg`; legacy shell at `index-legacy.html`.
 Open before launch: devnet DBC rehearsal (verify 60/25/10/3/2 leftover math),
-www.cyre.dev attach, **mention-grader `DRY_RUN=false`** on Render after `node scripts/bot-smoke.js` passes (founder flip), Anthropic
+www.cyre.dev attach, add GitHub repo secret **`BRIDGE_URL`** (or set Render `DRY_RUN=false`), Anthropic
 spend limit + credit top-up (chat in demo mode until then), guardian-voice.mp3,
 Vercel Analytics snippet on index.html (only check.html has it), stray root
 `address.js` delete (api/address.js is the live one — do not touch).

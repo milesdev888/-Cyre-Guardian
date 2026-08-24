@@ -8,7 +8,7 @@
 //   BRIDGE_URL    e.g. https://cyre-x-bridge.onrender.com/mcp/<secret>   (required)
 //   CYRE_API      default https://cyre.dev/api/address
 //   INTERVAL_MIN  dedup window in minutes, match cron schedule (default 10)
-//   DRY_RUN       "true" (default) = log replies only, never post
+//   DRY_RUN       "false" (default) = post live; set "true" to log only
 //   MAX_PER_RUN   default 5
 //   BRAIN         "true" enables the Guardian voice line via guardian-brain.js
 //   ANTHROPIC_API_KEY + BRAIN_MAX_PER_RUN — see guardian-brain.js
@@ -16,34 +16,16 @@
 const BRIDGE = process.env.BRIDGE_URL;
 const CYRE_API = process.env.CYRE_API || "https://cyre.dev/api/address";
 const INTERVAL_MIN = parseInt(process.env.INTERVAL_MIN || "10", 10);
-const DRY_RUN = (process.env.DRY_RUN || "true").toLowerCase() !== "false";
+const DRY_RUN = (process.env.DRY_RUN || "false").toLowerCase() !== "false";
 const MAX_PER_RUN = parseInt(process.env.MAX_PER_RUN || "5", 10);
 const B58 = /[1-9A-HJ-NP-Za-km-z]{32,44}/g;
 let brain = { voiceLine: async () => null, _enabled: () => false };
 try { brain = require("./guardian-brain.js"); } catch (e) { console.log("[grader] brain module absent — template voice only"); }
-
+const { callBridgeTool } = require("./bot-bridge.js");
 if (!BRIDGE) { console.error("FATAL: BRIDGE_URL not set"); process.exit(1); }
 
 async function callTool(name, args) {
-  const res = await fetch(BRIDGE, {
-    method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: Date.now(), method: "tools/call",
-      params: { name, arguments: args || {} } })
-  });
-  const raw = await res.text();
-  // bridge may answer plain JSON or SSE-framed JSON
-  let payload = raw;
-  if (raw.startsWith("event:") || raw.includes("\ndata:")) {
-    const m = raw.match(/data:\s*(\{[\s\S]*\})/);
-    if (m) payload = m[1];
-  }
-  let j;
-  try { j = JSON.parse(payload); } catch { throw new Error("bridge non-JSON: " + raw.slice(0, 200)); }
-  if (j.error) throw new Error("bridge error: " + JSON.stringify(j.error).slice(0, 300));
-  const c = j.result && j.result.content;
-  const text = Array.isArray(c) ? c.map(b => b.text || "").join("\n") : "";
-  try { return JSON.parse(text); } catch { return text; }
+  return callBridgeTool(name, args);
 }
 
 function grade(s){ return s<15?"A":s<30?"B":s<45?"C":s<60?"D":"F"; }
