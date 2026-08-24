@@ -1,0 +1,30 @@
+name: Guardian mention grader
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: guardian-mention-grader
+  cancel-in-progress: false
+
+jobs:
+  grade-mentions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run mention grader (live)
+        env:
+          BRIDGE_URL: ${{ secrets.BRIDGE_URL }}
+          CYRE_API: https://cyre.dev/api/address
+          INTERVAL_MIN: '10'
+          MAX_PER_RUN: '5'
+          DRY_RUN: 'false'
+          BRAIN: ${{ vars.BRAIN || 'false' }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node mention-grader.js

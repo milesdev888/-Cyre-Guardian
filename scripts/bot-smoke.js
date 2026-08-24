@@ -21,36 +21,8 @@ function ok(msg) {
 }
 
 async function callTool(name, args) {
-  const res = await fetch(BRIDGE, {
-    method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      id: Date.now(),
-      method: "tools/call",
-      params: { name, arguments: args || {} },
-    }),
-  });
-  const raw = await res.text();
-  let payload = raw;
-  if (raw.startsWith("event:") || raw.includes("\ndata:")) {
-    const m = raw.match(/data:\s*(\{[\s\S]*\})/);
-    if (m) payload = m[1];
-  }
-  let j;
-  try {
-    j = JSON.parse(payload);
-  } catch {
-    throw new Error("bridge non-JSON: " + raw.slice(0, 200));
-  }
-  if (j.error) throw new Error("bridge error: " + JSON.stringify(j.error).slice(0, 300));
-  const c = j.result && j.result.content;
-  const text = Array.isArray(c) ? c.map((b) => b.text || "").join("\n") : "";
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
+  const { callBridgeTool } = require("../bot-bridge.js");
+  return callBridgeTool(name, args);
 }
 
 (async () => {
@@ -91,9 +63,7 @@ async function callTool(name, args) {
   if (!grade || !grade.ok) fail("CYRE API grade failed: " + JSON.stringify(grade).slice(0, 200));
   ok("CYRE API grade — score " + grade.score + ", risk " + grade.riskLevel);
 
-  console.log("\n[bot-smoke] all checks passed. To go live on Render:");
-  console.log("  1. guardian-mention-grader: set DRY_RUN=false (keep BRIDGE_URL)");
-  console.log("  2. optional: BRAIN=true + ANTHROPIC_API_KEY on mention-grader");
-  console.log("  3. guardian-watcher: set WATCHLIST + DRY_RUN=false when ready");
-  console.log("  Posting remains founder-approval-gated per SPEC §2.");
+  console.log("\n[bot-smoke] all checks passed.");
+  console.log("Live runners: Render crons (DRY_RUN=false) or GitHub Actions (secret BRIDGE_URL).");
+  console.log("Tag @Cyredev888 with a Solana address to test mention replies.");
 })();
