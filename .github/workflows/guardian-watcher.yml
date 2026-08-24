@@ -18,11 +18,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run on-chain watcher (live)
+      - name: Run on-chain watcher
         env:
           BRIDGE_URL: ${{ secrets.BRIDGE_URL }}
           WATCHLIST: ${{ secrets.WATCHLIST }}
           RPC: ${{ secrets.SOLANA_RPC }}
           INTERVAL_MIN: '15'
-          DRY_RUN: 'false'
+          DRY_RUN: ${{ vars.BOT_LIVE == 'true' && 'false' || 'true' }}
         run: node watcher.js

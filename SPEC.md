@@ -178,11 +178,11 @@ Three Render services power @Cyredev888 automation. Reference IaC: `render.yaml`
 
 | Service | Role | Go-live env |
 |---|---|---|
-| `cyre-x-bridge` | X API MCP relay (`x-connector.js`) | `CONNECT_SECRET`, four X OAuth keys. `/health` returns `{ok,xAuth}`. |
-| `guardian-mention-grader` | @mention + address → grade reply | `BRIDGE_URL` (full `/mcp/<secret>` path), `DRY_RUN=false` after draft review. Optional `BRAIN=true` + `ANTHROPIC_API_KEY`. |
-| `guardian-watcher` | On-chain anomaly drafts/tweets | `WATCHLIST` (quiet wallets only), `RPC`, `DRY_RUN=false` when ready. |
+| `cyre-x-bridge` | X API MCP relay (`x-connector.js`) — **Claude custom connector** posts via `post_tweet` at `/mcp/<CONNECT_SECRET>`. Crons share the same bridge; never rate-limit `/` (liveness only). Deep check: `/health`. |
+| `guardian-mention-grader` | @mention + address → grade reply | `BRIDGE_URL`, `DRY_RUN=false` to go live. Default draft-only. |
+| `guardian-watcher` | On-chain anomaly drafts/tweets | `WATCHLIST`, `RPC`, `DRY_RUN=false` when ready. Posts via bridge when `BRIDGE_URL` set. |
 
-Posting is founder-approval-gated (SPEC §2). Default `DRY_RUN=false` in code; set `DRY_RUN=true` on Render to log-only. GitHub Actions workflows (`.github/workflows/guardian-*.yml`) also run live when repo secret `BRIDGE_URL` is set.
+Claude tweeting and cron posting are separate consumers of the same `post_tweet` MCP tool — crons default `DRY_RUN=true` so they do not compete with Claude for X API quota. Flip `DRY_RUN=false` on Render or set repo variable `BOT_LIVE=true` for GitHub Actions when ready.
 
 ## 4. HOMEPAGE + BOLT-ON PATTERN
 
