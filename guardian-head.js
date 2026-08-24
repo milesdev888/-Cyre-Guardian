@@ -21,9 +21,9 @@
 
   function pickHue() {
     var r = Math.random();
-    if (r < 0.42) return 0; // Solana green
-    if (r < 0.78) return 1; // Solana purple
-    if (r < 0.92) return 2; // deep purple
+    if (r < 0.18) return 0; // Solana green (sparse)
+    if (r < 0.72) return 1; // Solana purple (dominant)
+    if (r < 0.90) return 2; // deep purple
     return 3; // bright green accent
   }
   function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
@@ -256,18 +256,11 @@
       a = projected[i];
       var sz = a.s * (0.95 + dpr * 0.35) * (0.7 + w.dust * 0.4 + w.form * 0.25);
       if (faceAmt > 0.35) sz *= 1 - faceAmt * 0.55;
-      var baseA = (a.hue === 0 || a.hue === 3 ? 0.58 : 0.48) + a.a * 0.5;
+      var baseA = (a.hue === 0 || a.hue === 3 ? 0.42 : 0.36) + a.a * 0.4;
       ctx.beginPath();
-      ctx.fillStyle = hueColor(a.hue, baseA * Math.max(0.12, particleAlpha * 1.35));
-      ctx.arc(a.x, a.y, sz * 1.15, 0, Math.PI * 2);
+      ctx.fillStyle = hueColor(a.hue, baseA * Math.max(0.08, particleAlpha));
+      ctx.arc(a.x, a.y, sz, 0, Math.PI * 2);
       ctx.fill();
-      // bright Solana halo on denser points
-      if (particleAlpha > 0.2 && a.a > 0.45) {
-        ctx.beginPath();
-        ctx.fillStyle = hueColor(a.hue, 0.18 * particleAlpha);
-        ctx.arc(a.x, a.y, sz * 2.2, 0, Math.PI * 2);
-        ctx.fill();
-      }
     }
   }
 
