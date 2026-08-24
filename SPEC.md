@@ -77,7 +77,10 @@ cyre.dev/tokenomics and @Cyredev888.
 | `oracle.html` | Oracle Pulse v1 — mint/oracle-level RWA feed monitor → cyre.dev/oracle (prefer `/oracle` over `/pulse`). Feed board (not wallet paste). Patterns: stale / spike / divergence only. |
 | `guardian-chain-live.js` | Homepage live Solana pulse — polls `/api/chain-pulse` every 30s; updates LIVE/WATCHING chips + banner. No wallet scans. |
 | `api/chain-pulse.js` | GET `/api/chain-pulse` — one cached `getSlot` / 30s (`CHAIN_PULSE_CACHE_SEC`). Light UI pulse; **not** the Render watcher cron. |
-| `scan.html` | Guardian Token Scan — paste mint → cyre.dev/scan. Calls `/api/token`. |
+| `scan.html` | Guardian Token Scan + Protected Swap (phase 2) — paste mint → cyre.dev/scan. Scan via `/api/token`; swap via Jupiter Plugin after gate. See `SWAP-SPEC.md`. |
+| `scan-swap.js` | Scan-before-swap gate state machine (SWAP-SPEC §6). |
+| `swap-config.js` | Jupiter referral pubkey + 50 bps fee config (fill after referral.jup.ag setup). |
+| `SWAP-SPEC.md` | Guardian Protected Swap constitution + build order. |
 | `api/token.js` | GET `/api/token?mint=` — mint/freeze authority + holder concentration. Origin-locked to cyre.dev; 60/min throttle. Env `SOLANA_RPC`. |
 | `watcher.js` | Render cron `guardian-watcher` (*/15): full wallet scan + optional tweets. **Keep paused / DRY_RUN** when RPC credits matter; site pulse is separate. |
 | `mention-grader.js` | Render cron `guardian-mention-grader` (*/10): @mention + address → public grade reply via bridge. |
