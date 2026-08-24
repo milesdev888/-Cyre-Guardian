@@ -3,7 +3,7 @@
 // paste the pubkey below. Until set, swap UI shows a setup notice (scan still works).
 
 window.CYRE_SWAP_CONFIG = {
-  referralAccount: '',
+  referralAccount: '7xf6wecNGamSc1JrpBKjwZUBSc8Jb9oRTvFLYB8f6SMf',
   referralFeeBps: 50,
   scanGateMinutes: 10,
   solMint: 'So11111111111111111111111111111111111111112',
