@@ -1,4 +1,4 @@
-// api/token.mjs — Guardian Token Scan
+// api/token.js — Guardian Token Scan
 // Facts about a token mint before you trade it. Patterns, not verdicts.
 // GET /api/token?mint=<address>
 
