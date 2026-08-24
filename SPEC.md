@@ -75,11 +75,11 @@ cyre.dev/tokenomics and @Cyredev888.
 | `forensics.html` | Forensics v1 — single-address RWA pattern board → cyre.dev/forensics. Measured only; `Cache-Control: no-store`. |
 | `signals.html` | Signals v1 — public RWA pattern feed board → cyre.dev/signals. Default list empty (same Watch policy); measured hits only; `Cache-Control: no-store` on `/api/signals`. |
 | `oracle.html` | Oracle Pulse v1 — mint/oracle-level RWA feed monitor → cyre.dev/oracle (prefer `/oracle` over `/pulse`). Feed board (not wallet paste). Patterns: stale / spike / divergence only. |
-| `watcher.js` | Render cron `guardian-watcher` (*/15): anomaly detector → tweets via bridge. Default live (`DRY_RUN=false`). |
-| `mention-grader.js` | Render cron `guardian-mention-grader` (*/10): @mention + address → grade reply via bridge. Default live. |
+| `watcher.js` | Render cron `guardian-watcher` (*/15): anomaly detector → tweets via bridge. Default draft-only (`DRY_RUN=true`). |
+| `mention-grader.js` | Render cron `guardian-mention-grader` (*/10): @mention + address → grade reply via bridge. Default draft-only. |
 | `bot-bridge.js` | Shared MCP client for crons (`callBridgeTool`, `postTweet`). |
-| `.github/workflows/guardian-mention-grader.yml` | GitHub Actions cron (*/10) — live when repo secret `BRIDGE_URL` is set. |
-| `.github/workflows/guardian-watcher.yml` | GitHub Actions cron (*/15) — live when `BRIDGE_URL` + optional `WATCHLIST` secrets set. |
+| `.github/workflows/guardian-mention-grader.yml` | GitHub Actions cron (*/10) — live when secrets `BRIDGE_URL` + variable `BOT_LIVE=true`. |
+| `.github/workflows/guardian-watcher.yml` | GitHub Actions cron (*/15) — same opt-in; optional `WATCHLIST` secret. |
 | `api/chat.js` | Guardian chat (Anthropic). HARDENED: origin-locked to cyre.dev, role-sanitized, haiku model, daily cap. Keep all guardrails. |
 | `api/address.js` | GET /api/address — 1,000-sig window, 6 explainable signals, LOW/MED/HIGH. Env `SOLANA_RPC`. (Live file; SPEC formerly said `.mjs`.) |
 | `api/watch.js` | GET /api/watch — `?address=` and optional `?list=` (≤10). Reuses address signals; fresh-window alerts; counters from this measured run only; `Cache-Control: no-store` (no CDN reuse). Marks noisy if last24h ≥ 200. No LLM. Env `SOLANA_RPC`. |
@@ -176,11 +176,11 @@ Three Render services power @Cyredev888 automation. Reference IaC: `render.yaml`
 
 | Service | Role | Go-live env |
 |---|---|---|
-| `cyre-x-bridge` | X API MCP relay (`x-connector.js`) | `CONNECT_SECRET`, four X OAuth keys. `/health` returns `{ok,xAuth}`. |
-| `guardian-mention-grader` | @mention + address → grade reply | `BRIDGE_URL` (full `/mcp/<secret>` path), `DRY_RUN=false` after draft review. Optional `BRAIN=true` + `ANTHROPIC_API_KEY`. |
-| `guardian-watcher` | On-chain anomaly drafts/tweets | `WATCHLIST` (quiet wallets only), `RPC`, `DRY_RUN=false` when ready. |
+| `cyre-x-bridge` | X API MCP relay (`x-connector.js`) — **Claude custom connector** posts via `post_tweet` at `/mcp/<CONNECT_SECRET>`. Crons share the same bridge; never rate-limit `/` (liveness only). Deep check: `/health`. |
+| `guardian-mention-grader` | @mention + address → grade reply | `BRIDGE_URL`, `DRY_RUN=false` to go live. Default draft-only. |
+| `guardian-watcher` | On-chain anomaly drafts/tweets | `WATCHLIST`, `RPC`, `DRY_RUN=false` when ready. Posts via bridge when `BRIDGE_URL` set. |
 
-Posting is founder-approval-gated (SPEC §2). Default `DRY_RUN=false` in code; set `DRY_RUN=true` on Render to log-only. GitHub Actions workflows (`.github/workflows/guardian-*.yml`) also run live when repo secret `BRIDGE_URL` is set.
+Claude tweeting and cron posting are separate consumers of the same `post_tweet` MCP tool — crons default `DRY_RUN=true` so they do not compete with Claude for X API quota. Flip `DRY_RUN=false` on Render or set repo variable `BOT_LIVE=true` for GitHub Actions when ready.
 
 ## 4. HOMEPAGE + BOLT-ON PATTERN
 

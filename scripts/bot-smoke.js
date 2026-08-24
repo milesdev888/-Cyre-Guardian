@@ -64,6 +64,6 @@ async function callTool(name, args) {
   ok("CYRE API grade — score " + grade.score + ", risk " + grade.riskLevel);
 
   console.log("\n[bot-smoke] all checks passed.");
-  console.log("Live runners: Render crons (DRY_RUN=false) or GitHub Actions (secret BRIDGE_URL).");
-  console.log("Tag @Cyredev888 with a Solana address to test mention replies.");
+  console.log("Claude connector: unchanged — post_tweet via /mcp/<CONNECT_SECRET>");
+  console.log("Cron live posting: Render DRY_RUN=false OR GitHub vars BOT_LIVE=true + secret BRIDGE_URL");
 })();

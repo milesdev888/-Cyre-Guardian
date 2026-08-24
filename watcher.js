@@ -3,14 +3,14 @@
 // detects anomalies with the same signal philosophy as api/address.js,
 // and drafts a neutral observation tweet for each fresh anomaly.
 //
-// DRY_RUN=false (default): posts live when BRIDGE_URL or X keys are set.
-// DRY_RUN=true: tweets are LOGGED ONLY, never posted.
+// DRY_RUN=true (default): tweets are LOGGED ONLY, never posted.
+// DRY_RUN=false + BRIDGE_URL or X keys set: posts live via bridge (preferred) or direct X API.
 //
 // Env vars:
 //   WATCHLIST   comma-separated Solana addresses (required for work)
 //   RPC         Solana RPC url (default: public mainnet)
 //   INTERVAL_MIN  how often this cron runs, in minutes (default 15)
-//   DRY_RUN     "false" (default) or "true"
+//   DRY_RUN     "true" (default) or "false"
 //   BRIDGE_URL  preferred — posts via cyre-x-bridge (same as mention-grader)
 //   X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET  (fallback if no bridge)
 
@@ -20,7 +20,7 @@ const { postTweet: bridgePostTweet, bridgeConfigured } = require('./bot-bridge.j
 const RPC = process.env.RPC || 'https://api.mainnet-beta.solana.com';
 const WATCHLIST = (process.env.WATCHLIST || '').split(',').map(s => s.trim()).filter(Boolean);
 const INTERVAL = (parseInt(process.env.INTERVAL_MIN, 10) || 15) * 60; // seconds
-const DRY_RUN = (process.env.DRY_RUN || 'false').toLowerCase() !== 'false';
+const DRY_RUN = (process.env.DRY_RUN || 'true').toLowerCase() !== 'false';
 const DAY = 86400, HOUR = 3600;
 
 async function rpc(method, params) {
