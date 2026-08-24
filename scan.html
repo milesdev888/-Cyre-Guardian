@@ -60,7 +60,14 @@ a{color:var(--ice)}
 .swap-panel{margin-top:28px;padding-top:22px;border-top:1px solid var(--line);display:none}
 .swap-panel h2{font-family:Sora,Inter,sans-serif;font-size:18px;font-weight:800;margin-bottom:8px}
 .swap-panel .swap-lede{color:var(--dim);font-size:13px;line-height:1.6;margin-bottom:16px}
-#jup{min-height:420px;border-radius:16px;overflow:hidden}
+#jup{min-height:520px;height:520px;border-radius:16px;overflow:hidden}
+.mobile-wallet-help{display:none;margin-bottom:14px;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,190,80,.28);background:rgba(255,190,80,.07)}
+.mobile-wallet-help.is-visible{display:block}
+.mobile-wallet-help p{margin:0 0 12px;color:var(--text);font-size:13px;line-height:1.55}
+.mobile-wallet-help p strong{color:var(--amber)}
+.mobile-wallet-btns{display:flex;flex-wrap:wrap;gap:8px}
+.mobile-wallet-btns a{display:inline-flex;align-items:center;padding:10px 14px;border-radius:999px;border:1px solid rgba(95,208,255,.35);color:var(--text);font-size:13px;font-weight:600;text-decoration:none;background:rgba(13,16,23,.8)}
+.mobile-wallet-btns a.primary{background:linear-gradient(90deg,var(--ice),var(--cyan));color:#07080b;border:0}
 .scan-reminder{font-family:'IBM Plex Mono',Menlo,monospace;font-size:11px;letter-spacing:.04em;color:var(--dim);margin-top:14px;display:none}
 .fee-note{color:var(--dim);font-size:12px;line-height:1.65;margin-top:16px}
 :root{
@@ -94,7 +101,7 @@ a{color:var(--ice)}
     <ol>
       <li>Paste a token mint and tap <strong>Scan</strong></li>
       <li>Read the signals (HIGH patterns need an extra click-through)</li>
-      <li>Tap <strong>Proceed to swap</strong> — connect Phantom and sign in Jupiter's widget</li>
+      <li>Tap <strong>Proceed to swap</strong> — on phone, open this page in <strong>Phantom's in-app browser</strong> (see buttons below if no wallet is found)</li>
     </ol>
   </div>
 
@@ -118,6 +125,13 @@ a{color:var(--ice)}
   <div class="swap-panel" id="swap-panel">
     <h2>Swap via Jupiter</h2>
     <p class="swap-lede">Connect your wallet below. CYRE does not hold funds or keys — your wallet signs inside Jupiter's widget.</p>
+    <div class="mobile-wallet-help" id="mobile-wallet-help">
+      <p><strong>No wallet found?</strong> Regular mobile Safari/Chrome cannot see Phantom. Open this exact page inside your wallet app's browser, then scan again and tap Proceed to swap.</p>
+      <div class="mobile-wallet-btns">
+        <a class="primary" id="open-phantom" href="#">Open in Phantom</a>
+        <a id="open-solflare" href="#">Open in Solflare</a>
+      </div>
+    </div>
     <div id="jup" aria-label="Jupiter swap widget"></div>
     <div class="scan-reminder" id="scan-reminder" aria-live="polite"></div>
     <p class="fee-note">CYRE routes swaps through Jupiter and adds a 0.5% platform fee. Hidden fees are how trust dies; ours is a line item. Patterns, not verdicts.</p>
