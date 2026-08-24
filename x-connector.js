@@ -156,7 +156,7 @@ const TOOLS = [
   },
   {
     name: 'post_tweet',
-    description: 'Post a tweet from the connected account. Use ONLY when the human has explicitly approved the exact text in this conversation. Optionally reply to another tweet.',
+    description: 'Post a tweet from the connected account. Primary path for Claude custom connectors — use ONLY when the human has explicitly approved the exact text in this conversation. Cron bots may also call this tool via the same MCP endpoint; posting remains founder-approval-gated.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -212,10 +212,36 @@ async function handleRpc(msg) {
 }
 
 const server = http.createServer(async (req, res) => {
-  // Health check for Render
-  if (req.method === 'GET' && req.url === '/') {
-    res.writeHead(200, { 'content-type': 'text/plain' });
+  const path = (req.url || '').split('?')[0];
+
+  // Render liveness — no X API calls (keeps Claude's post_tweet quota free)
+  if (req.method === 'GET' && path === '/') {
+    res.writeHead(200, { 'content-type': 'text/plain', 'cache-control': 'no-store' });
     return res.end('cyre-x-bridge up');
+  }
+
+  // Optional deep check for manual smoke tests only — not wired as Render healthCheckPath
+  if (req.method === 'GET' && path === '/health') {
+    const missing = ['X_API_KEY','X_API_SECRET','X_ACCESS_TOKEN','X_ACCESS_SECRET','CONNECT_SECRET'].filter(k => !process.env[k]);
+    let xAuth = 'unknown';
+    if (!missing.length) {
+      try {
+        const me = await getMe();
+        xAuth = me?.username ? `ok:@${me.username}` : 'fail';
+      } catch (e) {
+        xAuth = 'fail';
+      }
+    }
+    const body = {
+      ok: missing.length === 0 && xAuth.startsWith('ok:'),
+      service: 'cyre-x-bridge',
+      xAuth,
+      missingEnv: missing,
+      claudeMcp: SECRET ? `/mcp/${SECRET.slice(0, 4)}…` : 'CONNECT_SECRET missing',
+      tools: TOOLS.map(t => t.name),
+    };
+    res.writeHead(body.ok ? 200 : 503, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+    return res.end(JSON.stringify(body));
   }
 
   const expected = `/mcp/${SECRET}`;

@@ -91,7 +91,7 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'IBM Pl
     <div class="bar">
       <button id="go" type="button">Refresh feeds</button>
     </div>
-    <p class="hint">NestUSD Lazer seeds (key required) + deferred USDY / OUSG / syrupUSDC (no verified public feed). Equity Hermes peers optional when primary measured. Auto demo archived → <a href="/auto">/auto</a>.</p>
+    <p class="hint" id="mode-hint">NestUSD Lazer seeds when <code>PYTH_LAZER_API_KEY</code> is set; otherwise live equity peers via Pyth Hermes. USDY / OUSG / syrupUSDC deferred. Auto-refreshes every 60s.</p>
     <div class="err" id="err"></div>
     <div class="load" id="load"><span class="scan"></span>Guardian is reading oracle feeds…</div>
   </section>
@@ -206,6 +206,14 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'IBM Pl
   }
 
   let inflight = false;
+  let timer = null;
+  const REFRESH_MS = 60000;
+
+  function modeLabel(mode) {
+    if (mode === 'pyth-lazer') return 'Reading via Pyth Lazer (NestUSD xStock)';
+    if (mode === 'hermes-peer-fallback') return 'Live via Pyth Hermes equity peers (Lazer key not set)';
+    return 'Deferred — waiting for verified feeds';
+  }
 
   async function run() {
     if (inflight) return;
@@ -218,6 +226,7 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'IBM Pl
       const r = await fetch('/api/oracle', { cache: 'no-store' });
       const d = await r.json();
       if (!d.ok) throw new Error(d.error || 'oracle failed');
+      $('mode-hint').textContent = modeLabel(d.readingMode) + ' · auto-refresh 60s · Patterns, not verdicts.';
       renderCounters(d.counters || {}, d.fetchedAt);
       renderChips(d.patterns || []);
       renderFeeds(d.feeds || []);
@@ -236,6 +245,14 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'IBM Pl
 
   $('go').addEventListener('click', run);
   run();
+  timer = window.setInterval(function () { if (!inflight) run(); }, REFRESH_MS);
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden && timer) { clearInterval(timer); timer = null; }
+    else if (!document.hidden && !timer) {
+      run();
+      timer = window.setInterval(function () { if (!inflight) run(); }, REFRESH_MS);
+    }
+  });
 })();
 </script>
 <script src="/ai-vibe-loader.js" defer></script>
