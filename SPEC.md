@@ -77,8 +77,11 @@ cyre.dev/tokenomics and @Cyredev888.
 | `oracle.html` | Oracle Pulse v1 — mint/oracle-level RWA feed monitor → cyre.dev/oracle (prefer `/oracle` over `/pulse`). Feed board (not wallet paste). Patterns: stale / spike / divergence only. |
 | `guardian-chain-live.js` | Homepage live Solana pulse — polls `/api/chain-pulse` every 30s; updates LIVE/WATCHING chips + banner. No wallet scans. |
 | `api/chain-pulse.js` | GET `/api/chain-pulse` — one cached `getSlot` / 30s (`CHAIN_PULSE_CACHE_SEC`). Light UI pulse; **not** the Render watcher cron. |
-| `watcher.js` | Render cron `guardian-watcher` (*/15): full wallet scan + optional tweets. **Keep paused / DRY_RUN** when RPC credits matter; site pulse is separate. |
-| `mention-grader.js` | Render cron `guardian-mention-grader` (*/10): @mention + address → public grade reply via bridge. |
+| `watcher.js` | Render cron `guardian-watcher` (*/15): anomaly detector → tweets via bridge. Default draft-only (`DRY_RUN=true`). **Keep paused** when RPC credits matter; site pulse is separate. |
+| `mention-grader.js` | Render cron `guardian-mention-grader` (*/10): @mention + address → grade reply via bridge. Default draft-only. |
+| `bot-bridge.js` | Shared MCP client for crons (`callBridgeTool`, `postTweet`). |
+| `.github/workflows/guardian-mention-grader.yml` | GitHub Actions cron (*/10) — live when secrets `BRIDGE_URL` + variable `BOT_LIVE=true`. |
+| `.github/workflows/guardian-watcher.yml` | GitHub Actions cron (*/15) — same opt-in; optional `WATCHLIST` secret. |
 | `api/chat.js` | Guardian chat (Anthropic). HARDENED: origin-locked to cyre.dev, role-sanitized, haiku model, daily cap. Keep all guardrails. |
 | `api/address.js` | GET /api/address — 1,000-sig window, 6 explainable signals, LOW/MED/HIGH. Env `SOLANA_RPC`. (Live file; SPEC formerly said `.mjs`.) |
 | `api/watch.js` | GET /api/watch — `?address=` and optional `?list=` (≤10). Reuses address signals; fresh-window alerts; counters from this measured run only; `Cache-Control: no-store` (no CDN reuse). Marks noisy if last24h ≥ 200. No LLM. Env `SOLANA_RPC`. |
@@ -88,6 +91,8 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/oracle.js` | GET /api/oracle — Oracle Pulse v1. NestUSD **Pyth Lazer** seeds (fetch only with `PYTH_LAZER_API_KEY`); equity Hermes peers optional when primary measured. Response `{ ok, kind:'cyre-oracle', version:1, disclaimer, fetchedAt, feeds, patterns }`; patterns stale/spike/divergence cite measured numbers only; USDY/OUSG/syrupUSDC deferred (no verified public feed); `Cache-Control: no-store`. No LLM. |
 | `api/rwa.mjs` | CoinGecko proxy, 60s cache, last-good fallback. Env `COINGECKO_API_KEY`. |
 | `cyre-token-256/512.png` | C7 emblem. 512 = mint metadata image URI (GitHub raw path, immutable). |
+| `render.yaml` | Render Blueprint reference for bot stack (bridge + two crons). Existing services: update env in Dashboard; do not duplicate. |
+| `scripts/bot-smoke.js` | Smoke test: bridge `/health`, `verify_connection`, `get_mentions`, CYRE API grade. Env `BRIDGE_URL`. |
 | `vercel.json` | `{cleanUrls:true, trailingSlash:false}` — pages served extensionless. |
 
 
@@ -167,6 +172,18 @@ Off-repo: `cyre-x-bridge` (Render web service — X API bridge, MCP connector + 
 `cyre-fraud-prediction` (separate repo/deploy, linked from the Fraud Prediction card);
 `cyre_dbc_config.jsonc` (local-only Meteora CLI config, holds the 60/25/10/3/2 math).
 
+### Bot stack go-live (Render)
+
+Three Render services power @Cyredev888 automation. Reference IaC: `render.yaml`. Smoke test: `BRIDGE_URL=… node scripts/bot-smoke.js`.
+
+| Service | Role | Go-live env |
+|---|---|---|
+| `cyre-x-bridge` | X API MCP relay (`x-connector.js`) — **Claude custom connector** posts via `post_tweet` at `/mcp/<CONNECT_SECRET>`. Crons share the same bridge; never rate-limit `/` (liveness only). Deep check: `/health`. |
+| `guardian-mention-grader` | @mention + address → grade reply | `BRIDGE_URL`, `DRY_RUN=false` to go live. Default draft-only. |
+| `guardian-watcher` | On-chain anomaly drafts/tweets | `WATCHLIST`, `RPC`, `DRY_RUN=false` when ready. Posts via bridge when `BRIDGE_URL` set. |
+
+Claude tweeting and cron posting are separate consumers of the same `post_tweet` MCP tool — crons default `DRY_RUN=true` so they do not compete with Claude for X API quota. Flip `DRY_RUN=false` on Render or set repo variable `BOT_LIVE=true` for GitHub Actions when ready.
+
 ## 4. HOMEPAGE + BOLT-ON PATTERN
 
 **Homepage (Aug 2026 redesign):** `index.html` is a clean self-contained modern page matching
@@ -234,14 +251,14 @@ after commit and diff.
 
 Live & verified: glass/AI-vibe layer, vortex, talking Guardian, checker, score card,
 tokenomics/roadmap/airdrop/auto/forensics/signals/oracle pages, clean URLs, hardened chat API, both crons
-(mention-grader in DRY_RUN), Guardian pop-out + AI presence.
+(mention-grader live when `DRY_RUN=false` or unset; GitHub Actions backup), Guardian pop-out + AI presence.
 Homepage: mock visual match — Synthetic Intelligence branding, "The chain has a witness.",
 **darker-purple mood** (`theme-purple-deep.css`): deeper violet ambient; **dust→mesh→photo→dust ~22 s morph**
 (0–16% dust, 16–30% dust→mesh, 30–48% dense violet/cyan particle wireframe head with soft eye bloom / no cartoon eyes, 48–60% mesh→photo, 60–82% her photo `/guardian2.jpg` full-portrait crossfade (no circle crop/rim), 82–100% photo→dust; fallback `/robot.jpg` if portrait fails);
 violet-heavy particle field + cyan accents + sparse gold (~12%); LIVE/RISK LOW/WATCHING chips, glowing Check CTA (cyan),
 living mesh, feature cards, trust strip; hero morph may show `/guardian2.jpg` during photo phase; FAB/popout still uses `/guardian2.jpg`; legacy shell at `index-legacy.html`.
 Open before launch: devnet DBC rehearsal (verify 60/25/10/3/2 leftover math),
-www.cyre.dev attach, mention-grader DRY_RUN→false after draft review, Anthropic
+www.cyre.dev attach, add GitHub repo secret **`BRIDGE_URL`** (or set Render `DRY_RUN=false`), Anthropic
 spend limit + credit top-up (chat in demo mode until then), guardian-voice.mp3,
 Vercel Analytics snippet on index.html (only check.html has it), stray root
 `address.js` delete (api/address.js is the live one — do not touch).
