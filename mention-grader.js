@@ -63,6 +63,15 @@ function archetype(p){
 }
 function shortAddr(a){ return a.slice(0,4) + "…" + a.slice(-4); }
 
+function bridgeErrorText(x) {
+  if (typeof x !== "string") return null;
+  const s = x.trim();
+  if (!s) return "empty bridge response";
+  if (/^(Auth failed|X API \d+|Tool error)/i.test(s)) return s;
+  if (/^bridge (error|non-JSON)/i.test(s)) return s;
+  return null;
+}
+
 function extractTweets(x) {
   // tolerate several bridge response shapes
   if (Array.isArray(x)) return x;
@@ -70,12 +79,14 @@ function extractTweets(x) {
   if (x && x.tweets && Array.isArray(x.tweets)) return x.tweets;
   // bridge text format: "@author [ISO date] (id 123): text..." per mention
   if (typeof x === "string") {
+    if (bridgeErrorText(x)) return [];
+    if (/^no recent mentions\.?$/i.test(x.trim())) return [];
     const out = [];
     const re = /@(\w+) \[([^\]]+)\] \(id (\d+)\):\s*([\s\S]*?)(?=\n@\w+ \[|\s*$)/g;
     let m;
     while ((m = re.exec(x)) !== null) {
       if (m[1].toLowerCase() === "cyredev888") continue; // never reply to ourselves
-      out.push({ author: m[1], created_at: m[2], id: m[3], text: m[4] });
+      out.push({ author: m[1], created_at: m[2], id: m[3], text: m[4].trim() });
     }
     return out;
   }
@@ -105,6 +116,14 @@ function politeArchetype(p) {
   return map[a] || a;
 }
 
+function trimReply(text, maxLen) {
+  const limit = maxLen || 280;
+  if (text.length <= limit) return text;
+  const suffix = "… Patterns, not verdicts. Full card → cyre.dev/score";
+  const head = text.slice(0, Math.max(0, limit - suffix.length)).replace(/\s+\S*$/, "");
+  return (head || text.slice(0, limit - 1)) + suffix;
+}
+
 function buildReply(addr, d, brainLine) {
   const p = d.profile || {};
   let out =
@@ -115,7 +134,7 @@ function buildReply(addr, d, brainLine) {
     "Risk band: " + (d.riskLevel || "n/a") + "\n\n";
   if (brainLine) out += brainLine + "\n\n";
   out += "Patterns, not verdicts. Full card → cyre.dev/score";
-  return out;
+  return trimReply(out);
 }
 
 (async () => {
@@ -124,9 +143,20 @@ function buildReply(addr, d, brainLine) {
   try { mentionsRaw = await callTool("get_mentions", {}); }
   catch (e) { console.error("[grader] get_mentions failed:", e.message); process.exit(0); }
 
+  const bridgeErr = bridgeErrorText(mentionsRaw);
+  if (bridgeErr) {
+    console.error("[grader] bridge error:", bridgeErr.slice(0, 400));
+    process.exit(0);
+  }
+
   const tweets = extractTweets(mentionsRaw);
   console.log("[grader] mentions fetched:", tweets.length);
-  if (!tweets.length) { console.log("[grader] raw shape sample:", JSON.stringify(mentionsRaw).slice(0, 400)); process.exit(0); }
+  if (!tweets.length) {
+    console.log("[grader] no actionable mentions this run");
+    if (typeof mentionsRaw === "string") console.log("[grader] bridge said:", mentionsRaw.slice(0, 200));
+    else console.log("[grader] raw shape sample:", JSON.stringify(mentionsRaw).slice(0, 400));
+    process.exit(0);
+  }
 
   const cutoff = Date.now() - (INTERVAL_MIN + 2) * 60 * 1000;
   let handled = 0;

@@ -1,0 +1,80 @@
+# CYRE Guardian bot stack — Render Blueprint (reference IaC)
+# Existing services in workspace tea-d9sgsmh42hec73c9sqjg already match these names.
+# Do NOT apply as a new Blueprint if services exist — update env vars in Dashboard instead.
+# Repo: milesdev888/-Cyre-Guardian · branch: main
+
+services:
+  - type: web
+    name: cyre-x-bridge
+    runtime: node
+    plan: free
+    region: oregon
+    repo: https://github.com/milesdev888/-Cyre-Guardian
+    branch: main
+    buildCommand: "true"
+    startCommand: node x-connector.js
+    healthCheckPath: /health
+    envVars:
+      - key: CONNECT_SECRET
+        sync: false
+      - key: X_API_KEY
+        sync: false
+      - key: X_API_SECRET
+        sync: false
+      - key: X_ACCESS_TOKEN
+        sync: false
+      - key: X_ACCESS_SECRET
+        sync: false
+
+cronJobs:
+  - name: guardian-mention-grader
+    runtime: node
+    plan: starter
+    region: oregon
+    repo: https://github.com/milesdev888/-Cyre-Guardian
+    branch: main
+    schedule: "*/10 * * * *"
+    buildCommand: "true"
+    startCommand: node mention-grader.js
+    envVars:
+      - key: BRIDGE_URL
+        sync: false
+      - key: CYRE_API
+        value: https://cyre.dev/api/address
+      - key: INTERVAL_MIN
+        value: "10"
+      - key: MAX_PER_RUN
+        value: "5"
+      - key: DRY_RUN
+        value: "true"
+      - key: BRAIN
+        value: "false"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  - name: guardian-watcher
+    runtime: node
+    plan: starter
+    region: oregon
+    repo: https://github.com/milesdev888/-Cyre-Guardian
+    branch: main
+    schedule: "*/15 * * * *"
+    buildCommand: "true"
+    startCommand: node watcher.js
+    envVars:
+      - key: WATCHLIST
+        sync: false
+      - key: RPC
+        sync: false
+      - key: INTERVAL_MIN
+        value: "15"
+      - key: DRY_RUN
+        value: "true"
+      - key: X_API_KEY
+        sync: false
+      - key: X_API_SECRET
+        sync: false
+      - key: X_ACCESS_TOKEN
+        sync: false
+      - key: X_ACCESS_SECRET
+        sync: false
