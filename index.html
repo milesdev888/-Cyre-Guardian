@@ -195,26 +195,6 @@
           if (window.innerWidth > 840) closeMenu();
         });
       }
-
-      var guardianButton = document.getElementById('talk-to-guardian');
-      function openGuardian() {
-        var fab = document.getElementById('gp-fab');
-        if (fab) {
-          fab.click();
-          return true;
-        }
-        return false;
-      }
-      if (guardianButton) {
-        guardianButton.addEventListener('click', function () {
-          if (openGuardian()) return;
-          var observer = new MutationObserver(function () {
-            if (openGuardian()) observer.disconnect();
-          });
-          observer.observe(document.body, { childList: true, subtree: true });
-          window.setTimeout(function () { observer.disconnect(); }, 4000);
-        });
-      }
     })();
   </script>
 </body>

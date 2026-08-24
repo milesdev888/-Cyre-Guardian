@@ -201,8 +201,25 @@
       if (!panel.classList.contains('is-open')) return;
       var t = e.target;
       if (panel.contains(t) || fab.contains(t)) return;
+      if (t && t.closest && t.closest('#talk-to-guardian,[data-guardian-open]')) return;
       close();
     });
+    function bindTriggers() {
+      document.querySelectorAll('#talk-to-guardian,[data-guardian-open]').forEach(function (btn) {
+        if (btn.dataset.gpBound) return;
+        btn.dataset.gpBound = '1';
+        btn.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          open();
+        });
+      });
+    }
+    bindTriggers();
+    window.CyreGuardianPopout = { open: open, close: close, toggle: function () {
+      if (panel.classList.contains('is-open')) close();
+      else open();
+    }};
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', mount);
