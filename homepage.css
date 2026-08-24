@@ -102,12 +102,36 @@ img{max-width:100%;display:block}
   font-size:14px;
 }
 .brand-orb{
+  width:22px;
+  height:22px;
+  border-radius:50%;
+  flex:none;
+  background:url('/cyre-token-icon-128.png') center/cover no-repeat;
+  border:1px solid rgba(95,208,255,.38);
+  box-shadow:0 0 16px rgba(95,208,255,.45), 0 0 28px rgba(155,123,255,.28);
+}
+.nav-links a.nav-token{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  color:var(--cyan);
+  font-weight:600;
+  letter-spacing:.02em;
+  border:1px solid rgba(95,208,255,.22);
+  background:rgba(95,208,255,.06);
+}
+.nav-links a.nav-token img{
   width:18px;
   height:18px;
-  border-radius:50%;
-  background:radial-gradient(circle at 35% 35%, #dff8ff 0%, var(--cyan) 34%, var(--violet) 72%, rgba(91,59,211,.85) 100%);
-  box-shadow:0 0 20px rgba(95,208,255,.5), 0 0 36px rgba(155,123,255,.35);
-  flex:none;
+  border-radius:4px;
+  display:block;
+  filter:drop-shadow(0 0 6px rgba(95,208,255,.45));
+}
+.nav-links a.nav-token:hover,
+.nav-links a.nav-token:focus-visible{
+  color:#dff8ff;
+  border-color:rgba(95,208,255,.45);
+  background:rgba(95,208,255,.12);
 }
 .nav-links{
   display:flex;

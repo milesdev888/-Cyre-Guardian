@@ -315,7 +315,7 @@
       formProps: formProps,
       branding: {
         name: brand.name || 'CYRE Guardian',
-        logoUri: brand.logoUri || 'https://cyre.dev/cyre-token-512.png',
+        logoUri: brand.logoUri || 'https://cyre.dev/cyre-token-icon-256.png',
       },
       onScreenUpdate: function () {
         updateSwapPanelHelp(state === 'SWAP' && !hasInjectedWallet());
