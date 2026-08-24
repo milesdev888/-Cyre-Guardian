@@ -101,7 +101,6 @@
     } catch (e) { onOk(null); }
   }
   loadImg('/robot.jpg', function (im) { robotImg = im; robotReady = !!im; });
-  loadImg('/guardian2.jpg', function (im) { herImg = im; herReady = !!im; });
 
   function resize() {
     var rect = canvas.getBoundingClientRect();
@@ -116,29 +115,25 @@
     if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = 'high';
   }
 
-  /* dust → robot → her → dust  (~24s)
-     0–14% dust | 14–28% dust→robot | 28–48% robot | 48–62% robot→her
-     62–82% her | 82–100% her→dust */
-  var PERIOD = 24;
+  /* dust → robot → dust  (~20s) — no photo morph (C7 profile face lives in ticker only)
+     0–15% dust | 15–30% dust→robot | 30–60% robot | 60–85% robot→dust | 85–100% dust */
+  var PERIOD = 20;
   function phaseWeights(elapsed) {
     if (reduce) return { dust: 0, form: 1, robot: 0, her: 0 };
     var p = (elapsed % PERIOD) / PERIOD;
     var dust = 0, form = 0, robot = 0, her = 0;
-    if (p < 0.14) {
+    if (p < 0.15) {
       dust = 1;
-    } else if (p < 0.28) {
-      var t = smoothstep((p - 0.14) / 0.14);
+    } else if (p < 0.30) {
+      var t = smoothstep((p - 0.15) / 0.15);
       dust = 1 - t; form = t; robot = t;
-    } else if (p < 0.48) {
+    } else if (p < 0.60) {
       form = 1; robot = 1;
-    } else if (p < 0.62) {
-      var t2 = smoothstep((p - 0.48) / 0.14);
-      form = 1; robot = 1 - t2; her = t2;
-    } else if (p < 0.82) {
-      form = 1; her = 1;
+    } else if (p < 0.85) {
+      var t2 = smoothstep((p - 0.60) / 0.25);
+      form = 1 - t2 * 0.35; robot = 1 - t2; dust = t2;
     } else {
-      var t3 = smoothstep((p - 0.82) / 0.18);
-      form = 1 - t3; her = 1 - t3; dust = t3;
+      dust = 1; form = 0.25;
     }
     return { dust: dust, form: form, robot: robot, her: her };
   }
@@ -234,9 +229,7 @@
     }
 
     drawFacets(projected, w);
-    // Robot then her — dimmed, no drawn eyes
     drawPortrait(robotImg, robotReady, w.robot, 0.72);
-    drawPortrait(herImg, herReady, w.her, 0.88);
 
     ctx.lineWidth = Math.max(0.5, dpr * 0.7);
     var maxDist = (32 - faceAmt * 14 + w.dust * 14) * dpr;
