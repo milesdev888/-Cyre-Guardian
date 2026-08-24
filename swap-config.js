@@ -9,7 +9,7 @@ window.CYRE_SWAP_CONFIG = {
   solMint: 'So11111111111111111111111111111111111111112',
   branding: {
     name: 'CYRE Guardian',
-    logoUri: 'https://cyre.dev/cyre-token-512.png',
+    logoUri: 'https://cyre.dev/cyre-token-icon-256.png',
   },
   pluginScript: 'https://plugin.jup.ag/plugin-v1.js',
 };

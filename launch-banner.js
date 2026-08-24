@@ -67,7 +67,7 @@
     btn.className = 'btn b-ghost';
     btn.style.cssText = 'color:var(--gold,#5fd0ff);border-color:rgba(95,208,255,.5);display:inline-flex;align-items:center;gap:9px';
     var lg = document.createElement('img');
-    lg.src = '/cyre-token-icon-128.png';
+    lg.src = '/cyre-token-ticker-128.png';
     lg.alt = '';
     lg.style.cssText = 'width:22px;height:22px;border-radius:50%;display:block';
     lg.onerror = function(){ lg.remove(); };

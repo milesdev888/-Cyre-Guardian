@@ -62,9 +62,10 @@ body.ga-app {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, var(--ga-cyan), var(--ga-violet));
-  box-shadow: 0 0 18px rgba(95, 208, 255, 0.45);
   flex: none;
+  background: url('/cyre-token-icon-128.png') center/cover no-repeat;
+  border: 1px solid rgba(95, 208, 255, 0.38);
+  box-shadow: 0 0 16px rgba(95, 208, 255, 0.45), 0 0 28px rgba(155, 123, 255, 0.28);
 }
 .ga-brand strong {
   font: 800 15px/1 var(--ga-display);
