@@ -88,6 +88,8 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/oracle.js` | GET /api/oracle — Oracle Pulse v1. NestUSD **Pyth Lazer** seeds (fetch only with `PYTH_LAZER_API_KEY`); equity Hermes peers optional when primary measured. Response `{ ok, kind:'cyre-oracle', version:1, disclaimer, fetchedAt, feeds, patterns }`; patterns stale/spike/divergence cite measured numbers only; USDY/OUSG/syrupUSDC deferred (no verified public feed); `Cache-Control: no-store`. No LLM. |
 | `api/rwa.mjs` | CoinGecko proxy, 60s cache, last-good fallback. Env `COINGECKO_API_KEY`. |
 | `cyre-token-256/512.png` | C7 emblem. 512 = mint metadata image URI (GitHub raw path, immutable). |
+| `render.yaml` | Render Blueprint reference for bot stack (bridge + two crons). Existing services: update env in Dashboard; do not duplicate. |
+| `scripts/bot-smoke.js` | Smoke test: bridge `/health`, `verify_connection`, `get_mentions`, CYRE API grade. Env `BRIDGE_URL`. |
 | `vercel.json` | `{cleanUrls:true, trailingSlash:false}` — pages served extensionless. |
 
 
@@ -167,6 +169,18 @@ Off-repo: `cyre-x-bridge` (Render web service — X API bridge, MCP connector + 
 `cyre-fraud-prediction` (separate repo/deploy, linked from the Fraud Prediction card);
 `cyre_dbc_config.jsonc` (local-only Meteora CLI config, holds the 60/25/10/3/2 math).
 
+### Bot stack go-live (Render)
+
+Three Render services power @Cyredev888 automation. Reference IaC: `render.yaml`. Smoke test: `BRIDGE_URL=… node scripts/bot-smoke.js`.
+
+| Service | Role | Go-live env |
+|---|---|---|
+| `cyre-x-bridge` | X API MCP relay (`x-connector.js`) | `CONNECT_SECRET`, four X OAuth keys. `/health` returns `{ok,xAuth}`. |
+| `guardian-mention-grader` | @mention + address → grade reply | `BRIDGE_URL` (full `/mcp/<secret>` path), `DRY_RUN=false` after draft review. Optional `BRAIN=true` + `ANTHROPIC_API_KEY`. |
+| `guardian-watcher` | On-chain anomaly drafts/tweets | `WATCHLIST` (quiet wallets only), `RPC`, `DRY_RUN=false` when ready. |
+
+Posting is founder-approval-gated (SPEC §2). Default `DRY_RUN=true` on both crons until explicitly flipped in Render Dashboard.
+
 ## 4. HOMEPAGE + BOLT-ON PATTERN
 
 **Homepage (Aug 2026 redesign):** `index.html` is a clean self-contained modern page matching
@@ -241,7 +255,7 @@ Homepage: mock visual match — Synthetic Intelligence branding, "The chain has 
 violet-heavy particle field + cyan accents + sparse gold (~12%); LIVE/RISK LOW/WATCHING chips, glowing Check CTA (cyan),
 living mesh, feature cards, trust strip; hero morph may show `/guardian2.jpg` during photo phase; FAB/popout still uses `/guardian2.jpg`; legacy shell at `index-legacy.html`.
 Open before launch: devnet DBC rehearsal (verify 60/25/10/3/2 leftover math),
-www.cyre.dev attach, mention-grader DRY_RUN→false after draft review, Anthropic
+www.cyre.dev attach, **mention-grader `DRY_RUN=false`** on Render after `node scripts/bot-smoke.js` passes (founder flip), Anthropic
 spend limit + credit top-up (chat in demo mode until then), guardian-voice.mp3,
 Vercel Analytics snippet on index.html (only check.html has it), stray root
 `address.js` delete (api/address.js is the live one — do not touch).

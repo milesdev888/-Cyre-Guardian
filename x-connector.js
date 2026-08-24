@@ -212,10 +212,28 @@ async function handleRpc(msg) {
 }
 
 const server = http.createServer(async (req, res) => {
-  // Health check for Render
-  if (req.method === 'GET' && req.url === '/') {
-    res.writeHead(200, { 'content-type': 'text/plain' });
-    return res.end('cyre-x-bridge up');
+  const path = (req.url || '').split('?')[0];
+
+  // Health check for Render + bot smoke tests
+  if (req.method === 'GET' && (path === '/' || path === '/health')) {
+    const missing = ['X_API_KEY','X_API_SECRET','X_ACCESS_TOKEN','X_ACCESS_SECRET','CONNECT_SECRET'].filter(k => !process.env[k]);
+    let xAuth = 'unknown';
+    if (!missing.length) {
+      try {
+        const me = await getMe();
+        xAuth = me?.username ? `ok:@${me.username}` : 'fail';
+      } catch (e) {
+        xAuth = 'fail';
+      }
+    }
+    const body = {
+      ok: missing.length === 0 && xAuth.startsWith('ok:'),
+      service: 'cyre-x-bridge',
+      xAuth,
+      missingEnv: missing,
+    };
+    res.writeHead(body.ok ? 200 : 503, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+    return res.end(JSON.stringify(body));
   }
 
   const expected = `/mcp/${SECRET}`;
