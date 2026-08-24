@@ -239,7 +239,10 @@
   }
 
   function initFromHash() {
-    var hash = (location.hash || '').replace(/^#/, '');
+    var params = new URLSearchParams(location.search);
+    var addr = params.get('address') || params.get('mint');
+    if (addr) saveContext(addr);
+    var hash = (location.hash || '').replace(/^#/, '').split('?')[0];
     if (hash && VIEWS[hash]) navigate(hash);
     else navigate('home');
   }

@@ -50,7 +50,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `theme-purple-deep.css` | Darker-purple mood overrides: deeper violet `#7048dc`, shadow boosts, hero ambient shift. Loaded by `index.html` (after homepage.css) + injected by `ai-vibe-loader.js`. |
 | `theme-blue.css` | Blue token overrides + avatar swap (`.portrait img` / `.g-av img` → /guardian2.jpg). |
 | `guardian-popout.js` | FAB (`/guardian2.jpg` + LIVE) → glass panel with `/guardian-video.mp4` + chat POST `/api/chat`. Does not replace `guardian-voice.js`. |
-| `nav-tools.js` | Tools dropdown/strip: Watch, Passport, Check, Score, Oracle, Forensics, Signals, Tokenomics, Roadmap, Airdrop (cyan/violet glass menus). |
+| `nav-tools.js` | Ensures Guardian App link on secondary pages (standalone URLs redirect to `/app`). |
 | `ai-vibe-loader.js` | Injects `theme-ai-vibe.css` + `theme-purple-deep.css`; ensures nav-tools, guardian-popout, ai-presence, rwa/vortex/voice/access. Loaded by `launch-banner.js` (+ one-line on secondary pages). |
 | `ai-presence.js` | SUPER AI idle: denser glow, orbit breathe/pulse, `.portrait` / orb rings (works with wireframe head wrap); reduced-motion safe. Loaded by `ai-vibe-loader.js`. |
 | `footer-polish.js` | Footer Docs/Security → `/roadmap`; Privacy/Terms/Support → mailto. |
@@ -77,8 +77,9 @@ cyre.dev/tokenomics and @Cyredev888.
 | `oracle.html` | Oracle Pulse v1 — mint/oracle-level RWA feed monitor → cyre.dev/oracle (prefer `/oracle` over `/pulse`). Feed board (not wallet paste). Patterns: stale / spike / divergence only. |
 | `guardian-chain-live.js` | Homepage live Solana pulse — polls `/api/chain-pulse` every 30s; updates LIVE/WATCHING chips + banner. No wallet scans. |
 | `api/chain-pulse.js` | GET `/api/chain-pulse` — one cached `getSlot` / 30s (`CHAIN_PULSE_CACHE_SEC`). Light UI pulse; **not** the Render watcher cron. |
-| `apps.html` | Guardian App Hub — product grid + link to unified console → cyre.dev/apps. |
-| `app.html` | **Guardian Console** — unified app shell (sidebar + mobile nav) embedding all tools via `/app` → cyre.dev/app. Loads `guardian-app.js`, `guardian-app.css`. |
+| `apps.html` | Redirects to `/app` (legacy hub URL). |
+| `app.html` | **Guardian Console** — single entry for all products → cyre.dev/app. |
+| `app-redirect.js` | Standalone product URLs redirect to `/app#view` (skipped when `?embed=1` for iframes). |
 | `guardian-app.js` | Console routing, quick lookup, iframe loader, session context for address/mint. |
 | `guardian-app.css` | Console shell styles (sidebar, dashboard, bottom nav). |
 | `embed-mode.js` / `embed-mode.css` | Hides page chrome when tools run inside Guardian App iframes (`?embed=1`). |
