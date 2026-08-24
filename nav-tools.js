@@ -10,6 +10,7 @@
     { href: '/watch', label: 'Watch', hint: 'Monitor' },
     { href: '/passport', label: 'Passport', hint: 'Profile' },
     { href: '/check', label: 'Check', hint: 'Address' },
+    { href: '/scan', label: 'Scan', hint: 'Swap' },
     { href: '/score', label: 'Score', hint: 'Wallet' },
     { href: '/oracle', label: 'Oracle', hint: 'Feeds' },
     { href: '/forensics', label: 'Forensics', hint: 'Patterns' },

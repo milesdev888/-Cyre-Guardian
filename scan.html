@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script defer src="/swap-config.js"></script>
 <script defer src="/scan-swap.js"></script>
+<link rel="preload" href="https://plugin.jup.ag/plugin-v1.js" as="script">
 <style>
 :root{--ink:#07080b;--panel:#0d1017;--line:#1f2634;--text:#e8ecf3;--dim:#8892a4;--ice:#5fd0ff;--cyan:#4fe3d0;--live:#3ddc84;--red:#ff4d5e;--amber:#ffbe50}
 *{box-sizing:border-box;margin:0}
@@ -46,6 +47,11 @@ button.ghost{background:transparent;border:1px solid rgba(95,208,255,.35);color:
 .notice{color:var(--amber);font-size:13px;line-height:1.55;margin:14px 0;padding:12px 14px;border:1px solid rgba(255,190,80,.25);border-radius:12px;background:rgba(255,190,80,.06);display:none}
 a{color:var(--ice)}
 .back{font-size:13px;color:var(--dim);text-decoration:none;display:inline-block;margin-bottom:22px}
+.swap-teaser{margin-top:28px;padding:18px 20px;border-radius:16px;border:1px dashed rgba(95,208,255,.28);background:rgba(13,16,23,.55)}
+.swap-teaser h2{font-family:Sora,Inter,sans-serif;font-size:16px;font-weight:800;margin-bottom:6px}
+.swap-teaser p{color:var(--dim);font-size:13px;line-height:1.6}
+.swap-teaser ol{margin:10px 0 0 18px;color:var(--dim);font-size:13px;line-height:1.7}
+.swap-teaser.is-unlocked{display:none}
 .proceed-block{margin-top:22px;padding-top:18px;border-top:1px solid var(--line);display:none}
 .proceed-block p{color:var(--dim);font-size:13px;line-height:1.6;margin-bottom:14px}
 .high-confirm{display:none;margin-bottom:14px;padding:14px 16px;border-radius:14px;border:1px solid rgba(255,77,94,.35);background:rgba(255,77,94,.07)}
@@ -81,6 +87,16 @@ a{color:var(--ice)}
   <div class="hint">Free scan · no wallet until you choose to swap · nothing to sign on scan</div>
   <p class="token-note">$C7 is not available to swap here until mainnet launch — this tool scans any Solana mint. The contract address will appear only on <a href="/tokenomics">cyre.dev/tokenomics</a> and @Cyredev888.</p>
   <div class="err" id="err"></div>
+
+  <div class="swap-teaser" id="swap-teaser">
+    <h2>Step 2 — Protected swap</h2>
+    <p>Jupiter swap unlocks here after you scan a token. Every other swap lets you buy blind — this one makes you look first.</p>
+    <ol>
+      <li>Paste a token mint and tap <strong>Scan</strong></li>
+      <li>Read the signals (HIGH patterns need an extra click-through)</li>
+      <li>Tap <strong>Proceed to swap</strong> — connect Phantom and sign in Jupiter's widget</li>
+    </ol>
+  </div>
 
   <div id="report">
     <div class="risk-banner" id="banner"><b id="riskword"></b><small id="riskscore"></small></div>
