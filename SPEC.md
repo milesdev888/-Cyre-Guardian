@@ -98,7 +98,9 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/signals.js` | GET /api/signals — optional `?address=` / `?list=` (≤10). Empty default → empty feed + message (quiet holders not yet filtered from SPEC seed mints; same Watch policy). Per address: Watch patterns (dormant→active, burst, failure spike) + mintAffinity via **per-mint** `getTokenAccountsByOwner` only (never programId dump). Response `{ ok, kind:'cyre-signals', version:1, disclaimer, window, items, counters }`; brief sleep between wallets; soft-fail RPC; `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
 | `api/oracle.js` | GET /api/oracle — Oracle Pulse v1. NestUSD **Pyth Lazer** seeds (fetch only with `PYTH_LAZER_API_KEY`); equity Hermes peers optional when primary measured. Response `{ ok, kind:'cyre-oracle', version:1, disclaimer, fetchedAt, feeds, patterns }`; patterns stale/spike/divergence cite measured numbers only; USDY/OUSG/syrupUSDC deferred (no verified public feed); `Cache-Control: no-store`. No LLM. |
 | `api/rwa.mjs` | CoinGecko proxy, 60s cache, last-good fallback. Env `COINGECKO_API_KEY`. |
-| `cyre-token-256/512.png` | C7 emblem. 512 = mint metadata image URI (GitHub raw path, immutable). |
+| `cyre-token-256/512.png` | C7 full lockup (Guardian + HUD + C7). 512 = mint metadata image URI. |
+| `cyre-token-icon-128/256/32.png` | Face-forward circular crop — favicon, FAB, small UI. |
+| `cyre-token-ticker-128.png` | C7 letter crop — DEX lists / wallet tickers where detail must read at 32px. |
 | `vercel.json` | `{cleanUrls:true, trailingSlash:false}` — pages served extensionless. |
 
 
