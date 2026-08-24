@@ -73,12 +73,19 @@
     }
   }
 
+  function showSwapTeaser(show) {
+    var el = $('swap-teaser');
+    if (!el) return;
+    el.classList.toggle('is-unlocked', !show);
+  }
+
   function resetToIdle() {
     state = 'IDLE';
     scanned = null;
     if (expiryTimer) { clearTimeout(expiryTimer); expiryTimer = null; }
     hideSwapPanel();
     showProceedBlock(false);
+    showSwapTeaser(true);
     showGateNotice('');
     setProceedEnabled(false);
   }
@@ -88,8 +95,14 @@
     state = 'SCANNED';
     hideSwapPanel();
     showProceedBlock(true);
+    showSwapTeaser(false);
     updateHighGate(data.risk);
     showGateNotice('');
+
+    var block = $('proceed-block');
+    if (block && block.scrollIntoView) {
+      block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
 
     if (expiryTimer) clearTimeout(expiryTimer);
     expiryTimer = setTimeout(function () {
@@ -107,6 +120,7 @@
     state = 'SCANNED';
     hideSwapPanel();
     showProceedBlock(true);
+    showSwapTeaser(false);
     setProceedEnabled(false);
     updateHighGate(scanned && scanned.risk);
     showGateNotice(reason || 'Output token changed — scan the token you want to swap.');
@@ -188,6 +202,7 @@
     }
     state = 'SWAP';
     showProceedBlock(false);
+    showSwapTeaser(false);
     loadPluginScript(function () { mountJupiter(scanned.mint); });
   }
 
