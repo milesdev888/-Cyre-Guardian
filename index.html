@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CYRE — Synthetic Intelligence · The chain has a witness</title>
   <meta name="description" content="CYRE is Synthetic Intelligence infrastructure for real-world assets on Solana. Guardian watches the chain — patterns, not verdicts.">
+  <meta property="og:image" content="https://cyre.dev/cyre-token-512.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:site" content="@Cyredev888">
+  <meta name="twitter:image" content="https://cyre.dev/cyre-token-512.png">
+  <link rel="icon" href="/cyre-token-icon-128.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -17,6 +22,7 @@
   <script defer src="/rwa-widget.js"></script>
   <script defer src="/ai-presence.js"></script>
   <script defer src="/footer-polish.js"></script>
+  <script defer src="/guardian-head.js"></script>
 </head>
 <body>
   <div class="bg-grid" aria-hidden="true"></div>
@@ -54,13 +60,13 @@
       </div>
 
       <div class="hero-visual" aria-label="Guardian visual">
-        <div class="orb-stage orbit guardian-c7-stage">
+        <div class="orb-stage orbit">
           <div class="glow" aria-hidden="true"></div>
           <div class="orbit-ring ring r1" aria-hidden="true"></div>
           <div class="orbit-ring ring r2" aria-hidden="true"></div>
           <div class="orbit-ring ring r3" aria-hidden="true"></div>
-          <div class="head-wrap portrait guardian-c7-wrap" role="img" aria-label="CYRE Guardian — synthetic intelligence witness">
-            <img class="guardian-c7" src="/cyre-token-512.png" alt="" width="512" height="512" decoding="async">
+          <div class="head-wrap portrait" role="img" aria-label="Guardian wireframe particle head">
+            <canvas id="guardian-head" width="640" height="800" aria-hidden="true"></canvas>
           </div>
           <div class="visual-base" aria-hidden="true"></div>
         </div>

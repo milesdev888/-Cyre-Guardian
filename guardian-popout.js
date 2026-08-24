@@ -151,7 +151,7 @@
     fab.setAttribute('aria-expanded', 'false');
     fab.setAttribute('aria-controls', 'gp-panel');
     fab.innerHTML =
-      '<img src="/cyre-token-icon-256.png" alt="" width="64" height="64">' +
+      '<img src="/guardian2.jpg" alt="" width="64" height="64">' +
       '<span class="gp-pulse" aria-hidden="true"></span>' +
       '<span class="gp-live">LIVE</span>';
     document.body.appendChild(fab);
