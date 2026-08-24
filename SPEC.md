@@ -75,7 +75,9 @@ cyre.dev/tokenomics and @Cyredev888.
 | `forensics.html` | Forensics v1 — single-address RWA pattern board → cyre.dev/forensics. Measured only; `Cache-Control: no-store`. |
 | `signals.html` | Signals v1 — public RWA pattern feed board → cyre.dev/signals. Default list empty (same Watch policy); measured hits only; `Cache-Control: no-store` on `/api/signals`. |
 | `oracle.html` | Oracle Pulse v1 — mint/oracle-level RWA feed monitor → cyre.dev/oracle (prefer `/oracle` over `/pulse`). Feed board (not wallet paste). Patterns: stale / spike / divergence only. |
-| `watcher.js` | Render cron `guardian-watcher` (*/15): anomaly detector → drafts/tweets. Stateless window dedup. |
+| `guardian-chain-live.js` | Homepage live Solana pulse — polls `/api/chain-pulse` every 30s; updates LIVE/WATCHING chips + banner. No wallet scans. |
+| `api/chain-pulse.js` | GET `/api/chain-pulse` — one cached `getSlot` / 30s (`CHAIN_PULSE_CACHE_SEC`). Light UI pulse; **not** the Render watcher cron. |
+| `watcher.js` | Render cron `guardian-watcher` (*/15): full wallet scan + optional tweets. **Keep paused / DRY_RUN** when RPC credits matter; site pulse is separate. |
 | `mention-grader.js` | Render cron `guardian-mention-grader` (*/10): @mention + address → public grade reply via bridge. |
 | `api/chat.js` | Guardian chat (Anthropic). HARDENED: origin-locked to cyre.dev, role-sanitized, haiku model, daily cap. Keep all guardrails. |
 | `api/address.js` | GET /api/address — 1,000-sig window, 6 explainable signals, LOW/MED/HIGH. Env `SOLANA_RPC`. (Live file; SPEC formerly said `.mjs`.) |

@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/homepage.css">
   <link rel="stylesheet" href="/theme-purple-deep.css">
+  <script defer src="/guardian-chain-live.js"></script>
   <script defer src="/vortex.js"></script>
   <script defer src="/guardian-popout.js"></script>
   <script defer src="/access-form.js"></script>
@@ -74,17 +75,17 @@
           <div class="visual-base" aria-hidden="true"></div>
         </div>
         <div class="chips" aria-label="Guardian status">
-          <div class="status-chip live">
+          <div class="status-chip live" id="chip-live">
             <span class="label">LIVE</span>
             <strong>Guardian active</strong>
           </div>
-          <div class="status-chip risk">
+          <div class="status-chip risk" id="chip-risk">
             <span class="label">RISK LOW</span>
             <strong>No immediate threats</strong>
           </div>
-          <div class="status-chip watch">
+          <div class="status-chip watch" id="chip-watch">
             <span class="label">WATCHING</span>
-            <strong>On-chain &amp; off-chain</strong>
+            <strong>Reading Solana…</strong>
           </div>
         </div>
       </div>
