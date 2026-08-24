@@ -80,8 +80,8 @@ async function scan(){
     document.getElementById('facts').innerHTML =
       fact('Mint authority', d.mintAuthorityRevoked?'Revoked ✓':'ACTIVE ⚠') +
       fact('Freeze authority', d.freezeAuthorityRevoked?'Revoked ✓':'ACTIVE ⚠') +
-      fact('Top holder', d.top1Pct+'%') +
-      fact('Top 10 holders', d.top10Pct+'%');
+      fact('Top holder', d.top1Pct != null ? d.top1Pct+'%' : 'Not measured') +
+      fact('Top 10 holders', d.top10Pct != null ? d.top10Pct+'%' : 'Not measured');
     document.getElementById('signals').innerHTML = d.signals.map(function(s){
       return '<div class="sig"><i class="i-'+s.level+'"></i><p>'+s.text+'</p></div>';
     }).join('');
