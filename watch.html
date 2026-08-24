@@ -198,8 +198,16 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'IBM Pl
 
   $('go').addEventListener('click', run);
   $('addr').addEventListener('keydown', (e) => { if (e.key === 'Enter') run(); });
+  (function(){
+    var p = new URLSearchParams(location.search);
+    var a = p.get('address');
+    if (!a) return;
+    $('addr').value = a;
+    if (p.get('embed') === '1') run();
+  })();
 })();
 </script>
+<script defer src="/embed-mode.js"></script>
 <script src="/ai-vibe-loader.js" defer></script>
 </body>
 </html>
