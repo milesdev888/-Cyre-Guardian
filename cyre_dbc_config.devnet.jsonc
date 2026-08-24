@@ -86,7 +86,14 @@
     "name": "CYRE",
     "symbol": "C7",
     "metadata": {
-      "uri": "https://cyre.dev/cyre-token-512.png"
+      "uri": "https://cyre.dev/token-metadata.json"
     }
+  }
+,
+  "dbcSwap": {
+    "amountIn": 0.05,
+    "slippageBps": 5000,
+    "swapBaseForQuote": false,
+    "referralTokenAccount": null
   }
 }
