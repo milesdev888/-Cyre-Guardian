@@ -41,11 +41,45 @@
     else el.style.display = 'none';
   }
 
+  function hasInjectedWallet() {
+    return !!(window.solana || (window.phantom && window.phantom.solana) || window.solflare);
+  }
+
+  function isMobileBrowser() {
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  }
+
+  function pageUrlForWallet() {
+    return location.href.split('#')[0];
+  }
+
+  function walletBrowseLinks() {
+    var url = encodeURIComponent(pageUrlForWallet());
+    return {
+      phantom: 'https://phantom.app/ul/browse/' + url,
+      solflare: 'https://solflare.com/ul/v1/browse/' + url,
+    };
+  }
+
+  function updateMobileWalletHelp(show) {
+    var box = $('mobile-wallet-help');
+    if (!box) return;
+    var visible = show && isMobileBrowser() && !hasInjectedWallet();
+    box.classList.toggle('is-visible', visible);
+    if (!visible) return;
+    var links = walletBrowseLinks();
+    var ph = $('open-phantom');
+    var sf = $('open-solflare');
+    if (ph) ph.href = links.phantom;
+    if (sf) sf.href = links.solflare;
+  }
+
   function hideSwapPanel() {
     var panel = $('swap-panel');
     var jup = $('jup');
     if (panel) panel.style.display = 'none';
     if (jup) jup.innerHTML = '';
+    updateMobileWalletHelp(false);
     if (window.Jupiter && typeof window.Jupiter.close === 'function') {
       try { window.Jupiter.close(); } catch (_) {}
     }
@@ -170,10 +204,14 @@
     window.Jupiter.init({
       displayMode: 'integrated',
       integratedTargetId: 'jup',
+      containerStyles: { height: '520px', width: '100%' },
       formProps: formProps,
       branding: {
         name: brand.name || 'CYRE Guardian',
         logoUri: brand.logoUri || 'https://cyre.dev/cyre-token-512.png',
+      },
+      onScreenUpdate: function () {
+        updateMobileWalletHelp(state === 'SWAP');
       },
       onFormUpdate: function (form) {
         var out = (form && (form.outputMint || form.toMint || (form.to && form.to.address))) || '';
@@ -189,6 +227,8 @@
       rem.style.display = 'block';
     }
     showGateNotice('');
+    updateMobileWalletHelp(true);
+    if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function proceedToSwap() {
