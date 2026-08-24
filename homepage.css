@@ -1,16 +1,17 @@
 /* homepage.css — CYRE homepage mock-match styles */
 :root{
-  --bg:#060816;
-  --bg2:#0a0f22;
-  --panel:rgba(10,14,30,.58);
-  --panel-strong:rgba(12,18,36,.78);
-  --line:rgba(95,208,255,.18);
-  --text:#eef4ff;
-  --muted:#99a8c7;
-  --cyan:#5fd0ff;
-  --violet:#9b7bff;
-  --green:#45da96;
-  --shadow:0 24px 80px rgba(0,0,0,.45);
+  --bg:#0b0618;
+  --bg2:#1a0c32;
+  --panel:rgba(28,14,48,.68);
+  --panel-strong:rgba(34,18,58,.88);
+  --line:rgba(176,148,255,.28);
+  --text:#f5f8ff;
+  --muted:#c5d0ef;
+  --cyan:#7cefff;
+  --violet:#c4b5fd;
+  --teal:#5ef0d8;
+  --green:#4aeea0;
+  --shadow:0 24px 80px rgba(8,4,24,.5);
   --radius:24px;
   --display:'Sora',system-ui,sans-serif;
   --body:'Inter',system-ui,sans-serif;
@@ -24,10 +25,11 @@ body{
   font-family:var(--body);
   color:var(--text);
   background:
-    radial-gradient(circle at top, rgba(95,208,255,.16), transparent 34%),
-    radial-gradient(circle at 80% 16%, rgba(155,123,255,.16), transparent 28%),
-    radial-gradient(circle at 20% 85%, rgba(95,208,255,.1), transparent 26%),
-    linear-gradient(180deg, #070b18 0%, #05070f 42%, #080b18 100%);
+    radial-gradient(ellipse 90% 55% at 78% -8%, rgba(124,239,255,.26), transparent 52%),
+    radial-gradient(ellipse 80% 50% at 8% 12%, rgba(196,181,253,.3), transparent 48%),
+    radial-gradient(ellipse 70% 45% at 92% 42%, rgba(94,240,216,.12), transparent 46%),
+    radial-gradient(circle at 40% 100%, rgba(155,123,255,.16), transparent 42%),
+    linear-gradient(180deg, #140a2a 0%, #0a0518 42%, #160c2e 100%);
   overflow-x:hidden;
   -webkit-font-smoothing:antialiased;
 }
@@ -107,8 +109,8 @@ img{max-width:100%;display:block}
   border-radius:50%;
   flex:none;
   background:url('/cyre-token-icon-128.png') center/cover no-repeat;
-  border:1px solid rgba(95,208,255,.38);
-  box-shadow:0 0 16px rgba(95,208,255,.45), 0 0 28px rgba(155,123,255,.28);
+  border:1px solid rgba(124,239,255,.42);
+  box-shadow:0 0 16px rgba(124,239,255,.45), 0 0 28px rgba(196,181,253,.32);
 }
 .nav-links a.nav-token{
   display:inline-flex;
@@ -309,9 +311,9 @@ h1{
 .lede{
   margin:14px 0 18px;
   max-width:54ch;
-  color:#c8d5ef;
-  font-size:16px;
-  line-height:1.55;
+  color:var(--muted);
+  font-size:16.5px;
+  line-height:1.6;
 }
 .cta-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:14px}
 .btn{
@@ -496,7 +498,7 @@ h1{
 }
 .card .label{margin-bottom:16px;display:inline-block}
 .card h3{margin:0 0 10px;font:700 1.4rem/1.1 var(--display)}
-.card p{margin:0 0 18px;color:#c2cee8;line-height:1.7}
+.card p{margin:0 0 18px;color:var(--muted);line-height:1.7}
 .card a{display:inline-flex;align-items:center;gap:8px;color:var(--cyan);font-weight:600}
 
 .trust-band,
@@ -508,7 +510,7 @@ h1{
 .trust-band h2,
 .access-band h2{margin:0 0 10px;font:700 clamp(1.5rem, 2.4vw, 2.3rem)/1.05 var(--display);letter-spacing:-.03em}
 .trust-band p,
-.access-band p{margin:0;color:#c5d0e8;line-height:1.7}
+.access-band p{margin:0;color:var(--muted);line-height:1.7}
 .trust-grid{
   display:grid;
   grid-template-columns:repeat(4, minmax(0,1fr));
