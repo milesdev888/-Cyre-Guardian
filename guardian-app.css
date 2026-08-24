@@ -182,8 +182,8 @@ body.ga-app {
 }
 .ga-live.is-live { color: #eefaff; border-color: rgba(61, 220, 132, 0.35); }
 .ga-live.is-live::before {
-  background: var(--ga-green);
-  box-shadow: 0 0 8px rgba(61, 220, 132, 0.55);
+  background: #14F195;
+  box-shadow: 0 0 10px rgba(20, 241, 149, 0.75), 0 0 18px rgba(153, 69, 255, 0.35);
 }
 
 .ga-main {

@@ -56,9 +56,32 @@ body::after{
     radial-gradient(circle at 50% 28%, rgba(124,239,255,.18), transparent 42%),
     linear-gradient(180deg, rgba(32,16,58,.55), rgba(8,4,20,.94));
 }
-.orbit-ring{border-color:rgba(196,181,253,.34)}
-.orbit-ring.r2{border-color:rgba(167,139,250,.4)}
-.orbit-ring.r3{border-color:rgba(124,239,255,.36)}
+.orbit-ring{border-color:rgba(153,69,255,.5)}
+.orbit-ring.r2{border-color:rgba(20,241,149,.48)}
+.orbit-ring.r3{border-color:rgba(153,69,255,.55)}
+.orbit-ring.r1::after{
+  background:#9945FF !important;
+  box-shadow:
+    0 0 0 2px rgba(153,69,255,.4),
+    0 0 16px rgba(153,69,255,1),
+    0 0 32px rgba(153,69,255,.8),
+    0 0 48px rgba(20,241,149,.4) !important;
+}
+.orbit-ring.r2::after{
+  background:#14F195 !important;
+  box-shadow:
+    0 0 0 2px rgba(20,241,149,.45),
+    0 0 16px rgba(20,241,149,1),
+    0 0 32px rgba(20,241,149,.85),
+    0 0 48px rgba(153,69,255,.35) !important;
+}
+.orbit-ring.r3::after{
+  background:linear-gradient(135deg,#9945FF,#14F195) !important;
+  box-shadow:
+    0 0 0 2px rgba(20,241,149,.35),
+    0 0 18px rgba(153,69,255,1),
+    0 0 34px rgba(20,241,149,.65) !important;
+}
 
 .status-chip{
   background:rgba(18,10,36,.9);
@@ -110,25 +133,28 @@ h1,h2,.section h2,.trust-band h2,.access-band h2,.footer-brand{
     box-shadow: 0 0 8px rgba(124,239,255,.25), 0 0 16px rgba(196,181,253,.2);
   }
 }
-@keyframes blink-glow-green {
+@keyframes blink-glow-solana {
   0%, 100% {
     opacity: 1;
-    filter: brightness(1);
-    box-shadow: 0 0 16px rgba(74,238,160,.7), 0 0 28px rgba(74,238,160,.4);
+    filter: brightness(1.15);
+    box-shadow: 0 0 16px rgba(20,241,149,.85), 0 0 28px rgba(153,69,255,.55);
   }
   50% {
-    opacity: .4;
-    filter: brightness(1.35);
-    box-shadow: 0 0 6px rgba(74,238,160,.28), 0 0 12px rgba(74,238,160,.18);
+    opacity: .55;
+    filter: brightness(1.4);
+    box-shadow: 0 0 8px rgba(20,241,149,.4), 0 0 14px rgba(153,69,255,.3);
   }
 }
 .brand-orb{
   animation: blink-glow 1.8s ease-in-out infinite;
 }
 .kicker::before{
-  background: #4aeea0 !important;
-  box-shadow: 0 0 16px rgba(74,238,160,.7) !important;
-  animation: blink-glow-green 1.8s ease-in-out infinite;
+  background: linear-gradient(135deg, #9945FF, #14F195) !important;
+  box-shadow:
+    0 0 0 2px rgba(20,241,149,.3),
+    0 0 16px rgba(153,69,255,.95),
+    0 0 28px rgba(20,241,149,.65) !important;
+  animation: blink-glow-solana 1.8s ease-in-out infinite;
 }
 .hero-blink{
   display: inline;
