@@ -42,11 +42,34 @@
   }
 
   function hasInjectedWallet() {
-    return !!(window.solana || (window.phantom && window.phantom.solana) || window.solflare);
+    var s = window.solana || (window.phantom && window.phantom.solana);
+    if (s && (s.isPhantom || s.isSolflare || s.publicKey || typeof s.connect === 'function')) return true;
+    var sf = window.solflare;
+    if (sf && (sf.isSolflare || sf.publicKey || typeof sf.connect === 'function')) return true;
+    if (window.backpack) return true;
+    return false;
   }
 
   function isMobileBrowser() {
     return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  }
+
+  function shouldPreferExternalSwap() {
+    return isMobileBrowser() || !hasInjectedWallet();
+  }
+
+  function canProceedToSwap() {
+    if (state !== 'SCANNED' || !scanned || isExpired()) return false;
+    if (scanned.risk === 'HIGH') {
+      var box = $('high-read');
+      if (!box || !box.checked) return false;
+    }
+    return true;
+  }
+
+  function jupiterAppUrl(mint) {
+    var sol = cfg.solMint || SOL;
+    return 'https://jup.ag/swap/' + sol + '-' + mint;
   }
 
   function pageUrlForWallet() {
@@ -61,10 +84,10 @@
     };
   }
 
-  function updateMobileWalletHelp(show) {
-    var box = $('mobile-wallet-help');
+  function updateWalletHelp(show) {
+    var box = $('wallet-help');
     if (!box) return;
-    var visible = show && isMobileBrowser() && !hasInjectedWallet();
+    var visible = show && !hasInjectedWallet();
     box.classList.toggle('is-visible', visible);
     if (!visible) return;
     var links = walletBrowseLinks();
@@ -74,12 +97,40 @@
     if (sf) sf.href = links.solflare;
   }
 
+  function updateSwapPanelHelp(show) {
+    var box = $('swap-panel-wallet-help');
+    if (!box) return;
+    box.classList.toggle('is-visible', show && !hasInjectedWallet());
+  }
+
+  function updateProceedActions() {
+    var external = $('swap-jupiter-app');
+    var embedded = $('proceed-swap');
+    var preferExternal = shouldPreferExternalSwap();
+    var ok = canProceedToSwap();
+
+    if (external) {
+      if (scanned && !isExpired()) external.href = jupiterAppUrl(scanned.mint);
+      external.classList.toggle('is-primary', preferExternal);
+      external.classList.toggle('is-disabled', !ok);
+    }
+    var panelJup = $('swap-panel-jup-link');
+    if (panelJup && scanned && !isExpired()) panelJup.href = jupiterAppUrl(scanned.mint);
+    if (embedded) {
+      embedded.textContent = preferExternal ? 'Try swap widget here' : 'Proceed to swap';
+      embedded.classList.toggle('ghost', preferExternal);
+      setProceedEnabled(ok);
+    }
+    updateWalletHelp(state === 'SCANNED' || state === 'SWAP');
+  }
+
   function hideSwapPanel() {
     var panel = $('swap-panel');
     var jup = $('jup');
     if (panel) panel.style.display = 'none';
     if (jup) jup.innerHTML = '';
-    updateMobileWalletHelp(false);
+    updateWalletHelp(false);
+    updateSwapPanelHelp(false);
     if (window.Jupiter && typeof window.Jupiter.close === 'function') {
       try { window.Jupiter.close(); } catch (_) {}
     }
@@ -105,6 +156,7 @@
       box.checked = false;
       setProceedEnabled(!isExpired());
     }
+    updateProceedActions();
   }
 
   function showSwapTeaser(show) {
@@ -138,10 +190,13 @@
       block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
+    updateProceedActions();
+
     if (expiryTimer) clearTimeout(expiryTimer);
     expiryTimer = setTimeout(function () {
       if (state === 'SCANNED') {
         setProceedEnabled(false);
+        updateProceedActions();
         showGateNotice('Scan expired — run Guardian scan again before swapping.');
       }
       if (state === 'SWAP') {
@@ -158,6 +213,7 @@
     setProceedEnabled(false);
     updateHighGate(scanned && scanned.risk);
     showGateNotice(reason || 'Output token changed — scan the token you want to swap.');
+    updateProceedActions();
   }
 
   function loadPluginScript(cb) {
@@ -211,7 +267,7 @@
         logoUri: brand.logoUri || 'https://cyre.dev/cyre-token-512.png',
       },
       onScreenUpdate: function () {
-        updateMobileWalletHelp(state === 'SWAP');
+        updateSwapPanelHelp(state === 'SWAP' && !hasInjectedWallet());
       },
       onFormUpdate: function (form) {
         var out = (form && (form.outputMint || form.toMint || (form.to && form.to.address))) || '';
@@ -227,35 +283,49 @@
       rem.style.display = 'block';
     }
     showGateNotice('');
-    updateMobileWalletHelp(true);
+    updateWalletHelp(!hasInjectedWallet());
+    updateSwapPanelHelp(true);
     if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function proceedToSwap() {
-    if (state !== 'SCANNED' || !scanned || isExpired()) {
-      showGateNotice('Scan expired — run Guardian scan again before swapping.');
+    if (!canProceedToSwap()) {
+      if (state === 'SCANNED' && isExpired()) {
+        showGateNotice('Scan expired — run Guardian scan again before swapping.');
+      }
       return;
-    }
-    if (scanned.risk === 'HIGH') {
-      var box = $('high-read');
-      if (!box || !box.checked) return;
     }
     state = 'SWAP';
     showProceedBlock(false);
     showSwapTeaser(false);
+    updateWalletHelp(false);
     loadPluginScript(function () { mountJupiter(scanned.mint); });
+  }
+
+  function onExternalSwapClick(e) {
+    if (!canProceedToSwap()) {
+      e.preventDefault();
+      if (state === 'SCANNED' && isExpired()) {
+        showGateNotice('Scan expired — run Guardian scan again before swapping.');
+      } else if (scanned && scanned.risk === 'HIGH') {
+        showGateNotice('Confirm you have read the HIGH risk signals above before swapping.');
+      }
+    }
   }
 
   function wireUi() {
     var proceed = $('proceed-swap');
+    var external = $('swap-jupiter-app');
     var highBox = $('high-read');
     var mintInput = $('mint');
 
     if (proceed) proceed.addEventListener('click', proceedToSwap);
+    if (external) external.addEventListener('click', onExternalSwapClick);
     if (highBox) {
       highBox.addEventListener('change', function () {
         if (state === 'SCANNED' && scanned && scanned.risk === 'HIGH') {
           setProceedEnabled(highBox.checked && !isExpired());
+          updateProceedActions();
         }
       });
     }
