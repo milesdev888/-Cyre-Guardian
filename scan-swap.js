@@ -55,7 +55,11 @@
   }
 
   function shouldPreferExternalSwap() {
-    return isMobileBrowser() || !hasInjectedWallet();
+    return !hasInjectedWallet();
+  }
+
+  function canUseEmbeddedWidget() {
+    return hasInjectedWallet();
   }
 
   function canProceedToSwap() {
@@ -117,18 +121,23 @@
     var panelJup = $('swap-panel-jup-link');
     if (panelJup && scanned && !isExpired()) panelJup.href = jupiterAppUrl(scanned.mint);
     if (embedded) {
-      embedded.textContent = preferExternal ? 'Try swap widget here' : 'Proceed to swap';
-      embedded.classList.toggle('ghost', preferExternal);
-      setProceedEnabled(ok);
+      embedded.style.display = preferExternal ? 'none' : '';
+      embedded.textContent = 'Proceed to swap here';
+      embedded.classList.toggle('ghost', false);
+      setProceedEnabled(ok && canUseEmbeddedWidget());
     }
+    var panelBtn = $('swap-panel-jup-btn');
+    if (panelBtn && scanned && !isExpired()) panelBtn.href = jupiterAppUrl(scanned.mint);
     updateWalletHelp(state === 'SCANNED' || state === 'SWAP');
   }
 
   function hideSwapPanel() {
     var panel = $('swap-panel');
     var jup = $('jup');
+    var external = $('swap-panel-external');
     if (panel) panel.style.display = 'none';
-    if (jup) jup.innerHTML = '';
+    if (jup) { jup.innerHTML = ''; jup.style.display = ''; }
+    if (external) external.style.display = 'none';
     updateWalletHelp(false);
     updateSwapPanelHelp(false);
     if (window.Jupiter && typeof window.Jupiter.close === 'function') {
@@ -233,6 +242,44 @@
     document.head.appendChild(s);
   }
 
+  function showExternalSwapPanel() {
+    state = 'SWAP';
+    showProceedBlock(false);
+    showSwapTeaser(false);
+    updateWalletHelp(false);
+
+    var panel = $('swap-panel');
+    var external = $('swap-panel-external');
+    var jup = $('jup');
+    var lede = $('swap-panel-lede');
+    if (panel) panel.style.display = 'block';
+    if (external) external.style.display = 'block';
+    if (jup) { jup.innerHTML = ''; jup.style.display = 'none'; }
+    if (lede) lede.style.display = 'none';
+
+    var btn = $('swap-panel-jup-btn');
+    if (btn && scanned) btn.href = jupiterAppUrl(scanned.mint);
+
+    var rem = $('scan-reminder');
+    if (rem && scanned) {
+      rem.textContent = 'Scanned ' + shortMint(scanned.mint) + ' at ' + fmtTime(new Date(scanned.at)) + '. Patterns, not verdicts — the trade is yours.';
+      rem.style.display = 'block';
+    }
+    showGateNotice('');
+    if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function backFromSwap() {
+    if (state !== 'SWAP') return;
+    hideSwapPanel();
+    state = 'SCANNED';
+    showProceedBlock(true);
+    showSwapTeaser(false);
+    var lede = $('swap-panel-lede');
+    if (lede) lede.style.display = '';
+    updateProceedActions();
+  }
+
   function mountJupiter(mint) {
     if (!cfg.referralAccount) {
       showGateNotice('Swap fee routing is being configured. Scan works; swap unlocks once the Jupiter referral account is set in swap-config.js.');
@@ -245,8 +292,12 @@
 
     var panel = $('swap-panel');
     var jup = $('jup');
+    var external = $('swap-panel-external');
+    var lede = $('swap-panel-lede');
     if (panel) panel.style.display = 'block';
-    if (jup) jup.innerHTML = '';
+    if (external) external.style.display = 'none';
+    if (lede) lede.style.display = '';
+    if (jup) { jup.innerHTML = ''; jup.style.display = ''; }
 
     var formProps = {
       initialInputMint: cfg.solMint || SOL,
@@ -295,6 +346,10 @@
       }
       return;
     }
+    if (!canUseEmbeddedWidget()) {
+      showExternalSwapPanel();
+      return;
+    }
     state = 'SWAP';
     showProceedBlock(false);
     showSwapTeaser(false);
@@ -316,11 +371,13 @@
   function wireUi() {
     var proceed = $('proceed-swap');
     var external = $('swap-jupiter-app');
+    var back = $('swap-back');
     var highBox = $('high-read');
     var mintInput = $('mint');
 
     if (proceed) proceed.addEventListener('click', proceedToSwap);
     if (external) external.addEventListener('click', onExternalSwapClick);
+    if (back) back.addEventListener('click', backFromSwap);
     if (highBox) {
       highBox.addEventListener('change', function () {
         if (state === 'SCANNED' && scanned && scanned.risk === 'HIGH') {
