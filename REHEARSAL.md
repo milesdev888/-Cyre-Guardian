@@ -159,3 +159,19 @@ that's the point of rehearsing on devnet.
 
 If all 9 steps pass, mainnet launch is the same flow with
 `cyre_dbc_config.jsonc` (real caps) — a script you have already run once.
+
+---
+
+## LOCAL VALIDATOR SHORTCUT (agent-tested)
+
+Public Devnet faucets often rate-limit automation. A full math rehearsal was
+completed on `solana-test-validator` with Meteora BPF programs — see
+**`REHEARSAL_RESULTS.md`** (PASS: 65M leftover claimed, 10M vest escrow,
+100% permanent LP lock config, immutable mint).
+
+Extra steps that rehearsal found:
+
+1. Prefer `"metadata": { "uri": "https://cyre.dev/token-metadata.json" }` over Irys upload.
+2. After migrate, call SDK `migration.withdrawLeftover` — leftover is not auto-credited.
+3. Near graduation, shrink `dbcSwap.amountIn` if you see `Insufficient Liquidity`.
+4. On localnet only: fund the DBC pool authority PDA (~0.1 SOL) before migrate.
