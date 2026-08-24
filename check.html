@@ -177,7 +177,15 @@ async function check(){
 
 go.addEventListener('click', check);
 input.addEventListener('keydown', function(e){ if (e.key === 'Enter') check(); });
+(function(){
+  var p = new URLSearchParams(location.search);
+  var a = p.get('address');
+  if (!a) return;
+  input.value = a;
+  if (p.get('embed') === '1') check();
+})();
 </script>
+<script defer src="/embed-mode.js"></script>
 <script src="/ai-vibe-loader.js" defer></script>
 </body>
 </html>

@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script defer src="/swap-config.js"></script>
 <script defer src="/scan-swap.js"></script>
+<script defer src="/embed-mode.js"></script>
 <link rel="preload" href="https://plugin.jup.ag/plugin-v1.js" as="script">
 <style>
 :root{--ink:#07080b;--panel:#0d1017;--line:#1f2634;--text:#e8ecf3;--dim:#8892a4;--ice:#5fd0ff;--cyan:#4fe3d0;--live:#3ddc84;--red:#ff4d5e;--amber:#ffbe50}
@@ -195,6 +196,13 @@ async function scan(){
 }
 function fact(k,v){ return '<div class="fact"><small>'+k+'</small><b>'+v+'</b></div>'; }
 document.getElementById('mint').addEventListener('keydown',function(e){ if(e.key==='Enter') scan(); });
+(function(){
+  var p = new URLSearchParams(location.search);
+  var m = p.get('mint');
+  if (!m) return;
+  document.getElementById('mint').value = m;
+  if (p.get('embed') === '1') scan();
+})();
 </script>
 </body>
 </html>

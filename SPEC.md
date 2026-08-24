@@ -77,7 +77,11 @@ cyre.dev/tokenomics and @Cyredev888.
 | `oracle.html` | Oracle Pulse v1 — mint/oracle-level RWA feed monitor → cyre.dev/oracle (prefer `/oracle` over `/pulse`). Feed board (not wallet paste). Patterns: stale / spike / divergence only. |
 | `guardian-chain-live.js` | Homepage live Solana pulse — polls `/api/chain-pulse` every 30s; updates LIVE/WATCHING chips + banner. No wallet scans. |
 | `api/chain-pulse.js` | GET `/api/chain-pulse` — one cached `getSlot` / 30s (`CHAIN_PULSE_CACHE_SEC`). Light UI pulse; **not** the Render watcher cron. |
-| `apps.html` | Guardian App Hub — all products in one grid (scan/swap, check, watch, oracle, etc.) → cyre.dev/apps. |
+| `apps.html` | Guardian App Hub — product grid + link to unified console → cyre.dev/apps. |
+| `app.html` | **Guardian Console** — unified app shell (sidebar + mobile nav) embedding all tools via `/app` → cyre.dev/app. Loads `guardian-app.js`, `guardian-app.css`. |
+| `guardian-app.js` | Console routing, quick lookup, iframe loader, session context for address/mint. |
+| `guardian-app.css` | Console shell styles (sidebar, dashboard, bottom nav). |
+| `embed-mode.js` / `embed-mode.css` | Hides page chrome when tools run inside Guardian App iframes (`?embed=1`). |
 | `scan.html` | Guardian Token Scan + Protected Swap (phase 2) — paste mint → cyre.dev/scan. Scan via `/api/token`; swap via Jupiter Plugin after gate. See `SWAP-SPEC.md`. |
 | `scan-swap.js` | Scan-before-swap gate state machine (SWAP-SPEC §6). |
 | `swap-config.js` | Jupiter referral pubkey + 50 bps fee config (fill after referral.jup.ag setup). |
