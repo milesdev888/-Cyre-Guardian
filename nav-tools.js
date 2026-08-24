@@ -7,6 +7,7 @@
   window.__cyAiNavTools = true;
 
   var LINKS = [
+    { href: '/apps', label: 'Apps', hint: 'All tools' },
     { href: '/watch', label: 'Watch', hint: 'Monitor' },
     { href: '/passport', label: 'Passport', hint: 'Profile' },
     { href: '/check', label: 'Check', hint: 'Address' },

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guardian Apps — CYRE</title>
+  <meta name="description" content="All CYRE Guardian products in one place — scan & swap, watch, check, oracle, forensics, passport, and more. Patterns, not verdicts.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/homepage.css">
+  <link rel="stylesheet" href="/theme-purple-deep.css">
+  <script defer src="/nav-tools.js"></script>
+  <script defer src="/guardian-chain-live.js"></script>
+  <style>
+    .apps-page { padding: 28px 0 64px; }
+    .apps-hero { margin-bottom: 28px; max-width: 720px; }
+    .apps-hero .kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; color: var(--cyan); margin-bottom: 10px; }
+    .apps-hero h1 { margin: 0 0 10px; font: 800 clamp(1.75rem, 5vw, 2.5rem)/1.08 var(--display); letter-spacing: -.02em; }
+    .apps-hero h1 span { color: var(--cyan); }
+    .apps-hero p { margin: 0; color: var(--muted); line-height: 1.65; font-size: 15px; max-width: 58ch; }
+    .apps-live { margin-top: 16px; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--muted); padding: 10px 14px; border-radius: 999px; border: 1px solid rgba(95,208,255,.2); background: rgba(6,10,22,.75); display: inline-flex; align-items: center; gap: 8px; }
+    .apps-live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+    .apps-live.is-live { color: #eefaff; border-color: rgba(61,220,132,.35); }
+    .apps-live.is-live::before { background: #3ddc84; box-shadow: 0 0 10px rgba(61,220,132,.55); }
+    .apps-group { margin-top: 32px; }
+    .apps-group-head { margin-bottom: 14px; }
+    .apps-group-head h2 { margin: 0; font: 700 1.05rem/1.2 var(--display); letter-spacing: .02em; }
+    .apps-group-head p { margin: 6px 0 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+    .apps-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+    .app-card {
+      display: block; text-decoration: none; color: inherit;
+      background: linear-gradient(165deg, rgba(18,22,38,.92), rgba(10,12,20,.88));
+      border: 1px solid rgba(95,208,255,.14); border-radius: 18px; padding: 18px 18px 16px;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+      min-height: 100%;
+    }
+    .app-card:hover { border-color: rgba(95,208,255,.38); transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,.35); }
+    .app-card.featured { border-color: rgba(79,227,208,.35); background: linear-gradient(165deg, rgba(20,28,48,.95), rgba(10,14,24,.9)); }
+    .app-card .tag { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--cyan); margin-bottom: 8px; display: block; }
+    .app-card .tag.live { color: #3ddc84; }
+    .app-card h3 { margin: 0 0 8px; font: 700 1.15rem/1.15 var(--display); }
+    .app-card p { margin: 0 0 14px; color: #b8c4dc; font-size: 13.5px; line-height: 1.55; }
+    .app-card .go { color: var(--cyan); font-weight: 600; font-size: 13px; }
+    .apps-foot { margin-top: 36px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.08); color: var(--muted); font-size: 12px; line-height: 1.65; max-width: 62ch; }
+    .apps-topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; }
+    .apps-topbar a.back { color: var(--muted); font-size: 13px; text-decoration: none; }
+    .apps-topbar a.back:hover { color: var(--cyan); }
+    @media (max-width: 640px) { .apps-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <header class="masthead shell">
+    <div class="pill">
+      <a class="brand" href="/" aria-label="CYRE home">
+        <span class="brand-orb" aria-hidden="true"></span>
+        <span>CYRE</span>
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle menu">
+        <span class="nav-toggle-line" aria-hidden="true"></span>
+      </button>
+      <nav id="site-nav" class="nav nav-links" aria-label="Primary">
+        <a href="/apps" aria-current="page">Apps</a>
+        <a href="/scan">Scan</a>
+        <a href="/watch">Watch</a>
+        <a href="/check">Check</a>
+        <a href="/oracle">Oracle</a>
+        <a href="/forensics">Forensics</a>
+        <a href="/tokenomics">Tokenomics</a>
+        <a href="/" class="req">Home</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell apps-page">
+    <div class="apps-topbar">
+      <a class="back" href="/">← Home</a>
+    </div>
+
+    <div class="apps-hero">
+      <div class="kicker">GUARDIAN APP HUB</div>
+      <h1>Every product. <span>One place.</span></h1>
+      <p>Scan before you swap, watch the chain, grade wallets, read oracle feeds, and carry explainable context — all Guardian flows, patterns not verdicts.</p>
+      <div class="apps-live" id="apps-live" aria-live="polite">Guardian connecting to Solana…</div>
+    </div>
+
+    <section class="apps-group" aria-labelledby="trade-title">
+      <div class="apps-group-head">
+        <h2 id="trade-title">Trade</h2>
+        <p>Look first, swap second — non-custodial via Jupiter.</p>
+      </div>
+      <div class="apps-grid">
+        <a class="app-card featured" href="/scan">
+          <span class="tag live">Live · Scan + Swap</span>
+          <h3>Token Scan &amp; Swap</h3>
+          <p>Paste any mint — Guardian reads mint/freeze authority and holder signals, then unlocks a Jupiter swap for that exact token.</p>
+          <span class="go">Open Scan →</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="apps-group" aria-labelledby="analyze-title">
+      <div class="apps-group-head">
+        <h2 id="analyze-title">Analyze</h2>
+        <p>Wallet and address intelligence from measured on-chain windows.</p>
+      </div>
+      <div class="apps-grid">
+        <a class="app-card" href="/check">
+          <span class="tag">Address</span>
+          <h3>Check</h3>
+          <p>Paste a Solana address — six explainable signals and a LOW / MED / HIGH band from a 1,000-signature window.</p>
+          <span class="go">Open Check →</span>
+        </a>
+        <a class="app-card" href="/score">
+          <span class="tag">Wallet</span>
+          <h3>Score</h3>
+          <p>Generate a shareable wallet score card dossier — canvas PNG and measured profile for one address.</p>
+          <span class="go">Open Score →</span>
+        </a>
+        <a class="app-card" href="/passport">
+          <span class="tag">Profile</span>
+          <h3>Passport</h3>
+          <p>Stable JSON risk passport — score, signals, mint affinity vs RWA seeds, reusable across workflows.</p>
+          <span class="go">Open Passport →</span>
+        </a>
+        <a class="app-card" href="/forensics">
+          <span class="tag">Patterns</span>
+          <h3>Forensics</h3>
+          <p>Single-address RWA pattern board — dormant→active, burst, failure spike, mint-affinity. Measured only.</p>
+          <span class="go">Open Forensics →</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="apps-group" aria-labelledby="monitor-title">
+      <div class="apps-group-head">
+        <h2 id="monitor-title">Monitor</h2>
+        <p>Feeds, wallets, and public pattern surfaces.</p>
+      </div>
+      <div class="apps-grid">
+        <a class="app-card" href="/watch">
+          <span class="tag">Wallets</span>
+          <h3>Watch</h3>
+          <p>Monitor up to 10 addresses — alerts from this measured run only. Burst, dormant→active, failure spike.</p>
+          <span class="go">Open Watch →</span>
+        </a>
+        <a class="app-card" href="/oracle">
+          <span class="tag">Feeds</span>
+          <h3>Oracle Pulse</h3>
+          <p>RWA oracle feed monitor — stale, spike, and divergence patterns on NestUSD Lazer seeds. Not wallet paste.</p>
+          <span class="go">Open Oracle →</span>
+        </a>
+        <a class="app-card" href="/signals">
+          <span class="tag">Feed</span>
+          <h3>Signals</h3>
+          <p>Public board of measured RWA pattern hits across an optional quiet address list.</p>
+          <span class="go">Open Signals →</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="apps-group" aria-labelledby="project-title">
+      <div class="apps-group-head">
+        <h2 id="project-title">Project</h2>
+        <p>$C7 tokenomics, roadmap, and community programs.</p>
+      </div>
+      <div class="apps-grid">
+        <a class="app-card" href="/tokenomics">
+          <span class="tag">$C7</span>
+          <h3>Tokenomics</h3>
+          <p>100M fixed supply, locks, vesting, and the only official place for the contract address when live.</p>
+          <span class="go">Open Tokenomics →</span>
+        </a>
+        <a class="app-card" href="/roadmap">
+          <span class="tag">Plan</span>
+          <h3>Roadmap</h3>
+          <p>Shipped, now, next, and exploring — Synthetic Intelligence on Solana for real-world assets.</p>
+          <span class="go">Open Roadmap →</span>
+        </a>
+        <a class="app-card" href="/airdrop">
+          <span class="tag">3M $C7</span>
+          <h3>Airdrop</h3>
+          <p>Community and creator allocation details. CA only on tokenomics and @Cyredev888 — never in DMs.</p>
+          <span class="go">Open Airdrop →</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="apps-group" aria-labelledby="guardian-title">
+      <div class="apps-group-head">
+        <h2 id="guardian-title">Guardian</h2>
+        <p>Talk to the witness on the homepage.</p>
+      </div>
+      <div class="apps-grid">
+        <a class="app-card" href="/">
+          <span class="tag">Chat</span>
+          <h3>Talk to Guardian</h3>
+          <p>Open the homepage pop-out — hardened chat API, origin-locked, patterns not verdicts.</p>
+          <span class="go">Go to Home →</span>
+        </a>
+      </div>
+    </section>
+
+    <p class="apps-foot">Patterns, not verdicts. CYRE never DMs you or asks you to connect a wallet except inside the Scan swap widget. $C7 is not swappable until mainnet launch.</p>
+  </main>
+
+  <footer class="shell">
+    <div class="footer-row">
+      <div>
+        <div class="footer-brand">CYRE</div>
+        <p class="footer-copy">Guardian App Hub · Synthetic Intelligence on Solana.</p>
+      </div>
+      <div class="footer-meta">Early-stage · Measured signals only.</div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var el = document.getElementById('apps-live');
+      if (!el) return;
+      function fmtSlot(n) {
+        if (n == null || !Number.isFinite(n)) return '—';
+        return n.toLocaleString('en-US');
+      }
+      function tick() {
+        fetch('/api/chain-pulse', { cache: 'no-store' })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d || !d.ok) {
+              el.textContent = 'Guardian reconnecting to Solana…';
+              el.classList.remove('is-live');
+              return;
+            }
+            var sec = d.fetchedAt ? Math.max(0, Math.floor((Date.now() - Date.parse(d.fetchedAt)) / 1000)) : 0;
+            el.textContent = 'Guardian watching Solana · slot ' + fmtSlot(d.slot) + ' · ' + sec + 's ago';
+            el.classList.add('is-live');
+          })
+          .catch(function () {
+            el.textContent = 'Guardian reconnecting to Solana…';
+            el.classList.remove('is-live');
+          });
+      }
+      tick();
+      setInterval(tick, 30000);
+    })();
+
+    (function () {
+      var navToggle = document.querySelector('.nav-toggle');
+      var nav = document.getElementById('site-nav');
+      if (!navToggle || !nav) return;
+      navToggle.addEventListener('click', function () {
+        var open = navToggle.getAttribute('aria-expanded') === 'true';
+        navToggle.setAttribute('aria-expanded', String(!open));
+        nav.classList.toggle('is-open', !open);
+        document.body.classList.toggle('menu-open', !open);
+      });
+    })();
+  </script>
+</body>
+</html>
