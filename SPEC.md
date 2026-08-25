@@ -234,7 +234,7 @@ no leftover gold chrome in UI (`#d9b36c`/`#d4a84b` as button/nav accents), no wh
 ## 7. VERIFY BEFORE DECLARING DONE (curl checklist)
 
 `curl -s -o /dev/null -w "%{http_code}"` each: `/` `/tokenomics` `/roadmap` `/airdrop`
-`/watch` `/passport` `/forensics` `/signals` `/oracle` `/check` `/score` `/auto` `/theme-glass.css` `/launch-banner.js` `/vortex.js`
+`/watch` `/passport` `/forensics` `/signals` `/oracle` `/check` `/score` `/auto` `/cortex` `/theme-glass.css` `/launch-banner.js` `/vortex.js`
 `/guardian-voice.js` `/guardian-video.mp4` `/theme-ai-vibe.css` `/guardian-popout.js` `/nav-tools.js` `/ai-vibe-loader.js` `/ai-presence.js` `/homepage.css` `/guardian-head.js` `/cyre-token-256.png` `/cyre-token-512.png`
 — all 200. Then `/api/address?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
 → expect `score:24, riskLevel:LOW`. Then `/api/watch?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`

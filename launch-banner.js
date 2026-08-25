@@ -20,25 +20,52 @@
 
   var css = document.createElement('style');
   css.textContent =
-    '#cy-banner{position:relative;overflow:hidden;background:#07080b;border-top:1px solid #1f2634;border-bottom:1px solid #1f2634}' +
-    '#cy-banner .cyb-in{position:relative;z-index:2;max-width:1080px;margin:0 auto;padding:72px 24px 56px;text-align:center}' +
-    '#cy-banner h2{font-family:Sora,system-ui,sans-serif;font-weight:700;font-size:clamp(26px,4.5vw,44px);color:#e8ecf3;margin:0 0 14px;letter-spacing:-.01em}' +
-    '#cy-banner p{color:#8892a4;font-size:clamp(14px,1.8vw,17px);max-width:640px;margin:0 auto 26px;line-height:1.7}' +
-    '#cy-banner .cyb-embed{width:100%;height:70vh;border:1px solid rgba(196,181,253,.16);border-radius:16px;overflow:hidden;background:#05060a;box-sizing:border-box}' +
-    '#cy-banner .cyb-frame{display:block;width:100%;height:100%;border:0;pointer-events:none;background:#05060a}' +
-    '#cy-banner .cyb-full{display:inline-block;margin-top:16px;font:500 14px Inter,system-ui,sans-serif;color:var(--gold,#5fd0ff);text-decoration:none}' +
-    '#cy-banner .cyb-full:hover,#cy-banner .cyb-full:focus-visible{color:#e8ecf3;text-decoration:underline}' +
-    '@media (max-width:640px){#cy-banner .cyb-in{padding:56px 20px 44px}#cy-banner .cyb-embed{height:60vh}}';
+    '#cy-banner{position:relative;overflow:hidden;isolation:isolate;' +
+      'background:radial-gradient(ellipse 70% 55% at 50% 40%,rgba(60,35,110,.28),transparent 62%),' +
+                 'radial-gradient(ellipse 50% 40% at 18% 80%,rgba(124,239,255,.06),transparent 55%),' +
+                 'linear-gradient(180deg,#0b0618 0%,#07080b 55%,#07080b 100%);' +
+      'border-top:1px solid rgba(196,181,253,.14);border-bottom:1px solid rgba(196,181,253,.14)}' +
+    '#cy-banner::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;' +
+      'background:radial-gradient(circle at 50% 0%,rgba(196,181,253,.08),transparent 42%)}' +
+    '#cy-banner .cyb-in{position:relative;z-index:2;max-width:1180px;margin:0 auto;padding:80px 24px 64px;text-align:center;' +
+      'opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}' +
+    '#cy-banner .cyb-in.is-in{opacity:1;transform:none}' +
+    '#cy-banner .cyb-eyebrow{display:block;margin:0 0 14px;font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;' +
+      'letter-spacing:.18em;text-transform:uppercase;color:rgba(196,181,253,.85)}' +
+    '#cy-banner h2{font-family:Sora,system-ui,sans-serif;font-weight:700;font-size:clamp(28px,4.6vw,46px);' +
+      'color:#eefaff;margin:0 0 14px;letter-spacing:-.02em}' +
+    '#cy-banner p{color:#8892a4;font-size:clamp(14px,1.8vw,17px);max-width:640px;margin:0 auto 28px;line-height:1.7}' +
+    '#cy-banner .cyb-embed{position:relative;width:100%;height:70vh;max-height:760px;min-height:360px;' +
+      'border:1px solid rgba(196,181,253,.16);border-radius:18px;overflow:hidden;background:#0b0618;box-sizing:border-box;' +
+      'box-shadow:0 24px 64px -28px rgba(0,0,0,.85),0 0 48px rgba(124,239,255,.08),0 0 64px rgba(196,181,253,.10),' +
+                 'inset 0 1px 0 rgba(238,250,255,.06)}' +
+    '#cy-banner .cyb-embed::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;' +
+      'box-shadow:inset 0 0 0 1px rgba(196,181,253,.06);' +
+      'background:linear-gradient(180deg,rgba(238,250,255,.04),transparent 18%,transparent 82%,rgba(11,6,24,.22))}' +
+    '#cy-banner .cyb-frame{display:block;width:100%;height:100%;border:0;pointer-events:none;background:#0b0618}' +
+    '#cy-banner .cyb-full{display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:8px 2px;' +
+      'font:500 14px Inter,system-ui,sans-serif;color:#7cefff;text-decoration:none;' +
+      'border-bottom:1px solid rgba(124,239,255,.28);transition:color .2s,border-color .2s,gap .2s}' +
+    '#cy-banner .cyb-full:hover,#cy-banner .cyb-full:focus-visible{color:#eefaff;border-bottom-color:rgba(238,250,255,.55);gap:12px;outline:none}' +
+    '#cy-banner .cyb-full span{display:inline-block;transition:transform .2s}' +
+    '#cy-banner .cyb-full:hover span,#cy-banner .cyb-full:focus-visible span{transform:translateX(3px)}' +
+    '@media (max-width:640px){#cy-banner .cyb-in{padding:56px 18px 48px}#cy-banner .cyb-embed{height:60vh;min-height:280px;border-radius:14px}}' +
+    '@media (prefers-reduced-motion:reduce){#cy-banner .cyb-in{opacity:1;transform:none;transition:none}' +
+      '#cy-banner .cyb-full,#cy-banner .cyb-full span{transition:none}}';
   document.head.appendChild(css);
 
   var sec = document.createElement('section');
   sec.id = 'cy-banner';
+  sec.setAttribute('aria-labelledby', 'cy-banner-title');
   sec.innerHTML =
     '<div class="cyb-in">' +
-      '<h2>Inside the Guardian.</h2>' +
+      '<span class="cyb-eyebrow">Neural Cortex</span>' +
+      '<h2 id="cy-banner-title">Inside the Guardian.</h2>' +
       '<p>The agent graph, live \u2014 research, signals, execution, risk. Patterns, not verdicts.</p>' +
-      '<div class="cyb-embed"><iframe class="cyb-frame" src="/cortex.html" loading="lazy" title="Guardian Neural Cortex"></iframe></div>' +
-      '<a class="cyb-full" href="/cortex">Open full screen \u2192</a>' +
+      '<div class="cyb-embed">' +
+        '<iframe class="cyb-frame" src="/cortex.html" loading="lazy" title="Guardian Neural Cortex" tabindex="-1"></iframe>' +
+      '</div>' +
+      '<a class="cyb-full" href="/cortex">Open full screen <span aria-hidden="true">\u2192</span></a>' +
     '</div>';
 
   // $CYRE nav tab — inserted before "Request access"
@@ -105,4 +132,19 @@
     anchor.parentNode.insertBefore(sec, anchor);
     anchor.parentNode.insertBefore(uc, anchor);
   } else { document.body.appendChild(sec); document.body.appendChild(uc); }
+
+  var panel = sec.querySelector('.cyb-in');
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !('IntersectionObserver' in window)){
+    panel.classList.add('is-in');
+  } else {
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){
+        if (!e.isIntersecting) return;
+        panel.classList.add('is-in');
+        io.disconnect();
+      });
+    },{threshold:.12, rootMargin:'0px 0px -8% 0px'});
+    io.observe(sec);
+  }
 })();

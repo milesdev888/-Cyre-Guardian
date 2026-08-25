@@ -95,7 +95,8 @@ header.head .head-in,header.head .wrap{
 .sec{position:relative;z-index:1}
 
 /* Banner + use-case strip pick up the glass border */
-#cy-banner{border-color:var(--glass-border)}
+#cy-banner{border-color:rgba(196,181,253,.14)}
+#cy-banner .cyb-embed{border-color:rgba(196,181,253,.16)}
 #cy-usecase{border-color:var(--glass-border);backdrop-filter:blur(8px)}
 
 /* ===== Sections from the second batch of Hedra screenshots ===== */
