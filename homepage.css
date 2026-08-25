@@ -484,9 +484,8 @@ h1{
   height:46%;
   aspect-ratio:1 / 1;
   inset:auto;
-  top:50%;
-  left:50%;
-  transform:translate(-50%,-50%);
+  top:27%;
+  left:27%;
   overflow:hidden;
   border-radius:50%;
   border:none;
