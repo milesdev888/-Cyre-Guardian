@@ -48,7 +48,8 @@ img{max-width:100%;display:block}
   inset:auto;
   pointer-events:none;
   z-index:-1;
-  filter:blur(12px);
+  filter:none;
+  opacity:.55;
 }
 .bg-grid::before{
   top:14vh;

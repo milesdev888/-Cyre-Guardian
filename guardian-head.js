@@ -219,10 +219,10 @@
 
     ctx.clearRect(0, 0, W, H);
 
-    // Softer ambient — no hot white core
+    // Quiet ambient — no soft bloom wash over particles
     var g = ctx.createRadialGradient(W * 0.5, H * 0.42, 10, W * 0.5, H * 0.48, W * 0.44);
-    g.addColorStop(0, 'rgba(112,72,220,' + (0.08 + w.form * 0.05).toFixed(3) + ')');
-    g.addColorStop(0.45, 'rgba(155,123,255,' + (0.05 + w.form * 0.03).toFixed(3) + ')');
+    g.addColorStop(0, 'rgba(112,72,220,' + (0.03 + w.form * 0.02).toFixed(3) + ')');
+    g.addColorStop(0.5, 'rgba(155,123,255,' + (0.02 + w.form * 0.015).toFixed(3) + ')');
     g.addColorStop(1, 'rgba(5,8,18,0)');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
 
@@ -230,8 +230,8 @@
 
     if (w.dust > 0.05) {
       var dg = ctx.createRadialGradient(W * 0.5, H * 0.48, 5, W * 0.5, H * 0.5, W * 0.52);
-      dg.addColorStop(0, 'rgba(112,72,220,' + (0.1 * w.dust).toFixed(3) + ')');
-      dg.addColorStop(0.5, 'rgba(155,123,255,' + (0.05 * w.dust).toFixed(3) + ')');
+      dg.addColorStop(0, 'rgba(112,72,220,' + (0.04 * w.dust).toFixed(3) + ')');
+      dg.addColorStop(0.5, 'rgba(155,123,255,' + (0.02 * w.dust).toFixed(3) + ')');
       dg.addColorStop(1, 'rgba(5,8,18,0)');
       ctx.fillStyle = dg; ctx.fillRect(0, 0, W, H);
     }
