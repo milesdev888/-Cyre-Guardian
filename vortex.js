@@ -162,14 +162,16 @@
   };
 
   Node.prototype.draw = function () {
-    var breath = 1 + (reduce ? 0 : 0.06 * Math.sin(this.pulse));
+    var breath = 1 + (reduce ? 0 : 0.04 * Math.sin(this.pulse));
     var rad = this.radius * breath;
-    var a = this.alpha * (0.94 + (reduce ? 0.06 : 0.06 * Math.sin(this.pulse * 0.7)));
+    var a = this.alpha;
     var x = this.x, y = this.y;
     var sides = 6;
-    var rot = (this.facet / 6) * Math.PI + (reduce ? 0 : this.pulse * 0.05);
+    var rot = (this.facet / 6) * Math.PI + (reduce ? 0 : this.pulse * 0.04);
 
-    // Solid crystal facet only — no soft halo / outer glow
+    // Hard crystal only — never use canvas shadowBlur (reads as soft halo)
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
     ctx.beginPath();
     for (var i = 0; i <= sides; i++) {
       var ang = rot + (i / sides) * Math.PI * 2;
@@ -180,17 +182,14 @@
     ctx.closePath();
     ctx.fillStyle = 'rgba(' + this.r + ',' + this.g + ',' + this.b + ',' + a.toFixed(3) + ')';
     ctx.fill();
-
-    // Thin hard rim (1px) — not a glow
-    ctx.strokeStyle = 'rgba(255,255,255,' + Math.min(0.55, a * 0.35 * this.spark).toFixed(3) + ')';
-    ctx.lineWidth = 0.85;
+    // Same-color hard edge (no white bloom ring)
+    ctx.strokeStyle = 'rgba(' +
+      Math.min(255, this.r + 40) + ',' +
+      Math.min(255, this.g + 40) + ',' +
+      Math.min(255, this.b + 30) + ',' +
+      Math.min(1, a).toFixed(3) + ')';
+    ctx.lineWidth = 1;
     ctx.stroke();
-
-    // Tiny hard specular — sharp pin, not bloom
-    ctx.beginPath();
-    ctx.arc(x - rad * 0.28, y - rad * 0.3, Math.max(0.45, rad * 0.16), 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.9, 0.45 + this.spark * 0.3).toFixed(3) + ')';
-    ctx.fill();
   };
 
   function init() {
@@ -230,13 +229,8 @@
     var dt = t0 ? Math.min((now - t0) / 1000, 0.05) : 0.016;
     t0 = now;
     ctx.clearRect(0, 0, width, height);
-
-    var g = ctx.createRadialGradient(width * 0.55, height * 0.35, 0, width * 0.5, height * 0.5, Math.max(width, height) * 0.75);
-    g.addColorStop(0, 'rgba(153,69,255,0.04)');
-    g.addColorStop(0.5, 'rgba(153,69,255,0.015)');
-    g.addColorStop(1, 'rgba(5,6,10,0.12)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, width, height);
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
 
     drawConnections();
     for (var i = 0; i < nodes.length; i++) {
