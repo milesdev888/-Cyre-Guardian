@@ -40,7 +40,6 @@
   ];
   var GREEN = { r: 20, g: 241, b: 149 };
   var GOLD  = { r: 255, g: 190, b: 80 };  // #FFBE50
-  var PURPLE = { r: 153, g: 69, b: 255 };
 
   function resize() {
     var rect = hero.getBoundingClientRect();
