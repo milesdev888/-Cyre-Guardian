@@ -61,7 +61,7 @@
       } else if (band < 0.28) {
         x = (Math.random() - 0.5) * 0.38; y = -0.28 + (Math.random() - 0.5) * 0.1; z = 0.58 + Math.random() * 0.14;
       }
-      var ds = 0.35 + Math.random() * 0.85;
+      var ds = 0.45 + Math.random() * 1.05;
       var da = Math.random() * Math.PI * 2;
       out.push({
         x: x, y: y, z: z,
@@ -71,7 +71,8 @@
         dx: x + Math.cos(da) * ds,
         dy: y + Math.sin(da) * ds * 0.55,
         dz: z + (Math.random() - 0.5) * ds * 0.7,
-        hue: pickHue(), s: 1.35 + Math.random() * 2.1, facet: Math.random()
+        hue: pickHue(), s: 0.42 + Math.random() * 0.72, facet: Math.random(),
+        spark: 0.55 + Math.random() * 0.45
       });
     }
     return out;
@@ -89,8 +90,8 @@
     return out;
   }
 
-  points = seed(640);
-  facets = buildFacets(points, 140);
+  points = seed(780);
+  facets = buildFacets(points, 120);
 
   function loadImg(src, onOk) {
     try {
@@ -228,17 +229,17 @@
     drawPortrait(robotImg, robotReady, w.robot, 0.72);
     drawPortrait(herImg, herReady, w.her, 0.88);
 
-    ctx.lineWidth = Math.max(0.5, dpr * 0.7);
-    var maxDist = (32 - faceAmt * 14 + w.dust * 14) * dpr;
+    ctx.lineWidth = Math.max(0.4, dpr * 0.45);
+    var maxDist = (26 - faceAmt * 12 + w.dust * 10) * dpr;
     var step = faceAmt > 0.5 ? 3 : 1;
     for (i = 0; i < projected.length; i += step) {
       a = projected[i]; var linked = 0;
-      for (j = i + 1; j < projected.length && linked < 8; j++) {
+      for (j = i + 1; j < projected.length && linked < 5; j++) {
         b = projected[j]; dx = a.x - b.x; if (dx > maxDist || dx < -maxDist) continue;
         dy = a.y - b.y; if (dy > maxDist || dy < -maxDist) continue;
         dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > maxDist || dist < 2) continue;
-        alpha = (1 - dist / maxDist) * Math.min(a.a, b.a) * 0.42 * linkAlphaScale;
+        alpha = (1 - dist / maxDist) * Math.min(a.a, b.a) * 0.28 * linkAlphaScale;
         if (alpha < 0.02) continue;
         if (a.hue === 3 || b.hue === 3) col = rgba(COL.gold, alpha * 0.95);
         else if (a.hue === 0 || b.hue === 0) col = rgba(COL.green, alpha * 0.95);
@@ -250,33 +251,38 @@
 
     for (i = 0; i < projected.length; i++) {
       a = projected[i];
-      var sz = a.s * (1.15 + dpr * 0.45) * (0.9 + w.dust * 0.35 + w.form * 0.25);
-      if (faceAmt > 0.35) sz *= 1 - faceAmt * 0.55;
-      var baseA = (a.hue === 3 ? 0.78 : a.hue === 0 ? 0.7 : 0.62) + a.a * 0.38;
-      var pa = baseA * Math.max(0.18, particleAlpha);
+      // Smaller glassy beads — denser sparkle on burst, delicate on form
+      var burst = Math.max(w.dust, 1 - w.form);
+      var sz = a.s * (0.55 + dpr * 0.22) * (0.75 + burst * 0.45 + w.form * 0.15);
+      if (faceAmt > 0.35) sz *= 1 - faceAmt * 0.6;
       var col = a.hue === 0 ? COL.green : a.hue === 1 ? COL.purple : a.hue === 2 ? COL.dpurple : COL.gold;
-      // Hard crystal fill — no white bloom / soft core
+      var glass = 0.28 + a.a * 0.22 + burst * 0.12;
+      var pa = glass * Math.max(0.12, particleAlpha);
+      var spark = (a.spark || 0.7) * (0.7 + burst * 0.5);
+
       ctx.shadowBlur = 0;
       ctx.shadowColor = 'transparent';
-      var sides = 6;
-      var crot = a.facet * Math.PI * 2 + elapsed * 0.03;
+
+      // Translucent glass body (circle reads cleaner small than hex)
       ctx.beginPath();
-      for (j = 0; j <= sides; j++) {
-        var ang = crot + (j / sides) * Math.PI * 2;
-        var px = a.x + Math.cos(ang) * sz;
-        var py = a.y + Math.sin(ang) * sz;
-        if (j === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-      }
-      ctx.closePath();
-      ctx.fillStyle = rgba(col, pa);
+      ctx.arc(a.x, a.y, sz, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' + col[0] + ',' + col[1] + ',' + col[2] + ',' + pa.toFixed(3) + ')';
       ctx.fill();
-      ctx.strokeStyle = 'rgba(' +
-        Math.min(255, col[0] + 40) + ',' +
-        Math.min(255, col[1] + 40) + ',' +
-        Math.min(255, col[2] + 30) + ',' +
-        Math.min(1, pa).toFixed(3) + ')';
-      ctx.lineWidth = 1;
+
+      // Bright glass rim
+      ctx.beginPath();
+      ctx.arc(a.x, a.y, sz, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255,255,255,' + Math.min(0.75, pa * 1.4 * spark).toFixed(3) + ')';
+      ctx.lineWidth = Math.max(0.45, sz * 0.22);
       ctx.stroke();
+
+      // Specular glint — tiny hard highlight
+      var hx = a.x - sz * 0.32;
+      var hy = a.y - sz * 0.35;
+      ctx.beginPath();
+      ctx.arc(hx, hy, Math.max(0.35, sz * 0.28), 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.95, 0.4 + spark * 0.45).toFixed(3) + ')';
+      ctx.fill();
     }
   }
 
