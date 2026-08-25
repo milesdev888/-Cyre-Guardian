@@ -31,6 +31,7 @@
   var raf = 0;
   var t0 = 0;
   var visible = true;
+  var resizeTimer = 0;
 
   // Solana brand — purple + green, brighter
   var COLORS = [
@@ -115,10 +116,49 @@
     ctx.stroke();
   };
 
+  function targetCount() {
+    return Math.min(NODE_COUNT, Math.max(36, ((width * height) / 14000) | 0));
+  }
+
   function init() {
     nodes.length = 0;
-    var n = Math.min(NODE_COUNT, Math.max(36, ((width * height) / 14000) | 0));
+    var n = targetCount();
     for (var i = 0; i < n; i++) nodes.push(new Node());
+  }
+
+  /* Keep the same field across viewport changes. Mobile scroll often fires
+     resize (URL bar show/hide) — re-seeding made every dot jump with the screen. */
+  function rescaleNodes(prevW, prevH) {
+    if (!nodes.length || !(prevW > 0) || !(prevH > 0)) {
+      init();
+      return;
+    }
+    var sx = width / prevW;
+    var sy = height / prevH;
+    var i, n;
+    if (Math.abs(sx - 1) > 0.001 || Math.abs(sy - 1) > 0.001) {
+      for (i = 0; i < nodes.length; i++) {
+        nodes[i].x *= sx;
+        nodes[i].y *= sy;
+      }
+    }
+    n = targetCount();
+    while (nodes.length < n) nodes.push(new Node());
+    if (nodes.length > n) nodes.length = n;
+  }
+
+  function onViewportChange() {
+    var prevW = width;
+    var prevH = height;
+    resize();
+    // Ignore tiny chrome-only height jitter; still update canvas via resize().
+    var widthJump = Math.abs(width - prevW) > 2;
+    var heightJump = Math.abs(height - prevH) > 48;
+    if (!nodes.length) {
+      init();
+      return;
+    }
+    if (widthJump || heightJump) rescaleNodes(prevW, prevH);
   }
 
   function drawConnections() {
@@ -182,7 +222,14 @@
 
   resize();
   init();
-  window.addEventListener('resize', function () { resize(); init(); });
+  window.addEventListener('resize', function () {
+    // Debounce so mobile URL-bar thrash does not thrash the field.
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      resizeTimer = 0;
+      onViewportChange();
+    }, 120);
+  });
 
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(function (es) {
