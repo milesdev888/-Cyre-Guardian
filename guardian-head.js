@@ -71,7 +71,7 @@
         dx: x + Math.cos(da) * ds,
         dy: y + Math.sin(da) * ds * 0.55,
         dz: z + (Math.random() - 0.5) * ds * 0.7,
-        hue: pickHue(), s: 0.7 + Math.random() * 1.5, facet: Math.random()
+        hue: pickHue(), s: 1.05 + Math.random() * 1.85, facet: Math.random()
       });
     }
     return out;
@@ -102,6 +102,7 @@
     } catch (e) { onOk(null); }
   }
   loadImg('/robot.jpg', function (im) { robotImg = im; robotReady = !!im; });
+  loadImg('/guardian2.jpg', function (im) { herImg = im; herReady = !!im; });
 
   function resize() {
     var rect = canvas.getBoundingClientRect();
@@ -116,25 +117,29 @@
     if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = 'high';
   }
 
-  /* dust → robot → dust  (~20s) — no photo morph (C7 profile face lives in ticker only)
-     0–15% dust | 15–30% dust→robot | 30–60% robot | 60–85% robot→dust | 85–100% dust */
-  var PERIOD = 20;
+  /* dust → robot → her (half-human) → dust  (~24s)
+     0–14% dust | 14–28% dust→robot | 28–48% robot | 48–62% robot→her
+     62–82% her | 82–100% her→dust */
+  var PERIOD = 24;
   function phaseWeights(elapsed) {
     if (reduce) return { dust: 0, form: 1, robot: 0, her: 0 };
     var p = (elapsed % PERIOD) / PERIOD;
     var dust = 0, form = 0, robot = 0, her = 0;
-    if (p < 0.15) {
+    if (p < 0.14) {
       dust = 1;
-    } else if (p < 0.30) {
-      var t = smoothstep((p - 0.15) / 0.15);
+    } else if (p < 0.28) {
+      var t = smoothstep((p - 0.14) / 0.14);
       dust = 1 - t; form = t; robot = t;
-    } else if (p < 0.60) {
+    } else if (p < 0.48) {
       form = 1; robot = 1;
-    } else if (p < 0.85) {
-      var t2 = smoothstep((p - 0.60) / 0.25);
-      form = 1 - t2 * 0.35; robot = 1 - t2; dust = t2;
+    } else if (p < 0.62) {
+      var t2 = smoothstep((p - 0.48) / 0.14);
+      form = 1; robot = 1 - t2; her = t2;
+    } else if (p < 0.82) {
+      form = 1; her = 1;
     } else {
-      dust = 1; form = 0.25;
+      var t3 = smoothstep((p - 0.82) / 0.18);
+      form = 1 - t3; her = 1 - t3; dust = t3;
     }
     return { dust: dust, form: form, robot: robot, her: her };
   }
@@ -230,7 +235,9 @@
     }
 
     drawFacets(projected, w);
+    // Robot then half-human her — dimmed, no drawn eyes
     drawPortrait(robotImg, robotReady, w.robot, 0.72);
+    drawPortrait(herImg, herReady, w.her, 0.88);
 
     ctx.lineWidth = Math.max(0.5, dpr * 0.7);
     var maxDist = (32 - faceAmt * 14 + w.dust * 14) * dpr;
@@ -254,11 +261,11 @@
 
     for (i = 0; i < projected.length; i++) {
       a = projected[i];
-      var sz = a.s * (0.95 + dpr * 0.35) * (0.7 + w.dust * 0.4 + w.form * 0.25);
+      var sz = a.s * (1.05 + dpr * 0.4) * (0.85 + w.dust * 0.35 + w.form * 0.25);
       if (faceAmt > 0.35) sz *= 1 - faceAmt * 0.55;
-      var baseA = (a.hue === 0 || a.hue === 3 ? 0.42 : 0.36) + a.a * 0.4;
+      var baseA = (a.hue === 0 || a.hue === 3 ? 0.58 : 0.5) + a.a * 0.42;
       ctx.beginPath();
-      ctx.fillStyle = hueColor(a.hue, baseA * Math.max(0.08, particleAlpha));
+      ctx.fillStyle = hueColor(a.hue, baseA * Math.max(0.12, particleAlpha));
       ctx.arc(a.x, a.y, sz, 0, Math.PI * 2);
       ctx.fill();
     }

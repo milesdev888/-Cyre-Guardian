@@ -61,15 +61,15 @@ body::after{
 .orbit-ring.r3{border-color:rgba(153,69,255,.55)}
 .orbit-ring.r1::after{
   background:#9945FF !important;
-  box-shadow:0 0 6px rgba(153,69,255,.55) !important;
+  box-shadow:0 0 0 2px rgba(153,69,255,.4), 0 0 8px rgba(153,69,255,.7) !important;
 }
 .orbit-ring.r2::after{
   background:#14F195 !important;
-  box-shadow:0 0 6px rgba(20,241,149,.55) !important;
+  box-shadow:0 0 0 2px rgba(20,241,149,.45), 0 0 8px rgba(20,241,149,.7) !important;
 }
 .orbit-ring.r3::after{
   background:linear-gradient(135deg,#9945FF,#14F195) !important;
-  box-shadow:0 0 6px rgba(153,69,255,.45) !important;
+  box-shadow:0 0 0 2px rgba(153,69,255,.35), 0 0 8px rgba(153,69,255,.55) !important;
 }
 
 .status-chip{
@@ -125,13 +125,13 @@ h1,h2,.section h2,.trust-band h2,.access-band h2,.footer-brand{
 @keyframes blink-glow-solana {
   0%, 100% {
     opacity: 1;
-    filter: brightness(1.05);
-    box-shadow: 0 0 6px rgba(20,241,149,.45);
+    filter: brightness(1.08);
+    box-shadow: 0 0 0 2px rgba(20,241,149,.35), 0 0 8px rgba(20,241,149,.55);
   }
   50% {
-    opacity: .65;
-    filter: brightness(1.15);
-    box-shadow: 0 0 4px rgba(20,241,149,.3);
+    opacity: .72;
+    filter: brightness(1.18);
+    box-shadow: 0 0 0 2px rgba(20,241,149,.25), 0 0 6px rgba(20,241,149,.4);
   }
 }
 .brand-orb{

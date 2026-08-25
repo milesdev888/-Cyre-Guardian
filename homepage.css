@@ -373,21 +373,21 @@ h1{
 .orbit-ring.r3::after{
   content:"";
   position:absolute;
-  top:-4px;left:50%;
-  width:8px;height:8px;
+  top:-5px;left:50%;
+  width:11px;height:11px;
   border-radius:50%;
   transform:translateX(-50%);
   background:#9945FF;
-  box-shadow:0 0 6px rgba(153,69,255,.55);
+  box-shadow:0 0 0 2px rgba(153,69,255,.4), 0 0 8px rgba(153,69,255,.7);
 }
 .orbit-ring.r2::after{
   background:#14F195;
-  box-shadow:0 0 6px rgba(20,241,149,.55);
+  box-shadow:0 0 0 2px rgba(20,241,149,.45), 0 0 8px rgba(20,241,149,.7);
 }
 .orbit-ring.r3::after{
-  top:auto;bottom:-4px;left:18%;
+  top:auto;bottom:-5px;left:18%;
   background:linear-gradient(135deg,#9945FF,#14F195);
-  box-shadow:0 0 6px rgba(153,69,255,.45);
+  box-shadow:0 0 0 2px rgba(153,69,255,.35), 0 0 8px rgba(153,69,255,.55);
 }
 .head-wrap{
   inset:12%;

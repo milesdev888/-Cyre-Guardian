@@ -26,8 +26,8 @@
   var ctx = canvas.getContext('2d');
   var width = 0, height = 0, dpr = 1;
   var nodes = [];
-  var NODE_COUNT = 72;
-  var CONNECTION_DIST = 168;
+  var NODE_COUNT = 88;
+  var CONNECTION_DIST = 180;
   var raf = 0;
   var t0 = 0;
   var visible = true;
@@ -65,17 +65,17 @@
     var ang = Math.random() * Math.PI * 2;
     this.vx = Math.cos(ang) * speed;
     this.vy = Math.sin(ang) * speed;
-    this.radius = 0.7 + Math.random() * 1.6;
-    this.alpha = 0.35 + Math.random() * 0.4;
+    this.radius = 1.35 + Math.random() * 2.1;
+    this.alpha = 0.55 + Math.random() * 0.4;
     this.pulse = Math.random() * Math.PI * 2;
     this.pulseSp = 0.8 + Math.random() * 1.4;
     var c;
-    // Mostly Solana purple; green as sparse accents (~18%)
-    if (Math.random() < 0.18) {
+    // Mostly Solana purple; green as sparse accents (~22%)
+    if (Math.random() < 0.22) {
       c = GREEN;
       this.gold = true;
-      this.radius = 0.8 + Math.random() * 1.5;
-      this.alpha = 0.4 + Math.random() * 0.35;
+      this.radius = 1.5 + Math.random() * 2.0;
+      this.alpha = 0.62 + Math.random() * 0.35;
     } else {
       c = COLORS[(Math.random() * 3) | 0];
       this.gold = false;
@@ -100,14 +100,19 @@
     if (sp > max) { this.vx = this.vx / sp * max; this.vy = this.vy / sp * max; }
   };
   Node.prototype.draw = function () {
-    var breath = 1 + (reduce ? 0 : 0.12 * Math.sin(this.pulse));
+    var breath = 1 + (reduce ? 0 : 0.14 * Math.sin(this.pulse));
     var rad = this.radius * breath;
-    var a = this.alpha * (0.85 + (reduce ? 0.15 : 0.12 * Math.sin(this.pulse * 0.7)));
-    // Crisp core only — no soft glow halo (avoids "Xmas tree" bloom)
+    var a = this.alpha * (0.9 + (reduce ? 0.1 : 0.14 * Math.sin(this.pulse * 0.7)));
+    // Solid core + tiny hard rim — readable without soft bloom / Xmas-tree halos
     ctx.beginPath();
     ctx.arc(this.x, this.y, rad, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(' + this.r + ',' + this.g + ',' + this.b + ',' + a.toFixed(3) + ')';
     ctx.fill();
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, rad, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(' + this.r + ',' + this.g + ',' + this.b + ',' + Math.min(1, a * 0.85).toFixed(3) + ')';
+    ctx.lineWidth = 0.9;
+    ctx.stroke();
   };
 
   function init() {
@@ -124,8 +129,8 @@
         var dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < CONNECTION_DIST) {
           var t = 1 - dist / CONNECTION_DIST;
-          var alpha = t * 0.14;
-          // Soft Solana purple links — low alpha, no bloom
+          var alpha = t * 0.22;
+          // Solana purple links — clearer mesh, still no bloom
           var r = 153;
           var g = 69;
           var b = 255;
@@ -133,7 +138,7 @@
           ctx.moveTo(nodes[i].x, nodes[i].y);
           ctx.lineTo(nodes[j].x, nodes[j].y);
           ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + alpha.toFixed(3) + ')';
-          ctx.lineWidth = 0.45 + t * 0.4;
+          ctx.lineWidth = 0.55 + t * 0.55;
           ctx.stroke();
         }
       }
@@ -147,9 +152,9 @@
 
     // Quiet Solana purple vignette — no multicolor bloom
     var g = ctx.createRadialGradient(width * 0.55, height * 0.35, 0, width * 0.5, height * 0.5, Math.max(width, height) * 0.75);
-    g.addColorStop(0, 'rgba(153,69,255,0.05)');
-    g.addColorStop(0.45, 'rgba(153,69,255,0.02)');
-    g.addColorStop(1, 'rgba(5,6,10,0.45)');
+    g.addColorStop(0, 'rgba(153,69,255,0.07)');
+    g.addColorStop(0.45, 'rgba(153,69,255,0.03)');
+    g.addColorStop(1, 'rgba(5,6,10,0.4)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, width, height);
 
