@@ -192,22 +192,24 @@ async function scan(){
       d.holdersMeasured = true;
       d.holdersSource = hold.d.holdersSource || d.holdersSource;
       d.signals = (d.signals || []).filter(function(s){
-        return !(s && s.text && s.text.indexOf('Holder concentration not measured') === 0);
+        return !(s && s.text && (
+          s.text.indexOf('Holder concentration not measured') === 0 ||
+          s.text.indexOf('Largest single account holds') === 0 ||
+          s.text.indexOf('Top 10 accounts hold') === 0
+        ));
       });
-      var hasTop = d.signals.some(function(s){ return s && s.text && s.text.indexOf('Top 10 accounts hold') === 0; });
-      var hasTop1 = d.signals.some(function(s){ return s && s.text && s.text.indexOf('Largest single account holds') === 0; });
-      if (!hasTop1 && d.top1Pct != null && d.top1Pct > 20) {
+      if (d.top1Pct != null && d.top1Pct > 20) {
         d.signals.splice(Math.min(2, d.signals.length), 0, {
           level: 'med',
           text: 'Largest single account holds ' + Number(d.top1Pct).toFixed(1) + '% of supply. Note: large accounts are sometimes liquidity pools, not individuals.'
         });
       }
-      if (!hasTop && d.top10Pct != null && d.top10Pct > 60) {
+      if (d.top10Pct != null && d.top10Pct > 60) {
         d.signals.splice(Math.min(3, d.signals.length), 0, {
           level: 'med',
           text: 'Top 10 accounts hold ' + Number(d.top10Pct).toFixed(1) + '% of supply — concentrated.'
         });
-      } else if (!hasTop && d.top10Pct != null && d.top10Pct > 0) {
+      } else if (d.top10Pct != null && d.top10Pct > 0) {
         d.signals.splice(Math.min(3, d.signals.length), 0, {
           level: 'info',
           text: 'Top 10 accounts hold ' + Number(d.top10Pct).toFixed(1) + '% of supply.'
@@ -215,10 +217,18 @@ async function scan(){
       }
     }
 
+    // Recompute risk score after holder enrichment (higher = more risk flags)
+    d.score = 0;
+    if (!d.mintAuthorityRevoked) d.score += 30;
+    if (!d.freezeAuthorityRevoked) d.score += 25;
+    if (d.top1Pct != null && d.top1Pct > 20) d.score += 15;
+    if (d.top10Pct != null && d.top10Pct > 60) d.score += 15;
+    d.risk = d.score >= 45 ? 'HIGH' : d.score >= 20 ? 'MEDIUM' : 'LOW';
+
     var b = document.getElementById('banner');
     b.className = 'risk-banner r-'+d.risk;
     document.getElementById('riskword').textContent = d.risk+' RISK PATTERN';
-    document.getElementById('riskscore').textContent = 'Signal score '+d.score+' · supply '+Number(d.supply).toLocaleString();
+    document.getElementById('riskscore').textContent = scoreLine(d);
     document.getElementById('facts').innerHTML =
       fact('Mint authority', d.mintAuthorityRevoked?'Revoked ✓':'ACTIVE ⚠') +
       fact('Freeze authority', d.freezeAuthorityRevoked?'Revoked ✓':'ACTIVE ⚠') +
@@ -233,6 +243,13 @@ async function scan(){
   go.disabled = false; go.textContent = 'Scan';
 }
 function fact(k,v){ return '<div class="fact"><small>'+k+'</small><b>'+v+'</b></div>'; }
+function scoreLine(d){
+  var supply = 'supply ' + Number(d.supply).toLocaleString();
+  var s = Number(d.score) || 0;
+  // Higher = more risk flags. 0 is a real result (clean on measured checks), not "missing".
+  if (s === 0) return 'Risk score 0 / 85 — no flags · ' + supply;
+  return 'Risk score ' + s + ' / 85 · ' + supply;
+}
 document.getElementById('mint').addEventListener('keydown',function(e){ if(e.key==='Enter') scan(); });
 (function(){
   var p = new URLSearchParams(location.search);
