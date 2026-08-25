@@ -6,7 +6,7 @@
   if (!canvas || !canvas.getContext) return;
   var ctx = canvas.getContext('2d');
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var dpr = Math.min(Math.max(window.devicePixelRatio || 1, 2.5), 4);
+  var dpr = Math.min(Math.max(window.devicePixelRatio || 1, 3), 4);
   var W = 640, H = 800, points = [], facets = [];
   var t0 = performance.now(), raf = 0, visible = true;
   var robotImg = null, herImg = null, robotReady = false, herReady = false;
@@ -108,7 +108,9 @@
     var rect = canvas.getBoundingClientRect();
     var cssW = Math.max(1, rect.width);
     var cssH = Math.max(1, rect.height);
-    var scale = Math.max(dpr, 1600 / Math.max(cssW, cssH));
+    dpr = Math.min(Math.max(window.devicePixelRatio || 1, 3), 4);
+    // Prefer ~2K–4K backing store so crystal facets stay sharp on mobile retina
+    var scale = Math.max(dpr, 2000 / Math.max(cssW, cssH));
     scale = Math.min(scale, 4);
     W = Math.max(1, Math.floor(cssW * scale));
     H = Math.max(1, Math.floor(cssH * scale));
@@ -261,12 +263,40 @@
 
     for (i = 0; i < projected.length; i++) {
       a = projected[i];
-      var sz = a.s * (1.05 + dpr * 0.4) * (0.85 + w.dust * 0.35 + w.form * 0.25);
+      var sz = a.s * (1.15 + dpr * 0.45) * (0.9 + w.dust * 0.35 + w.form * 0.25);
       if (faceAmt > 0.35) sz *= 1 - faceAmt * 0.55;
-      var baseA = (a.hue === 3 ? 0.68 : a.hue === 0 ? 0.58 : 0.5) + a.a * 0.42;
+      var baseA = (a.hue === 3 ? 0.78 : a.hue === 0 ? 0.7 : 0.62) + a.a * 0.38;
+      var pa = baseA * Math.max(0.18, particleAlpha);
+      var col = a.hue === 0 ? COL.green : a.hue === 1 ? COL.purple : a.hue === 2 ? COL.dpurple : COL.gold;
+      // Crystal facet (hex) — sharp glass, no soft bloom
+      var sides = 6;
+      var crot = a.facet * Math.PI * 2 + elapsed * 0.05;
       ctx.beginPath();
-      ctx.fillStyle = hueColor(a.hue, baseA * Math.max(0.12, particleAlpha));
-      ctx.arc(a.x, a.y, sz, 0, Math.PI * 2);
+      for (j = 0; j <= sides; j++) {
+        var ang = crot + (j / sides) * Math.PI * 2;
+        var px = a.x + Math.cos(ang) * sz;
+        var py = a.y + Math.sin(ang) * sz;
+        if (j === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = rgba(col, pa);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,' + Math.min(0.75, pa * 0.5).toFixed(3) + ')';
+      ctx.lineWidth = Math.max(0.6, sz * 0.16);
+      ctx.stroke();
+      // Bright core
+      ctx.beginPath();
+      ctx.arc(a.x, a.y, sz * 0.4, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(' +
+        Math.min(255, col[0] + 70) + ',' +
+        Math.min(255, col[1] + 70) + ',' +
+        Math.min(255, col[2] + 50) + ',' +
+        Math.min(1, pa * 0.95).toFixed(3) + ')';
+      ctx.fill();
+      // Specular glint
+      ctx.beginPath();
+      ctx.arc(a.x - sz * 0.28, a.y - sz * 0.3, Math.max(0.5, sz * 0.2), 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,' + Math.min(1, 0.55 + pa * 0.35).toFixed(3) + ')';
       ctx.fill();
     }
   }

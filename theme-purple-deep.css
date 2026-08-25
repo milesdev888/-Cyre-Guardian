@@ -60,16 +60,27 @@ body::after{
 .orbit-ring.r2{border-color:rgba(20,241,149,.48)}
 .orbit-ring.r3{border-color:rgba(153,69,255,.55)}
 .orbit-ring.r1::after{
-  background:#9945FF !important;
-  box-shadow:0 0 0 2px rgba(153,69,255,.45), 0 0 10px rgba(153,69,255,.75) !important;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0 22%, transparent 42%),
+    linear-gradient(145deg, #c9a0ff, #9945FF 55%, #6b2fd4) !important;
+  box-shadow:0 0 0 1.5px rgba(255,255,255,.35), 0 0 10px rgba(153,69,255,.7) !important;
+  border-radius:20% !important;
+  transform:translateX(-50%) rotate(30deg) !important;
 }
 .orbit-ring.r2::after{
-  background:#14F195 !important;
-  box-shadow:0 0 0 2px rgba(20,241,149,.5), 0 0 10px rgba(20,241,149,.75) !important;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0 22%, transparent 42%),
+    linear-gradient(145deg, #9fffd8, #14F195 55%, #0ab872) !important;
+  box-shadow:0 0 0 1.5px rgba(255,255,255,.35), 0 0 10px rgba(20,241,149,.7) !important;
+  border-radius:20% !important;
+  transform:translateX(-50%) rotate(30deg) !important;
 }
 .orbit-ring.r3::after{
-  background:#FFBE50 !important;
-  box-shadow:0 0 0 2px rgba(255,190,80,.45), 0 0 10px rgba(255,190,80,.7) !important;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0 22%, transparent 42%),
+    linear-gradient(145deg, #ffe6a8, #FFBE50 55%, #d49220) !important;
+  box-shadow:0 0 0 1.5px rgba(255,255,255,.4), 0 0 10px rgba(255,190,80,.7) !important;
+  border-radius:20% !important;
 }
 
 .status-chip{
