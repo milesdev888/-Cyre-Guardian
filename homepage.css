@@ -377,6 +377,7 @@ h1{
   box-shadow:none;
   filter:none;
   border-radius:50%;
+  z-index:1;
 }
 .orbit-ring.r1{
   inset:8%;
