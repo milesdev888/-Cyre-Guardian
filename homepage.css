@@ -349,170 +349,18 @@ h1{
 .hero-visual{position:relative;display:grid;place-items:center;min-height:420px}
 .orb-stage{
   position:relative;
-  width:min(100%, 420px);
+  width:min(100%, 460px);
   aspect-ratio:1;
   display:grid;
   place-items:center;
 }
-.orb-stage.agent-net{
-  width:min(100%, 480px);
-}
-.agent-core-glow{
-  position:absolute;
-  inset:18%;
-  border-radius:50%;
-  background:radial-gradient(circle at 50% 48%,
-    rgba(186,224,255,.22) 0%,
-    rgba(72,140,255,.12) 38%,
-    transparent 72%);
-  pointer-events:none;
-  z-index:0;
-  filter:blur(2px);
-}
-.agent-hud{
-  position:absolute;
-  left:2%;
-  top:2%;
-  z-index:4;
-  font-size:9px;
-  letter-spacing:.14em;
-  text-transform:uppercase;
-  color:rgba(186,224,255,.55);
-  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  pointer-events:none;
-}
-.agent-spokes{
+#guardian-net{
   position:absolute;
   inset:0;
   width:100%;
   height:100%;
-  pointer-events:none;
   z-index:1;
-  overflow:visible;
-}
-.agent-spokes .spoke{
-  stroke:rgba(95,180,255,.55);
-  stroke-width:0.45;
-  vector-effect:non-scaling-stroke;
-  stroke-dasharray:1.2 1.4;
-  animation:spoke-flow 6s linear infinite;
-}
-.agent-spokes .spoke-gate{
-  stroke:rgba(255,77,94,.75);
-  animation-duration:4.5s;
-}
-.agent-spokes .spoke-pulse{
-  fill:rgba(186,224,255,.95);
-}
-.agent-spokes .spoke-pulse.gate{
-  fill:rgba(255,77,94,.95);
-}
-@keyframes spoke-flow{
-  to{stroke-dashoffset:-12}
-}
-.agent-node{
-  position:absolute;
-  left:var(--x);
-  top:var(--y);
-  z-index:3;
-  width:48px;
-  height:48px;
-  transform:translate(-50%,-50%);
-  display:grid;
-  place-items:center;
   pointer-events:none;
-  animation:agent-node-float 7s ease-in-out infinite;
-  animation-delay:var(--d, 0s);
-}
-.agent-node .node-orbits{
-  position:absolute;
-  inset:-12px;
-  border-radius:50%;
-  border:1px solid rgba(186,224,255,.32);
-}
-.agent-node .node-orbits::before,
-.agent-node .node-orbits::after{
-  content:"";
-  position:absolute;
-  inset:5px;
-  border-radius:50%;
-  border:1px solid rgba(72,140,255,.28);
-  transform:rotate(22deg) scaleX(1.18);
-}
-.agent-node .node-orbits::after{
-  inset:10px;
-  border-color:rgba(186,224,255,.22);
-  transform:rotate(-32deg) scaleY(1.14);
-}
-.agent-node .node-core{
-  width:10px;height:10px;
-  border-radius:50%;
-  background:#c8e7ff;
-  box-shadow:0 0 12px rgba(95,208,255,.65);
-  z-index:1;
-}
-.agent-node .node-core.gate{
-  background:#FF4D5E;
-  box-shadow:0 0 14px rgba(255,77,94,.6);
-}
-.agent-node .node-meta{
-  position:absolute;
-  top:calc(100% + 6px);
-  left:50%;
-  transform:translateX(-50%);
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-  white-space:nowrap;
-  font-size:9px;
-  letter-spacing:.12em;
-  text-transform:uppercase;
-  color:rgba(230,240,255,.82);
-  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-}
-.agent-node .node-meta .st{
-  color:rgba(61,220,132,.85);
-  letter-spacing:.08em;
-  font-size:8px;
-}
-.agent-node .node-meta.gate{color:rgba(255,180,188,.92)}
-.agent-node .node-meta.gate .st{color:rgba(255,120,130,.9)}
-.agent-node .node-meta .dot{
-  width:6px;height:6px;
-  border-radius:50%;
-  display:inline-block;
-}
-.agent-node .node-meta .dot.live{background:#3DDC84}
-.agent-node .node-meta .dot.risk{background:#FF4D5E}
-.agent-node .node-packet{
-  position:absolute;
-  bottom:calc(100% + 8px);
-  left:50%;
-  transform:translateX(-50%);
-  font-size:7px;
-  letter-spacing:.1em;
-  text-transform:uppercase;
-  color:rgba(150,190,255,.55);
-  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  white-space:nowrap;
-}
-.agent-node .node-packet.gate{color:rgba(255,140,150,.6)}
-@keyframes agent-node-float{
-  0%,100%{translate:0 0}
-  50%{translate:0 -4px}
-}
-@media (max-width:720px){
-  .orb-stage.agent-net{width:min(100%, 360px)}
-  .agent-node{width:38px;height:38px}
-  .agent-node .node-meta{font-size:8px}
-  .agent-node .node-meta .st,
-  .agent-node .node-packet,
-  .agent-hud,
-  .agent-node.n-oracle .node-meta,
-  .agent-node.n-score .node-packet{display:none}
-}
-@media (prefers-reduced-motion:reduce){
-  .agent-spokes .spoke{animation:none}
 }
 .orbit-ring,
 .glow,
@@ -520,46 +368,9 @@ h1{
   position:absolute;
   border-radius:999px;
 }
-.glow{
-  display:none !important;
-}
-/* Single orbit only — round green + red markers, no extra rings */
+.glow,
 .orbit-ring{
-  border:1.5px solid rgba(72,140,255,.5);
-  pointer-events:none;
-  box-shadow:none;
-  filter:none;
-}
-.orbit-ring.r1{
-  inset:6% 10%;
-  animation:orbit-spin 72s linear infinite;
-}
-.orbit-ring.r2,
-.orbit-ring.r3{
   display:none !important;
-}
-.orbit-ring.r1::after{
-  content:"";
-  position:absolute;
-  top:-5px;left:50%;
-  width:10px;height:10px;
-  border-radius:50%;
-  transform:translateX(-50%);
-  background:#3DDC84;
-  border:none;
-  box-shadow:none;
-  filter:none;
-}
-.orbit-ring.r1::before{
-  content:"";
-  position:absolute;
-  bottom:-5px;left:18%;
-  width:10px;height:10px;
-  border-radius:50%;
-  background:#FF4D5E;
-  border:none;
-  box-shadow:none;
-  filter:none;
 }
 .head-wrap{
   inset:12%;
@@ -568,26 +379,13 @@ h1{
   border:1px solid rgba(176,148,255,.4);
   box-shadow:none;
   filter:none;
-  /* Flat disc — no dark bottom “sphere shadow” */
   background:rgba(12,8,24,.55);
   animation:none;
 }
-/* Portrait morph: let sapphire glass burst spill with no inner disc frame */
-.head-wrap.portrait{
-  overflow:visible;
-  background:transparent;
-  border:none;
-  box-shadow:none;
-  border-radius:0;
-  inset:0;
-  z-index:2;
-}
-.head-wrap.portrait canvas{
-  position:absolute;
-  inset:-22%;
-  width:144%;
-  height:144%;
-  z-index:1;
+/* Soft round core slot — hidden while net orb is the preview hero */
+.head-wrap.portrait,
+.head-wrap.portrait.net-core{
+  display:none !important;
 }
 .head-wrap.guardian-c7-wrap{
   inset:4%;

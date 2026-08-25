@@ -61,31 +61,8 @@ body::after{
   box-shadow:none !important;
   border-radius:0 !important;
 }
-.orbit-ring.r2,
-.orbit-ring.r3{
+.orbit-ring{
   display:none !important;
-}
-.orbit-ring.r1{
-  border-color:rgba(72,140,255,.5) !important;
-  box-shadow:none !important;
-  filter:none !important;
-}
-.orbit-ring.r1::after{
-  background:#3DDC84 !important;
-  box-shadow:none !important;
-  border:none !important;
-  border-radius:50% !important;
-  transform:translateX(-50%) !important;
-  width:10px !important;
-  height:10px !important;
-}
-.orbit-ring.r1::before{
-  background:#FF4D5E !important;
-  box-shadow:none !important;
-  border:none !important;
-  border-radius:50% !important;
-  width:10px !important;
-  height:10px !important;
 }
 
 .status-chip{
