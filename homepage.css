@@ -736,6 +736,5 @@ footer{padding:26px 0 16px}
 
 @media (prefers-reduced-motion: reduce){
   html{scroll-behavior:auto}
-  *,*::before,*::after{animation:none!important;transition:none!important}
   .glow,.head-wrap{transform:none!important}
 }

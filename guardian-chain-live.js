@@ -52,7 +52,7 @@
       st.textContent =
         '.guardian-chain-bar{margin-top:14px;font-family:IBM Plex Mono,ui-monospace,monospace;font-size:11px;' +
         'letter-spacing:.06em;color:#8892a4;padding:8px 12px;border-radius:999px;border:1px solid rgba(95,208,255,.18);' +
-        'background:rgba(6,10,22,.75);display:inline-flex;align-items:center;gap:8px;max-width:100%}' +
+        'background:rgba(6,10,22,.75);display:inline-flex;align-items:center;gap:8px;max-width:calc(100% - 96px)}' +
         '.guardian-chain-bar::before{content:"";width:7px;height:7px;border-radius:50%;background:#8892a4;flex:none}' +
         '.guardian-chain-bar.is-live{color:#eefaff;border-color:rgba(61,220,132,.35)}' +
         '.guardian-chain-bar.is-live::before{background:#3ddc84;box-shadow:0 0 10px rgba(61,220,132,.55);animation:gcl-pulse 2s infinite}' +
@@ -74,7 +74,7 @@
     var ageTxt = sec != null ? sec + 's ago' : 'just now';
     setChip('chip-live', 'Guardian active', 'LIVE');
     setChip('chip-watch', 'Slot ' + fmtSlot(d.slot), 'WATCHING');
-    setLiveBanner('Guardian watching Solana · slot ' + fmtSlot(d.slot) + ' · ' + ageTxt, true);
+    setLiveBanner('Guardian watching Solana · ' + ageTxt + ' · slot ' + fmtSlot(d.slot), true);
   }
 
   function tick() {
