@@ -47,7 +47,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `index.html` | **Homepage redesign** (Aug 2026): self-contained cinematic AI page — headline "The chain has a witness.", eyebrow **Synthetic Intelligence · RWA fraud-watch**, cyan `#5fd0ff` + violet `#9b7bff` + sparse gold particle accents, **wireframe/particle Guardian head** (idle morph dust→mesh→photo→dust; soft eye bloom on mesh, no cartoon eyes), orbit rings, compact status chips LIVE / RISK LOW / WATCHING beside head, cyan-glow Check CTA + transparent outline Talk to Guardian, single nav (no duplicate Tools strip), Watchlist/Forensics/Passport/Signals cards, trust strip (no fake metrics). Hero morph may show `/guardian2.jpg` during photo phase; FAB/popout still uses `/guardian2.jpg`. Loads `homepage.css`, `vortex.js`, `guardian-head.js`, `guardian-popout.js`, `access-form.js`, `rwa-widget.js`, `ai-presence.js`, `footer-polish.js`. |
 | `index-legacy.html` | Pre-redesign CYRE 7 shell snapshot for rollback. Do not serve as `/`. |
 | `theme-glass.css` | Crystal glassmorphism skin (loaded by launch-banner.js). Delete = revert skin. |
-| `theme-purple-deep.css` | Darker-purple mood overrides: deeper violet `#7048dc`, shadow boosts, hero ambient shift. Loaded by `index.html` (after homepage.css) + injected by `ai-vibe-loader.js`. |
+| `theme-purple-deep.css` | Institutional Coinbase-blue mood overrides (filename kept for cache links): ink `#0a0b0d`, primary `#0052ff`, surfaces `#12151c`. Loaded by `index.html` (after homepage.css) + injected by `ai-vibe-loader.js`. |
 | `theme-blue.css` | Blue token overrides + avatar swap (`.portrait img` / `.g-av img` → /guardian2.jpg). |
 | `guardian-popout.js` | FAB (`/guardian2.jpg` + LIVE) → glass panel with `/guardian-video.mp4` + chat POST `/api/chat`. Does not replace `guardian-voice.js`. |
 | `nav-tools.js` | Ensures Guardian App link on secondary pages (standalone URLs redirect to `/app`). |
@@ -56,7 +56,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `footer-polish.js` | Footer Docs/Security → `/roadmap`; Privacy/Terms/Support → mailto. |
 | `launch-banner.js` | Self-mounting: 3D word-funnel canvas banner (robot core), $C7 + Roadmap nav links, hero $C7 button (emblem), glass CSS loader, AI-vibe loader hook, claims-safe HUD bar. |
 | `vortex.js` | Living particle/network mesh behind hero — violet-heavy mood (`#7048dc` / `#9b7bff`) with cyan accents (`#5fd0ff`) and sparse gold/amber dots (~12%; `#d4a84b` / `#ffb454`); continuous motion; static frame if `prefers-reduced-motion`. |
-| `homepage.css` | Homepage redesign styles (cyan Check glow, wireframe head stage, compact chips, single nav). |
+| `homepage.css` | Homepage styles — Coinbase-inspired blue CTAs (`#0052ff`), dark institutional surfaces. |
 | `guardian-head.js` | Homepage hero canvas — **dust → mesh → photo → dust** (~22s): 0–16% dust; 16–30% dust→mesh; 30–48% dense violet/cyan particle wireframe head (soft eye bloom, no solid cartoon eyes); 48–60% mesh→photo; 60–82% her photo (`/guardian2.jpg` full-portrait crossfade, no circle crop/rim); 82–100% photo→dust. Fallback `/robot.jpg` if portrait fails. `prefers-reduced-motion` → static mesh. FAB/popout still uses `/guardian2.jpg`. |
 | `guardian-voice.js` | "Hear Guardian": tap → talking video → mp3 → speech-synth fallback chain; robot morph. |
 | `guardian-video.mp4` | 480² talking-Guardian clip (preload=none). |
