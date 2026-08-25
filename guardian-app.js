@@ -6,7 +6,7 @@
 
   var VIEWS = {
     home: { title: 'Guardian Console', subtitle: 'All products in one workspace', frame: null },
-    scan: { title: 'Token Scan & Swap', subtitle: 'Look first, swap second', frame: '/scan?embed=1&v=holders4' },
+    scan: { title: 'Token Scan & Swap', subtitle: 'Look first, swap second', frame: '/scan?embed=1&v=score1' },
     check: { title: 'Address Check', subtitle: 'Six explainable signals', frame: '/check?embed=1' },
     watch: { title: 'Watch', subtitle: 'Measured wallet alerts', frame: '/watch?embed=1' },
     score: { title: 'Wallet Score', subtitle: 'Shareable score card', frame: '/score?embed=1' },
