@@ -175,44 +175,44 @@ async function scan(){
   if(!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(m)){ err.textContent='That does not look like a Solana address.'; err.style.display='block'; return; }
   go.disabled = true; go.textContent = 'Scanning…';
   try{
-    var r = await fetch('/api/token?mint='+encodeURIComponent(m));
-    var d = await r.json();
-    if(!r.ok) throw new Error(d.error||'scan failed');
+    // Fire holders enrichment in parallel so CDN/RPC misses on the main
+    // response cannot leave Top holder / Top 10 stuck on "Not measured".
+    var mainP = fetch('/api/token?mint='+encodeURIComponent(m), { cache: 'no-store' }).then(function(r){ return r.json().then(function(d){ return { r:r, d:d }; }); });
+    var holdP = fetch('/api/token?mint='+encodeURIComponent(m)+'&holders=1', { cache: 'no-store' }).then(function(r){ return r.json().then(function(d){ return { r:r, d:d }; }); }).catch(function(){ return null; });
 
-    // If holder concentration missed on the first pass (RPC limit), retry once
-    // on the light holders-only path after a short pause.
-    if (!d.holdersMeasured) {
-      go.textContent = 'Measuring holders…';
-      await new Promise(function(res){ setTimeout(res, 700); });
-      try {
-        var r2 = await fetch('/api/token?mint='+encodeURIComponent(m)+'&holders=1');
-        var h = await r2.json();
-        if (r2.ok && h.holdersMeasured) {
-          d.top1Pct = h.top1Pct;
-          d.top10Pct = h.top10Pct;
-          d.holdersMeasured = true;
-          d.signals = (d.signals || []).filter(function(s){
-            return !(s && s.text && s.text.indexOf('Holder concentration not measured') === 0);
-          });
-          if (h.top1Pct != null && h.top1Pct > 20) {
-            d.signals.splice(Math.min(2, d.signals.length), 0, {
-              level: 'med',
-              text: 'Largest single account holds ' + Number(h.top1Pct).toFixed(1) + '% of supply. Note: large accounts are sometimes liquidity pools, not individuals.'
-            });
-          }
-          if (h.top10Pct != null && h.top10Pct > 60) {
-            d.signals.splice(Math.min(3, d.signals.length), 0, {
-              level: 'med',
-              text: 'Top 10 accounts hold ' + Number(h.top10Pct).toFixed(1) + '% of supply — concentrated.'
-            });
-          } else if (h.top10Pct != null && h.top10Pct > 0) {
-            d.signals.splice(Math.min(3, d.signals.length), 0, {
-              level: 'info',
-              text: 'Top 10 accounts hold ' + Number(h.top10Pct).toFixed(1) + '% of supply.'
-            });
-          }
-        }
-      } catch (_) { /* keep authority facts; holders stay unmeasured */ }
+    var main = await mainP;
+    var d = main.d;
+    if(!main.r.ok) throw new Error(d.error||'scan failed');
+
+    go.textContent = 'Measuring holders…';
+    var hold = await holdP;
+    if (hold && hold.r && hold.r.ok && hold.d && hold.d.holdersMeasured) {
+      d.top1Pct = hold.d.top1Pct;
+      d.top10Pct = hold.d.top10Pct;
+      d.holdersMeasured = true;
+      d.holdersSource = hold.d.holdersSource || d.holdersSource;
+      d.signals = (d.signals || []).filter(function(s){
+        return !(s && s.text && s.text.indexOf('Holder concentration not measured') === 0);
+      });
+      var hasTop = d.signals.some(function(s){ return s && s.text && s.text.indexOf('Top 10 accounts hold') === 0; });
+      var hasTop1 = d.signals.some(function(s){ return s && s.text && s.text.indexOf('Largest single account holds') === 0; });
+      if (!hasTop1 && d.top1Pct != null && d.top1Pct > 20) {
+        d.signals.splice(Math.min(2, d.signals.length), 0, {
+          level: 'med',
+          text: 'Largest single account holds ' + Number(d.top1Pct).toFixed(1) + '% of supply. Note: large accounts are sometimes liquidity pools, not individuals.'
+        });
+      }
+      if (!hasTop && d.top10Pct != null && d.top10Pct > 60) {
+        d.signals.splice(Math.min(3, d.signals.length), 0, {
+          level: 'med',
+          text: 'Top 10 accounts hold ' + Number(d.top10Pct).toFixed(1) + '% of supply — concentrated.'
+        });
+      } else if (!hasTop && d.top10Pct != null && d.top10Pct > 0) {
+        d.signals.splice(Math.min(3, d.signals.length), 0, {
+          level: 'info',
+          text: 'Top 10 accounts hold ' + Number(d.top10Pct).toFixed(1) + '% of supply.'
+        });
+      }
     }
 
     var b = document.getElementById('banner');

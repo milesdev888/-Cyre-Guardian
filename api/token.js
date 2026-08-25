@@ -126,36 +126,44 @@ async function measureHoldersViaRpc(mint, supply, decimals) {
 // Fallback when RPC rate-limits getTokenLargestAccounts: RugCheck's measured topHolders.
 // We only read percentage fields — never their risk score / "rugged" labels.
 async function measureHoldersViaRugcheck(mint) {
-  const r = await fetch('https://api.rugcheck.xyz/v1/tokens/' + encodeURIComponent(mint) + '/report', {
-    headers: { accept: 'application/json' }
-  });
-  if (!r.ok) throw new Error('holder index http ' + r.status);
-  const d = await r.json();
-  const rows = Array.isArray(d.topHolders) ? d.topHolders : [];
-  if (!rows.length) throw new Error('holder index empty');
-  const pcts = rows
-    .map((h) => Number(h && h.pct))
-    .filter((n) => Number.isFinite(n) && n >= 0)
-    .sort((a, b) => b - a);
-  if (!pcts.length) throw new Error('holder index missing pct');
-  const top1 = Math.min(100, pcts[0] || 0);
-  const top10 = Math.min(100, pcts.slice(0, 10).reduce((s, v) => s + v, 0));
-  return {
-    top1,
-    top10,
-    holdersMeasured: true,
-    holderCount: pcts.length,
-    source: 'index'
-  };
+  let lastErr = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const r = await fetch('https://api.rugcheck.xyz/v1/tokens/' + encodeURIComponent(mint) + '/report', {
+        headers: { accept: 'application/json' }
+      });
+      if (!r.ok) throw new Error('holder index http ' + r.status);
+      const d = await r.json();
+      const rows = Array.isArray(d.topHolders) ? d.topHolders : [];
+      if (!rows.length) throw new Error('holder index empty');
+      const pcts = rows
+        .map((h) => Number(h && h.pct))
+        .filter((n) => Number.isFinite(n) && n >= 0)
+        .sort((a, b) => b - a);
+      if (!pcts.length) throw new Error('holder index missing pct');
+      const top1 = Math.min(100, pcts[0] || 0);
+      const top10 = Math.min(100, pcts.slice(0, 10).reduce((s, v) => s + v, 0));
+      return {
+        top1,
+        top10,
+        holdersMeasured: true,
+        holderCount: pcts.length,
+        source: 'index'
+      };
+    } catch (e) {
+      lastErr = e;
+      await sleep(250 * (attempt + 1));
+    }
+  }
+  throw lastErr || new Error('holder index unavailable');
 }
 
 async function measureHolders(mint, supply, decimals) {
+  // Prefer indexed holders first (no Solana RPC quota). Fall back to on-chain largest-accounts.
   try {
-    return await measureHoldersViaRpc(mint, supply, decimals);
-  } catch (_) {
-    // RPC path failed (usually 429 on getTokenLargestAccounts) — try indexed fallback
-  }
-  return measureHoldersViaRugcheck(mint);
+    return await measureHoldersViaRugcheck(mint);
+  } catch (_) { /* try RPC */ }
+  return measureHoldersViaRpc(mint, supply, decimals);
 }
 
 function buildSignals(mintAuthority, freezeAuthority, holders) {
@@ -190,7 +198,7 @@ function buildSignals(mintAuthority, freezeAuthority, holders) {
       signals.push({ level: 'info', text: 'Top 10 accounts hold ' + top10.toFixed(1) + '% of supply.' });
     }
   } else {
-    signals.push({ level: 'info', text: 'Holder concentration not measured this run — RPC limit. Mint and freeze authority facts above still apply.' });
+    signals.push({ level: 'info', text: 'Holder concentration not measured this run. Mint and freeze authority facts above still apply.' });
   }
 
   signals.push({ level: 'info', text: 'LP lock status is not assessed in this scan. Verify locks on the pool page before sizing a position.' });
@@ -222,9 +230,15 @@ export default async function handler(req, res) {
     let freezeAuthority = null;
     let decimals = 0;
     let supply = 0;
+    let holders = { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
 
     if (holdersOnly) {
-      // Light path for UI retry: supply + largest accounts only
+      // Prefer index (no RPC). Only hit chain if the index has no topHolders.
+      try {
+        holders = await measureHoldersViaRugcheck(mint);
+      } catch (_) {
+        holders = { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
+      }
       const tokSupply = await rpc('getTokenSupply', [mint, { commitment: 'confirmed' }]);
       const v = tokSupply && tokSupply.value;
       if (!v) return res.status(404).json({ error: 'mint supply not found' });
@@ -233,9 +247,15 @@ export default async function handler(req, res) {
       if (!Number.isFinite(supply)) {
         supply = Number(v.amount) / Math.pow(10, decimals);
       }
+      if (!holders.holdersMeasured) {
+        try { holders = await measureHoldersViaRpc(mint, supply, decimals); }
+        catch (_) { /* leave unmeasured */ }
+      }
     } else {
-      // 1. mint account (jsonParsed gives us authorities + decimals + supply)
-      const acct = await rpc('getAccountInfo', [mint, { encoding: 'jsonParsed', commitment: 'confirmed' }]);
+      // Mint account + holder index in parallel so holders don't wait on (or share) RPC quota
+      const acctP = rpc('getAccountInfo', [mint, { encoding: 'jsonParsed', commitment: 'confirmed' }]);
+      const holdersP = measureHoldersViaRugcheck(mint).catch(() => null);
+      const acct = await acctP;
       if (!acct || !acct.value) return res.status(404).json({ error: 'account not found' });
       const parsed = acct.value.data && acct.value.data.parsed;
       if (!parsed || parsed.type !== 'mint')
@@ -246,15 +266,12 @@ export default async function handler(req, res) {
       freezeAuthority = info.freezeAuthority || null;
       decimals = info.decimals;
       supply = Number(info.supply) / Math.pow(10, decimals);
-    }
 
-    // 2. largest holders — RPC first, indexed fallback when RPC rate-limits
-    let holders = { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
-    try {
-      if (!holdersOnly) await sleep(120);
-      holders = await measureHolders(mint, supply, decimals);
-    } catch (_) {
-      holders = { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
+      holders = (await holdersP) || { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
+      if (!holders.holdersMeasured) {
+        try { holders = await measureHoldersViaRpc(mint, supply, decimals); }
+        catch (_) { /* leave unmeasured */ }
+      }
     }
 
     if (holdersOnly) {
@@ -273,7 +290,7 @@ export default async function handler(req, res) {
 
     const { signals, score, risk } = buildSignals(mintAuthority, freezeAuthority, holders);
 
-    res.setHeader('cache-control', 's-maxage=60');
+    res.setHeader('cache-control', 'no-store');
     return res.status(200).json({
       mint, supply, decimals,
       mintAuthorityRevoked: !mintAuthority,
