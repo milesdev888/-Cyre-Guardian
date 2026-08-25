@@ -221,7 +221,7 @@
     ctx.globalCompositeOperation = 'source-over';
     ctx.drawImage(img, dx, dy, dw, dh);
     ctx.globalAlpha = alpha * 0.28;
-    ctx.fillStyle = 'rgba(8,6,18,1)';
+    ctx.fillStyle = 'rgba(10,11,13,1)';
     ctx.fillRect(dx, dy, dw, dh);
     ctx.globalAlpha = alpha * 0.22;
     var eg = ctx.createLinearGradient(0, dy + dh * 0.28, 0, dy + dh * 0.52);
