@@ -390,9 +390,10 @@ h1{
   left:50%;
   width:84%;
   height:84%;
-  border:1.5px solid rgba(72,140,255,.55);
+  border:3px solid rgba(110,168,255,.8);
+  box-shadow:0 0 20px rgba(72,140,255,.35), inset 0 0 24px rgba(72,140,255,.16);
   transform:translate(-50%,-50%);
-  animation:orbit-spin 72s linear infinite;
+  animation:orbit-spin 36s linear infinite;
 }
 .orbit-ring.r1::after{
   content:"";
@@ -422,6 +423,7 @@ h1{
   position:absolute;
   left:var(--x);
   top:var(--y);
+  transform:translate(-50%,-50%);
   z-index:3;
   width:36px;
   height:36px;
@@ -668,6 +670,13 @@ footer{padding:26px 0 16px}
   0%,100%{transform:translateY(0) scale(1)}
   50%{transform:translateY(-8px) scale(1.012)}
 }
+
+/* Snap badges onto the r=42% orbit line (center-anchored) */
+.orb-stage div.agent-node:nth-of-type(2){left:15.4%;top:26.2%}
+.orb-stage div.agent-node:nth-of-type(3){left:12.4%;top:68.8%}
+.orb-stage div.agent-node:nth-of-type(4){left:84.2%;top:74.4%}
+.orb-stage div.agent-node:nth-of-type(5){left:91.9%;top:47.7%}
+.orb-stage div.agent-node:nth-of-type(6){left:80.8%;top:21.4%}
 @keyframes orbit-spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
 @keyframes orbit-pulse{
   0%,100%{opacity:.75}
