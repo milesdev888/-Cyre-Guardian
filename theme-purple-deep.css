@@ -62,17 +62,20 @@ body::after{
   border-radius:50% !important;
 }
 .orbit-ring.r1{
-  inset:8% !important;
+  inset:auto !important;
+  top:50% !important;
+  left:50% !important;
+  width:84% !important;
+  height:84% !important;
   border-radius:50% !important;
+  border-color:rgba(72,140,255,.55) !important;
+  box-shadow:none !important;
+  filter:none !important;
+  transform:translate(-50%,-50%) !important;
 }
 .orbit-ring.r2,
 .orbit-ring.r3{
   display:none !important;
-}
-.orbit-ring.r1{
-  border-color:rgba(72,140,255,.5) !important;
-  box-shadow:none !important;
-  filter:none !important;
 }
 .orbit-ring.r1::after{
   background:#3DDC84 !important;

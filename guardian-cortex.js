@@ -133,15 +133,14 @@
 
     ctx.clearRect(0, 0, W, H);
 
-    /* Soft sapphire nebula wash */
-    var g = ctx.createRadialGradient(W * 0.5, H * 0.48, scale * 0.05, W * 0.5, H * 0.5, scale * 1.15);
-    g.addColorStop(0, 'rgba(186,224,255,0.16)');
-    g.addColorStop(0.4, 'rgba(72,140,255,0.08)');
-    g.addColorStop(0.75, 'rgba(120,90,200,0.04)');
+    /* Soft sapphire nebula wash — no hard ring bands */
+    var g = ctx.createRadialGradient(W * 0.5, H * 0.48, scale * 0.08, W * 0.5, H * 0.5, scale * 1.05);
+    g.addColorStop(0, 'rgba(186,224,255,0.14)');
+    g.addColorStop(0.55, 'rgba(72,140,255,0.06)');
     g.addColorStop(1, 'rgba(8,6,20,0)');
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.arc(W * 0.5, H * 0.5, scale * 1.15, 0, Math.PI * 2);
+    ctx.arc(W * 0.5, H * 0.5, scale * 1.05, 0, Math.PI * 2);
     ctx.fill();
 
     /* Edges */
