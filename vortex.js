@@ -1,6 +1,7 @@
-/* vortex.js — crystal 4K Solana mesh
+/* vortex.js — crystal 4K Solana mesh with continuous drift
    Purple #9945FF · green #14F195 · gold #FFBE50.
-   High-DPR canvas + faceted crystal dots (specular, no soft bloom). */
+   High-DPR canvas + faceted crystal dots. Motion runs while idle —
+   resize no longer re-seeds (fixes “only moves when scrolling”). */
 (function () {
   'use strict';
   var hero = document.querySelector('.hero');
@@ -23,7 +24,7 @@
   }
   hero.insertBefore(canvas, hero.firstChild);
 
-  var ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });
+  var ctx = canvas.getContext('2d', { alpha: true });
   var width = 0, height = 0, dpr = 1;
   var nodes = [];
   var NODE_COUNT = 100;
@@ -31,6 +32,7 @@
   var raf = 0;
   var t0 = 0;
   var visible = true;
+  var resizeTimer = 0;
 
   var COLORS = [
     { r: 168, g:  92, b: 255 },
@@ -40,13 +42,11 @@
   var GREEN = { r: 48, g: 250, b: 175 };
   var GOLD  = { r: 255, g: 208, b: 96 };
 
-  function resize() {
-    var rect = hero.getBoundingClientRect();
-    // 4K-class backing store on retina / large CSS boxes
+  function applyCanvasSize(w, h) {
     var native = window.devicePixelRatio || 1;
     dpr = Math.min(Math.max(native, 2.5), 3.5);
-    width = Math.max(1, rect.width | 0);
-    height = Math.max(1, rect.height | 0);
+    width = w;
+    height = h;
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     canvas.style.width = width + 'px';
@@ -56,22 +56,70 @@
     if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = 'high';
   }
 
+  /** Resize without killing drift. Ignore mobile URL-bar height jitter. */
+  function resize(opts) {
+    opts = opts || {};
+    var rect = hero.getBoundingClientRect();
+    var w = Math.max(1, rect.width | 0);
+    var h = Math.max(1, rect.height | 0);
+    var first = !width || !height;
+    var dw = Math.abs(w - width);
+    var dh = Math.abs(h - height);
+
+    // Mobile chrome show/hide changes height ~40–120px — don't reshuffle dots
+    if (!first && !opts.force) {
+      if (dw < 2 && dh < 100) return;
+      if (dw < 2 && dh >= 100) {
+        // Height-only jump: grow/shrink canvas, keep X, scale Y gently
+        var oldH = height;
+        applyCanvasSize(w, h);
+        if (oldH > 0) {
+          var sy = h / oldH;
+          for (var i = 0; i < nodes.length; i++) {
+            nodes[i].y = Math.min(h + 20, Math.max(-20, nodes[i].y * sy));
+          }
+        }
+        return;
+      }
+    }
+
+    var oldW = width;
+    var oldH = height;
+    applyCanvasSize(w, h);
+
+    if (first || !nodes.length || opts.reseed) {
+      init();
+      return;
+    }
+    // Real layout change: scale positions, keep velocities
+    if (oldW > 0 && oldH > 0) {
+      var sx = w / oldW;
+      var sy = h / oldH;
+      for (var j = 0; j < nodes.length; j++) {
+        nodes[j].x *= sx;
+        nodes[j].y *= sy;
+      }
+    }
+  }
+
   function Node() {
-    this.reset(true);
+    this.reset();
   }
   Node.prototype.reset = function () {
     this.x = Math.random() * width;
     this.y = Math.random() * height;
-    var speed = reduce ? 0 : (0.16 + Math.random() * 0.26);
+    // Clear continuous drift (visible while idle — not only on scroll)
+    var speed = reduce ? 0 : (0.42 + Math.random() * 0.7);
     var ang = Math.random() * Math.PI * 2;
     this.vx = Math.cos(ang) * speed;
     this.vy = Math.sin(ang) * speed;
     this.radius = 2.0 + Math.random() * 2.4;
     this.alpha = 0.82 + Math.random() * 0.18;
     this.pulse = Math.random() * Math.PI * 2;
-    this.pulseSp = 0.7 + Math.random() * 1.3;
-    this.facet = (Math.random() * 6) | 0; // crystal orientation
+    this.pulseSp = 1.1 + Math.random() * 1.6;
+    this.facet = (Math.random() * 6) | 0;
     this.spark = 0.55 + Math.random() * 0.45;
+    this.spin = (Math.random() - 0.5) * 0.9;
     var roll = Math.random();
     var c;
     if (roll < 0.12) {
@@ -93,30 +141,34 @@
   };
   Node.prototype.update = function (dt) {
     if (reduce) return;
+    // Gentle orbital wind so paths curve (reads as “alive”)
+    this.vx += Math.sin(this.pulse * 0.7) * 0.035 * dt * 60;
+    this.vy += Math.cos(this.pulse * 0.55) * 0.03 * dt * 60;
     this.x += this.vx * (60 * dt);
     this.y += this.vy * (60 * dt);
     this.pulse += this.pulseSp * dt;
-    if (this.x < -20) this.x = width + 20;
-    if (this.x > width + 20) this.x = -20;
-    if (this.y < -20) this.y = height + 20;
-    if (this.y > height + 20) this.y = -20;
-    this.vx += (Math.random() - 0.5) * 0.01;
-    this.vy += (Math.random() - 0.5) * 0.01;
+    this.facet += this.spin * dt;
+    if (this.x < -24) this.x = width + 24;
+    if (this.x > width + 24) this.x = -24;
+    if (this.y < -24) this.y = height + 24;
+    if (this.y > height + 24) this.y = -24;
+    this.vx += (Math.random() - 0.5) * 0.02;
+    this.vy += (Math.random() - 0.5) * 0.02;
     var sp = Math.sqrt(this.vx * this.vx + this.vy * this.vy) || 0.001;
-    var max = 0.55;
+    var max = 1.15;
+    var min = 0.28;
     if (sp > max) { this.vx = this.vx / sp * max; this.vy = this.vy / sp * max; }
+    else if (sp < min) { this.vx = this.vx / sp * min; this.vy = this.vy / sp * min; }
   };
 
-  /** Crystal facet: hex body + bright core + sharp specular (no soft bloom halo). */
   Node.prototype.draw = function () {
-    var breath = 1 + (reduce ? 0 : 0.1 * Math.sin(this.pulse));
+    var breath = 1 + (reduce ? 0 : 0.12 * Math.sin(this.pulse));
     var rad = this.radius * breath;
     var a = this.alpha * (0.92 + (reduce ? 0.08 : 0.08 * Math.sin(this.pulse * 0.7)));
     var x = this.x, y = this.y;
     var sides = 6;
-    var rot = (this.facet / 6) * Math.PI + (reduce ? 0 : this.pulse * 0.08);
+    var rot = (this.facet / 6) * Math.PI + (reduce ? 0 : this.pulse * 0.12);
 
-    // Faceted crystal body
     ctx.beginPath();
     for (var i = 0; i <= sides; i++) {
       var ang = rot + (i / sides) * Math.PI * 2;
@@ -128,12 +180,10 @@
     ctx.fillStyle = 'rgba(' + this.r + ',' + this.g + ',' + this.b + ',' + a.toFixed(3) + ')';
     ctx.fill();
 
-    // Hard glass rim
     ctx.strokeStyle = 'rgba(255,255,255,' + Math.min(0.85, a * 0.55 * this.spark).toFixed(3) + ')';
     ctx.lineWidth = Math.max(0.7, rad * 0.18);
     ctx.stroke();
 
-    // Bright inner core (crystal density)
     ctx.beginPath();
     ctx.arc(x, y, rad * 0.42, 0, Math.PI * 2);
     ctx.fillStyle = 'rgba(' +
@@ -143,7 +193,6 @@
       Math.min(1, a * 0.95).toFixed(3) + ')';
     ctx.fill();
 
-    // Sharp specular glint (tiny — not a bloom)
     var sx = x - rad * 0.28;
     var sy = y - rad * 0.32;
     ctx.beginPath();
@@ -184,6 +233,8 @@
   }
 
   function frame(now) {
+    raf = 0;
+    if (!visible && !reduce) return;
     var dt = t0 ? Math.min((now - t0) / 1000, 0.05) : 0.016;
     t0 = now;
     ctx.clearRect(0, 0, width, height);
@@ -205,21 +256,34 @@
   }
 
   function start() {
-    if (raf) return;
-    t0 = 0;
     if (reduce) {
-      frame(16);
+      frame(performance.now());
       return;
     }
+    if (raf) return;
+    t0 = 0;
     raf = requestAnimationFrame(frame);
   }
   function stop() {
-    if (raf) { cancelAnimationFrame(raf); raf = 0; t0 = 0; }
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    t0 = 0;
   }
 
-  resize();
-  init();
-  window.addEventListener('resize', function () { resize(); init(); });
+  function scheduleResize() {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      resizeTimer = 0;
+      resize();
+      start();
+    }, 120);
+  }
+
+  resize({ force: true, reseed: true });
+  window.addEventListener('resize', scheduleResize);
+  // orientationchange fires before layout settles
+  window.addEventListener('orientationchange', function () {
+    setTimeout(function () { resize({ force: true }); start(); }, 280);
+  });
 
   if ('IntersectionObserver' in window) {
     new IntersectionObserver(function (es) {
@@ -227,9 +291,12 @@
         visible = e.isIntersecting;
         if (visible) start(); else stop();
       });
-    }, { threshold: 0.08 }).observe(hero);
-  } else {
-    start();
+    }, { threshold: 0.02 }).observe(hero);
   }
+  // Always kick the loop — don't wait on observer
   start();
+  // Keep alive if tab was backgrounded
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && visible) start();
+  });
 })();

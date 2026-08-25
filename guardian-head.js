@@ -210,7 +210,7 @@
   function drawFrame(now) {
     var elapsed = (now - t0) / 1000;
     var w = phaseWeights(elapsed);
-    var rot = reduce ? 0.35 : Math.sin(elapsed * 0.22) * 0.45 + elapsed * 0.06;
+    var rot = reduce ? 0.35 : Math.sin(elapsed * 0.32) * 0.5 + elapsed * 0.1;
     var breathe = reduce ? 1 : 1 + Math.sin(elapsed * 0.9) * 0.016;
     var projected = [], i, j, a, b, dx, dy, dist, alpha, col;
     var faceAmt = Math.max(w.robot, w.her);
