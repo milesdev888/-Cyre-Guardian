@@ -68,10 +68,14 @@ body::after{
   width:84% !important;
   height:84% !important;
   border-radius:50% !important;
-  border-color:rgba(72,140,255,.55) !important;
-  box-shadow:none !important;
+  border-color:rgba(255,140,50,.92) !important;
+  box-shadow:
+    0 0 14px rgba(255,170,60,.9),
+    0 0 34px rgba(255,110,30,.55),
+    0 0 68px rgba(255,60,10,.3),
+    inset 0 0 16px rgba(255,170,70,.6),
+    inset 0 0 42px rgba(255,100,30,.28) !important;
   filter:none !important;
-  transform:translate(-50%,-50%) !important;
 }
 .orbit-ring.r2,
 .orbit-ring.r3{
@@ -87,7 +91,7 @@ body::after{
   height:10px !important;
 }
 .orbit-ring.r1::before{
-  background:#FF4D5E !important;
+  background:#3DDC84 !important;
   box-shadow:none !important;
   border:none !important;
   border-radius:50% !important;
