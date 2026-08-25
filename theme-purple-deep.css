@@ -57,7 +57,8 @@ body::after{
 }
 .head-wrap.portrait{
   background:transparent !important;
-  border-color:rgba(72,140,255,.35) !important;
+  border:none !important;
+  box-shadow:none !important;
 }
 .orbit-ring{border-color:rgba(72,140,255,.5);box-shadow:none !important;filter:none !important}
 .orbit-ring.r2{border-color:rgba(18,72,190,.55)}

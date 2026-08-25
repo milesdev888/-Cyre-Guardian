@@ -398,21 +398,12 @@ h1{
   background:rgba(12,8,24,.55);
   animation:none;
 }
-/* Portrait morph: let sapphire glass burst spill past the disc */
+/* Portrait morph: let sapphire glass burst spill with no inner disc frame */
 .head-wrap.portrait{
   overflow:visible;
   background:transparent;
-  border-color:rgba(72,140,255,.35);
-}
-.head-wrap.portrait::before{
-  content:"";
-  position:absolute;
-  inset:18%;
-  border-radius:50%;
-  background:rgba(12,8,24,.55);
-  border:1px solid rgba(72,140,255,.28);
-  pointer-events:none;
-  z-index:0;
+  border:none;
+  box-shadow:none;
 }
 .head-wrap.portrait canvas{
   position:absolute;
