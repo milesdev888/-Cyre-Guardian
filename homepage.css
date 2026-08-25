@@ -352,6 +352,8 @@ h1{
   aspect-ratio:1 / 1;
   display:grid;
   place-items:center;
+  /* Force square box so % geometry stays circular on all phones */
+  max-width:100%;
 }
 #guardian-cortex{
   position:absolute;
@@ -360,6 +362,8 @@ h1{
   height:100%;
   z-index:0;
   pointer-events:none;
+  border-radius:50%;
+  overflow:hidden;
 }
 .orbit-ring,
 .glow,
@@ -367,12 +371,13 @@ h1{
   position:absolute;
   border-radius:50%;
 }
-.glow{
+.glow,
+.orbit-ring.r2,
+.orbit-ring.r3{
   display:none !important;
 }
-/* Perfect circle — equal inset on a 1:1 stage (uneven inset made an ellipse) */
+/* ONE true circle: equal width/height, centered — never uneven inset */
 .orbit-ring{
-  border:1.5px solid rgba(72,140,255,.55);
   pointer-events:none;
   box-shadow:none;
   filter:none;
@@ -380,12 +385,14 @@ h1{
   z-index:1;
 }
 .orbit-ring.r1{
-  inset:8%;
+  inset:auto;
+  top:50%;
+  left:50%;
+  width:84%;
+  height:84%;
+  border:1.5px solid rgba(72,140,255,.55);
+  transform:translate(-50%,-50%);
   animation:orbit-spin 72s linear infinite;
-}
-.orbit-ring.r2,
-.orbit-ring.r3{
-  display:none !important;
 }
 .orbit-ring.r1::after{
   content:"";
@@ -410,14 +417,14 @@ h1{
   box-shadow:none;
   filter:none;
 }
-/* Satellite nodes on the perfect orbit */
+/* Satellite nodes — single mini circle only (no stacked ellipses) */
 .agent-node{
   position:absolute;
   left:var(--x);
   top:var(--y);
   z-index:3;
-  width:40px;
-  height:40px;
+  width:36px;
+  height:36px;
   transform:translate(-50%,-50%);
   display:grid;
   place-items:center;
@@ -425,28 +432,25 @@ h1{
 }
 .agent-node .node-orbits{
   position:absolute;
-  inset:-8px;
+  inset:-6px;
   border-radius:50%;
-  border:1px solid rgba(186,224,255,.3);
+  border:1px solid rgba(186,224,255,.28);
 }
-.agent-node .node-orbits::before{
-  content:"";
-  position:absolute;
-  inset:5px;
-  border-radius:50%;
-  border:1px solid rgba(72,140,255,.25);
-  transform:rotate(25deg) scaleX(1.12);
+.agent-node .node-orbits::before,
+.agent-node .node-orbits::after{
+  content:none !important;
+  display:none !important;
 }
 .agent-node .node-core{
   width:8px;height:8px;
   border-radius:50%;
   background:#c8e7ff;
-  box-shadow:0 0 10px rgba(95,208,255,.5);
+  box-shadow:none;
   z-index:1;
 }
 .agent-node .node-core.gate{
   background:#FF4D5E;
-  box-shadow:0 0 10px rgba(255,77,94,.55);
+  box-shadow:none;
 }
 .agent-node .node-meta{
   position:absolute;
@@ -470,14 +474,15 @@ h1{
 .agent-node .node-meta .dot.live{background:#3DDC84}
 .agent-node .node-meta .dot.risk{background:#FF4D5E}
 @media (max-width:720px){
-  .orb-stage{width:min(100%, 320px)}
-  .agent-node{width:34px;height:34px}
+  .orb-stage{width:min(92vw, 340px)}
+  .agent-node{width:32px;height:32px}
   .agent-node .node-meta{font-size:8px}
 }
 .head-wrap{
-  /* Perfect circle core for the Guardian face — sits above cortex net */
-  width:48%;
-  height:48%;
+  /* Perfect circular face core, dead-center */
+  width:46%;
+  height:46%;
+  aspect-ratio:1 / 1;
   inset:auto;
   top:50%;
   left:50%;
@@ -487,13 +492,13 @@ h1{
   border:none;
   box-shadow:none;
   filter:none;
-  background:transparent;
+  background:rgba(8,10,20,.35);
   animation:none;
   z-index:2;
 }
 .head-wrap.portrait{
   overflow:hidden;
-  background:transparent;
+  background:rgba(8,10,20,.35);
   border:none;
   box-shadow:none;
   border-radius:50%;
@@ -504,6 +509,7 @@ h1{
   width:100%;
   height:100%;
   z-index:1;
+  object-fit:cover;
 }
 .head-wrap.guardian-c7-wrap{
   inset:4%;
@@ -663,7 +669,7 @@ footer{padding:26px 0 16px}
   0%,100%{transform:translateY(0) scale(1)}
   50%{transform:translateY(-8px) scale(1.012)}
 }
-@keyframes orbit-spin{to{transform:rotate(360deg)}}
+@keyframes orbit-spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
 @keyframes orbit-pulse{
   0%,100%{opacity:.75}
   50%{opacity:1}
