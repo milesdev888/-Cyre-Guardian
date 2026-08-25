@@ -1,6 +1,7 @@
 /* guardian-head.js — dust → robot → her photo → dust
-   Small glassy beads that sparkle on burst. Robot=/robot.jpg, her=/guardian2.jpg.
-   prefers-reduced-motion → static soft mesh. FAB popout unchanged. */
+   Sapphire glass burst: beads explode past the portrait disc on assemble/dissolve.
+   Robot=/robot.jpg, her=/guardian2.jpg. prefers-reduced-motion → static mesh.
+   QA: ?phase=dust|assemble|dissolve|burst freezes that moment. */
 (function () {
   var canvas = document.getElementById('guardian-head');
   if (!canvas || !canvas.getContext) return;
@@ -10,8 +11,8 @@
   var W = 640, H = 800, points = [], facets = [];
   var t0 = performance.now(), raf = 0, visible = true;
   var robotImg = null, herImg = null, robotReady = false, herReady = false;
+  var freezeP = null;
 
-  /* Sapphire glass — deep + ice only (no festive multi-hue mix) */
   var COL = {
     deep:  [18,  72,  190],
     mid:   [72, 140, 255],
@@ -20,9 +21,9 @@
 
   function pickHue() {
     var r = Math.random();
-    if (r < 0.35) return 0; // deep
-    if (r < 0.75) return 1; // mid
-    return 2; // ice
+    if (r < 0.3) return 0;
+    if (r < 0.7) return 1;
+    return 2;
   }
   function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
   function hueColor(hue, a) {
@@ -37,8 +38,29 @@
   function smoothstep(t) { t = Math.max(0, Math.min(1, t)); return t * t * (3 - 2 * t); }
   function clamp(v, lo, hi) { return v < lo ? lo : v > hi ? hi : v; }
 
+  function pushPoint(out, x, y, z, scatterMin, scatterMax) {
+    var ds = scatterMin + Math.random() * (scatterMax - scatterMin);
+    var da = Math.random() * Math.PI * 2;
+    var elev = (Math.random() - 0.45) * 0.95;
+    out.push({
+      x: x, y: y, z: z,
+      gx: x * (0.96 + (Math.random() - 0.5) * 0.06),
+      gy: y * (0.98 + (Math.random() - 0.5) * 0.05),
+      gz: z * (1.02 + (Math.random() - 0.5) * 0.08),
+      dx: x + Math.cos(da) * ds,
+      dy: y + Math.sin(da) * ds * 0.7 + elev * 0.3,
+      dz: z + (Math.random() - 0.5) * ds * 0.8,
+      boom: 0.75 + Math.random() * 0.5,
+      hue: pickHue(),
+      s: 0.42 + Math.random() * 0.85,
+      facet: Math.random(),
+      spark: 0.55 + Math.random() * 0.45
+    });
+  }
+
   function seed(n) {
     var out = [], i, u, v, th, ph, x, y, z, r, band;
+    /* Head-shaped form points */
     for (i = 0; i < n; i++) {
       u = Math.random(); v = Math.random();
       th = u * Math.PI * 2; ph = Math.acos(2 * v - 1);
@@ -59,19 +81,17 @@
       } else if (band < 0.28) {
         x = (Math.random() - 0.5) * 0.38; y = -0.28 + (Math.random() - 0.5) * 0.1; z = 0.58 + Math.random() * 0.14;
       }
-      var ds = 0.45 + Math.random() * 1.05;
-      var da = Math.random() * Math.PI * 2;
-      out.push({
-        x: x, y: y, z: z,
-        gx: x * (0.96 + (Math.random() - 0.5) * 0.06),
-        gy: y * (0.98 + (Math.random() - 0.5) * 0.05),
-        gz: z * (1.02 + (Math.random() - 0.5) * 0.08),
-        dx: x + Math.cos(da) * ds,
-        dy: y + Math.sin(da) * ds * 0.55,
-        dz: z + (Math.random() - 0.5) * ds * 0.7,
-        hue: pickHue(), s: 0.42 + Math.random() * 0.72, facet: Math.random(),
-        spark: 0.55 + Math.random() * 0.45
-      });
+      pushPoint(out, x, y, z, 0.95, 2.05);
+    }
+    /* Extra filled burst cloud — reads as glass shatter, not a hollow shell */
+    for (i = 0; i < Math.floor(n * 0.45); i++) {
+      var rr = Math.pow(Math.random(), 0.55) * 1.55;
+      th = Math.random() * Math.PI * 2;
+      ph = Math.acos(2 * Math.random() - 1);
+      x = Math.sin(ph) * Math.cos(th) * rr * 0.55;
+      y = Math.cos(ph) * rr * 0.7;
+      z = Math.sin(ph) * Math.sin(th) * rr * 0.5;
+      pushPoint(out, x, y, z, 1.05, 2.2);
     }
     return out;
   }
@@ -88,8 +108,8 @@
     return out;
   }
 
-  points = seed(520);
-  facets = buildFacets(points, 80);
+  points = seed(780);
+  facets = buildFacets(points, 100);
 
   function loadImg(src, onOk) {
     try {
@@ -108,7 +128,6 @@
     var cssW = Math.max(1, rect.width);
     var cssH = Math.max(1, rect.height);
     dpr = Math.min(Math.max(window.devicePixelRatio || 1, 3), 4);
-    // Prefer ~2K–4K backing store so crystal facets stay sharp on mobile retina
     var scale = Math.max(dpr, 2000 / Math.max(cssW, cssH));
     scale = Math.min(scale, 4);
     W = Math.max(1, Math.floor(cssW * scale));
@@ -118,31 +137,39 @@
     if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = 'high';
   }
 
-  /* dust → robot → her (half-human) → dust  (~24s)
-     0–14% dust | 14–28% dust→robot | 28–48% robot | 48–62% robot→her
-     62–82% her | 82–100% her→dust */
-  var PERIOD = 24;
+  var PERIOD = 26;
+  try {
+    var q = new URLSearchParams(location.search);
+    var phase = q.get('phase');
+    if (phase === 'dust') freezeP = 0.08;
+    else if (phase === 'assemble') freezeP = 0.23;
+    else if (phase === 'dissolve' || phase === 'burst') freezeP = 0.88;
+  } catch (e) {}
+
   function phaseWeights(elapsed) {
-    if (reduce) return { dust: 0, form: 1, robot: 0, her: 0 };
-    var p = (elapsed % PERIOD) / PERIOD;
-    var dust = 0, form = 0, robot = 0, her = 0;
+    if (reduce) return { dust: 0, form: 1, robot: 0, her: 0, burst: 0 };
+    var p = freezeP != null ? freezeP : (elapsed % PERIOD) / PERIOD;
+    var dust = 0, form = 0, robot = 0, her = 0, burst = 0;
     if (p < 0.14) {
       dust = 1;
-    } else if (p < 0.28) {
-      var t = smoothstep((p - 0.14) / 0.14);
+      burst = 0.55 + 0.2 * Math.sin((p / 0.14) * Math.PI * 2);
+    } else if (p < 0.32) {
+      var t = smoothstep((p - 0.14) / 0.18);
       dust = 1 - t; form = t; robot = t;
+      burst = Math.sin(t * Math.PI);
     } else if (p < 0.48) {
       form = 1; robot = 1;
-    } else if (p < 0.62) {
-      var t2 = smoothstep((p - 0.48) / 0.14);
+    } else if (p < 0.60) {
+      var t2 = smoothstep((p - 0.48) / 0.12);
       form = 1; robot = 1 - t2; her = t2;
-    } else if (p < 0.82) {
+    } else if (p < 0.76) {
       form = 1; her = 1;
     } else {
-      var t3 = smoothstep((p - 0.82) / 0.18);
+      var t3 = smoothstep((p - 0.76) / 0.24);
       form = 1 - t3; her = 1 - t3; dust = t3;
+      burst = Math.sin(t3 * Math.PI);
     }
-    return { dust: dust, form: form, robot: robot, her: her };
+    return { dust: dust, form: form, robot: robot, her: her, burst: burst };
   }
 
   function projectPoint(p, rot, breathe, w) {
@@ -150,7 +177,15 @@
     var x0 = lerp(p.dx, p.gx, fa);
     var y0 = lerp(p.dy, p.gy, fa);
     var z0 = lerp(p.dz, p.gz, fa);
-    if (fa > 0) {
+
+    if (w.burst > 0.02) {
+      var boom = w.burst * (p.boom || 1) * 0.95;
+      x0 = lerp(x0, p.dx, boom);
+      y0 = lerp(y0, p.dy, boom);
+      z0 = lerp(z0, p.dz, boom);
+    }
+
+    if (fa > 0 && w.burst < 0.35) {
       y0 *= 1 + fa * 0.03;
       if (y0 < -0.1) { x0 *= 1 - fa * 0.1; z0 *= 1 - fa * 0.08; }
     }
@@ -158,10 +193,10 @@
     var xr = x0 * c - z0 * s, zr = x0 * s + z0 * c, yr = y0 * breathe;
     var persp = 2.6 / (2.6 + zr);
     return {
-      x: W * 0.5 + xr * persp * W * 0.38,
-      y: H * 0.48 + yr * persp * H * 0.34,
+      x: W * 0.5 + xr * persp * W * 0.33,
+      y: H * 0.5 + yr * persp * H * 0.31,
       z: zr, a: Math.max(0.12, Math.min(1, (zr + 1.1) / 1.8)),
-      hue: p.hue, s: p.s * persp, facet: p.facet
+      hue: p.hue, s: p.s * persp, facet: p.facet, spark: p.spark
     };
   }
 
@@ -169,18 +204,16 @@
     if (!ready || !img || weight < 0.05) return;
     var alpha = Math.pow(clamp(weight, 0, 1), 0.9) * maxAlpha;
     var iw = img.naturalWidth || 600, ih = img.naturalHeight || 600;
-    var size = Math.min(W, H) * 0.82, dw = size, dh = size * (ih / iw);
-    if (dh > H * 0.88) { dh = H * 0.88; dw = dh * (iw / ih); }
-    var dx = (W - dw) * 0.5, dy = H * 0.06;
+    var size = Math.min(W, H) * 0.54, dw = size, dh = size * (ih / iw);
+    if (dh > H * 0.58) { dh = H * 0.58; dw = dh * (iw / ih); }
+    var dx = (W - dw) * 0.5, dy = (H - dh) * 0.42;
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.globalCompositeOperation = 'source-over';
     ctx.drawImage(img, dx, dy, dw, dh);
-    // Soft dim overlay — kills hot spots / bright baked-in eyes without drawing eyes
     ctx.globalAlpha = alpha * 0.28;
     ctx.fillStyle = 'rgba(8,6,18,1)';
     ctx.fillRect(dx, dy, dw, dh);
-    // Extra soft shade over upper face (eye band) only
     ctx.globalAlpha = alpha * 0.22;
     var eg = ctx.createLinearGradient(0, dy + dh * 0.28, 0, dy + dh * 0.52);
     eg.addColorStop(0, 'rgba(5,8,18,0)');
@@ -188,11 +221,22 @@
     eg.addColorStop(1, 'rgba(5,8,18,0)');
     ctx.fillStyle = eg;
     ctx.fillRect(dx, dy + dh * 0.22, dw, dh * 0.4);
+    /* Soft edge fade — no hard circular frame */
+    var cx = W * 0.5, cy = H * 0.48;
+    var R = Math.min(W, H) * 0.34;
+    var rg = ctx.createRadialGradient(cx, cy, R * 0.62, cx, cy, R);
+    rg.addColorStop(0, 'rgba(5,8,18,0)');
+    rg.addColorStop(0.72, 'rgba(5,8,18,0)');
+    rg.addColorStop(1, 'rgba(5,8,18,1)');
+    ctx.globalAlpha = alpha;
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = rg;
+    ctx.fillRect(dx - 4, dy - 4, dw + 8, dh + 8);
     ctx.restore();
   }
 
   function drawFacets(projected, w) {
-    var m = w.form * (1 - Math.max(w.robot, w.her) * 0.75);
+    var m = w.form * (1 - Math.max(w.robot, w.her) * 0.75) * (1 - w.burst * 0.6);
     if (m < 0.08) return;
     var i, f, a, b, c, alpha;
     ctx.lineWidth = Math.max(0.6, dpr * (0.7 + m * 0.5));
@@ -210,11 +254,12 @@
     var elapsed = (now - t0) / 1000;
     var w = phaseWeights(elapsed);
     var rot = reduce ? 0.35 : Math.sin(elapsed * 0.18) * 0.35 + elapsed * 0.045;
-    var breathe = reduce ? 1 : 1 + Math.sin(elapsed * 0.9) * 0.016;
+    if (freezeP != null) rot = 0.28;
+    var breathe = reduce || freezeP != null ? 1 : 1 + Math.sin(elapsed * 0.9) * 0.016;
     var projected = [], i, j, a, b, dx, dy, dist, alpha, col;
-    var faceAmt = Math.max(w.robot, w.her);
-    var particleAlpha = (1 - faceAmt * 0.9) * (0.32 + w.form * 0.55 + w.dust * 0.4);
-    var linkAlphaScale = (1 - faceAmt * 0.88) * (0.2 + w.form * 0.55 + w.dust * 0.35);
+    var faceAmt = Math.max(w.robot, w.her) * (1 - w.burst * 0.85);
+    var particleAlpha = (1 - faceAmt * 0.75) * (0.42 + w.form * 0.35 + w.dust * 0.55 + w.burst * 0.65);
+    var linkAlphaScale = (1 - faceAmt * 0.8) * (0.16 + w.form * 0.35 + w.dust * 0.45 + w.burst * 0.5);
 
     ctx.clearRect(0, 0, W, H);
     ctx.shadowBlur = 0;
@@ -223,13 +268,12 @@
     for (i = 0; i < points.length; i++) projected.push(projectPoint(points[i], rot, breathe, w));
 
     drawFacets(projected, w);
-    // Robot then half-human her — dimmed, no drawn eyes
-    drawPortrait(robotImg, robotReady, w.robot, 0.72);
-    drawPortrait(herImg, herReady, w.her, 0.88);
+    drawPortrait(robotImg, robotReady, w.robot * (1 - w.burst * 0.7), 0.72);
+    drawPortrait(herImg, herReady, w.her * (1 - w.burst * 0.7), 0.88);
 
     ctx.lineWidth = Math.max(0.35, dpr * 0.35);
-    var maxDist = (18 - faceAmt * 8 + w.dust * 6) * dpr;
-    var step = faceAmt > 0.5 ? 4 : 2;
+    var maxDist = (24 - faceAmt * 10 + w.dust * 12 + w.burst * 16) * dpr;
+    var step = faceAmt > 0.55 ? 4 : (w.burst > 0.35 ? 1 : 2);
     for (i = 0; i < projected.length; i += step) {
       a = projected[i]; var linked = 0;
       for (j = i + 1; j < projected.length && linked < 3; j++) {
@@ -237,9 +281,9 @@
         dy = a.y - b.y; if (dy > maxDist || dy < -maxDist) continue;
         dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > maxDist || dist < 2) continue;
-        alpha = (1 - dist / maxDist) * Math.min(a.a, b.a) * 0.16 * linkAlphaScale;
+        alpha = (1 - dist / maxDist) * Math.min(a.a, b.a) * 0.2 * linkAlphaScale;
         if (alpha < 0.02) continue;
-        if (a.hue === 2 || b.hue === 2) col = rgba(COL.ice, alpha * 0.9);
+        if (a.hue === 2 || b.hue === 2) col = rgba(COL.ice, alpha * 0.95);
         else if (a.hue === 0 || b.hue === 0) col = rgba(COL.deep, alpha * 0.95);
         else col = rgba(COL.mid, alpha * 0.9);
         ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
@@ -249,38 +293,43 @@
 
     for (i = 0; i < projected.length; i++) {
       a = projected[i];
-      // Smaller glassy beads — denser sparkle on burst, delicate on form
-      var burst = Math.max(w.dust, 1 - w.form);
-      var sz = a.s * (0.55 + dpr * 0.22) * (0.75 + burst * 0.45 + w.form * 0.15);
-      if (faceAmt > 0.35) sz *= 1 - faceAmt * 0.6;
-      var col = a.hue === 0 ? COL.deep : a.hue === 1 ? COL.mid : COL.ice;
-      var glass = 0.28 + a.a * 0.22 + burst * 0.12;
-      var pa = glass * Math.max(0.12, particleAlpha);
-      var spark = (a.spark || 0.7) * (0.7 + burst * 0.5);
+      var burst = Math.max(w.burst, w.dust * 0.75, 1 - w.form);
+      var sz = a.s * (0.65 + dpr * 0.26) * (0.72 + burst * 0.95 + w.form * 0.1);
+      if (faceAmt > 0.4 && w.burst < 0.25) sz *= 1 - faceAmt * 0.5;
+      var cRgb = a.hue === 0 ? COL.deep : a.hue === 1 ? COL.mid : COL.ice;
+      var glass = 0.36 + a.a * 0.26 + burst * 0.34;
+      var pa = glass * Math.max(0.16, particleAlpha);
+      var spark = (a.spark || 0.7) * (0.8 + burst * 0.95);
 
       ctx.shadowBlur = 0;
       ctx.shadowColor = 'transparent';
 
-      // Translucent glass body (circle reads cleaner small than hex)
       ctx.beginPath();
       ctx.arc(a.x, a.y, sz, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(' + col[0] + ',' + col[1] + ',' + col[2] + ',' + pa.toFixed(3) + ')';
+      ctx.fillStyle = 'rgba(' + cRgb[0] + ',' + cRgb[1] + ',' + cRgb[2] + ',' + pa.toFixed(3) + ')';
       ctx.fill();
 
-      // Bright glass rim
       ctx.beginPath();
       ctx.arc(a.x, a.y, sz, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255,255,255,' + Math.min(0.75, pa * 1.4 * spark).toFixed(3) + ')';
-      ctx.lineWidth = Math.max(0.45, sz * 0.22);
+      ctx.strokeStyle = 'rgba(255,255,255,' + Math.min(0.9, pa * 1.6 * spark).toFixed(3) + ')';
+      ctx.lineWidth = Math.max(0.5, sz * 0.28);
       ctx.stroke();
 
-      // Specular glint — tiny hard highlight
       var hx = a.x - sz * 0.32;
       var hy = a.y - sz * 0.35;
       ctx.beginPath();
-      ctx.arc(hx, hy, Math.max(0.35, sz * 0.28), 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.95, 0.4 + spark * 0.45).toFixed(3) + ')';
+      ctx.arc(hx, hy, Math.max(0.4, sz * 0.32), 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.98, 0.45 + spark * 0.55).toFixed(3) + ')';
       ctx.fill();
+
+      if (burst > 0.45) {
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, sz * (1.35 + burst * 0.35), 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(' + cRgb[0] + ',' + cRgb[1] + ',' + cRgb[2] + ',' +
+          (0.08 + burst * 0.16).toFixed(3) + ')';
+        ctx.lineWidth = Math.max(0.35, sz * 0.1);
+        ctx.stroke();
+      }
     }
   }
 
