@@ -270,10 +270,10 @@
       var col = a.hue === 0 ? COL.green : a.hue === 1 ? COL.purple : a.hue === 2 ? COL.dpurple : COL.gold;
       // Crystal facet (hex) — sharp glass, no soft bloom
       var sides = 6;
-      var rot = a.facet * Math.PI * 2 + elapsed * 0.05;
+      var crot = a.facet * Math.PI * 2 + elapsed * 0.05;
       ctx.beginPath();
       for (j = 0; j <= sides; j++) {
-        var ang = rot + (j / sides) * Math.PI * 2;
+        var ang = crot + (j / sides) * Math.PI * 2;
         var px = a.x + Math.cos(ang) * sz;
         var py = a.y + Math.sin(ang) * sz;
         if (j === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
