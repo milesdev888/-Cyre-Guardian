@@ -55,25 +55,25 @@ body::after{
   background:rgba(12,8,24,.55) !important;
   filter:none !important;
 }
-.orbit-ring{border-color:rgba(153,69,255,.5);box-shadow:none !important;filter:none !important}
-.orbit-ring.r2{border-color:rgba(20,241,149,.48)}
-.orbit-ring.r3{border-color:rgba(153,69,255,.45)}
+.orbit-ring{border-color:rgba(72,140,255,.5);box-shadow:none !important;filter:none !important}
+.orbit-ring.r2{border-color:rgba(18,72,190,.55)}
+.orbit-ring.r3{border-color:rgba(186,224,255,.4)}
 .orbit-ring.r1::after{
-  background:#9945FF !important;
+  background:#488CFF !important;
   box-shadow:none !important;
   border:none !important;
   border-radius:50% !important;
   transform:translateX(-50%) !important;
 }
 .orbit-ring.r2::after{
-  background:#14F195 !important;
+  background:#1248BE !important;
   box-shadow:none !important;
   border:none !important;
   border-radius:50% !important;
   transform:translateX(-50%) !important;
 }
 .orbit-ring.r3::after{
-  background:#FFBE50 !important;
+  background:#BAE0FF !important;
   box-shadow:none !important;
   border:none !important;
   border-radius:50% !important;
