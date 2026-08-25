@@ -11,17 +11,17 @@
   var t0 = performance.now(), raf = 0, visible = true;
   var robotImg = null, herImg = null, robotReady = false, herReady = false;
 
-  /* Sapphire glass — 3 tones only */
+  /* Sapphire glass — deep + ice only (no festive multi-hue mix) */
   var COL = {
-    deep:  [18,  72,  190],  // deep sapphire
-    mid:   [72, 140, 255],  // bright sapphire
-    ice:   [186, 224, 255]  // ice glass
+    deep:  [18,  72,  190],
+    mid:   [72, 140, 255],
+    ice:   [186, 224, 255]
   };
 
   function pickHue() {
     var r = Math.random();
-    if (r < 0.28) return 0; // deep
-    if (r < 0.68) return 1; // mid (dominant)
+    if (r < 0.35) return 0; // deep
+    if (r < 0.75) return 1; // mid
     return 2; // ice
   }
   function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
@@ -88,8 +88,8 @@
     return out;
   }
 
-  points = seed(780);
-  facets = buildFacets(points, 120);
+  points = seed(520);
+  facets = buildFacets(points, 80);
 
   function loadImg(src, onOk) {
     try {
@@ -227,17 +227,17 @@
     drawPortrait(robotImg, robotReady, w.robot, 0.72);
     drawPortrait(herImg, herReady, w.her, 0.88);
 
-    ctx.lineWidth = Math.max(0.4, dpr * 0.45);
-    var maxDist = (26 - faceAmt * 12 + w.dust * 10) * dpr;
-    var step = faceAmt > 0.5 ? 3 : 1;
+    ctx.lineWidth = Math.max(0.35, dpr * 0.35);
+    var maxDist = (18 - faceAmt * 8 + w.dust * 6) * dpr;
+    var step = faceAmt > 0.5 ? 4 : 2;
     for (i = 0; i < projected.length; i += step) {
       a = projected[i]; var linked = 0;
-      for (j = i + 1; j < projected.length && linked < 5; j++) {
+      for (j = i + 1; j < projected.length && linked < 3; j++) {
         b = projected[j]; dx = a.x - b.x; if (dx > maxDist || dx < -maxDist) continue;
         dy = a.y - b.y; if (dy > maxDist || dy < -maxDist) continue;
         dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > maxDist || dist < 2) continue;
-        alpha = (1 - dist / maxDist) * Math.min(a.a, b.a) * 0.28 * linkAlphaScale;
+        alpha = (1 - dist / maxDist) * Math.min(a.a, b.a) * 0.16 * linkAlphaScale;
         if (alpha < 0.02) continue;
         if (a.hue === 2 || b.hue === 2) col = rgba(COL.ice, alpha * 0.9);
         else if (a.hue === 0 || b.hue === 0) col = rgba(COL.deep, alpha * 0.95);

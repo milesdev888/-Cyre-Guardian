@@ -22,7 +22,7 @@
   function boot() {
     // Core bolt-ons (may be missing after index restores)
     onceScript('cy-rwa-widget', '/rwa-widget.js');
-    onceScript('cy-vortex', '/vortex.js');
+    onceScript('cy-vortex', '/hero-meteors.js?v=fix-xmas');
     onceScript('cy-guardian-voice', '/guardian-voice.js');
     onceScript('cy-access-form', '/access-form.js');
     // AI vibe layer
