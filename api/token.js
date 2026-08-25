@@ -81,7 +81,7 @@ function accountUiAmount(row, decimalsFallback) {
   return raw / Math.pow(10, Number.isFinite(dec) ? dec : 0);
 }
 
-async function measureHolders(mint, supply, decimals) {
+async function measureHoldersViaRpc(mint, supply, decimals) {
   // Prefer confirmed commitment; some providers want a string commitment, others an object.
   let largest = null;
   let lastErr = null;
@@ -92,7 +92,7 @@ async function measureHolders(mint, supply, decimals) {
   ];
   for (let i = 0; i < attempts.length; i++) {
     try {
-      largest = await rpc('getTokenLargestAccounts', attempts[i], { retries: 4 });
+      largest = await rpc('getTokenLargestAccounts', attempts[i], { retries: 3 });
       lastErr = null;
       break;
     } catch (e) {
@@ -104,7 +104,7 @@ async function measureHolders(mint, supply, decimals) {
 
   const accounts = (largest && largest.value) || [];
   if (!accounts.length) {
-    return { top1: 0, top10: 0, holdersMeasured: true, holderCount: 0 };
+    return { top1: 0, top10: 0, holdersMeasured: true, holderCount: 0, source: 'rpc' };
   }
   const amounts = accounts
     .map((a) => accountUiAmount(a, decimals))
@@ -118,8 +118,44 @@ async function measureHolders(mint, supply, decimals) {
     top1,
     top10,
     holdersMeasured: true,
-    holderCount: amounts.length
+    holderCount: amounts.length,
+    source: 'rpc'
   };
+}
+
+// Fallback when RPC rate-limits getTokenLargestAccounts: RugCheck's measured topHolders.
+// We only read percentage fields — never their risk score / "rugged" labels.
+async function measureHoldersViaRugcheck(mint) {
+  const r = await fetch('https://api.rugcheck.xyz/v1/tokens/' + encodeURIComponent(mint) + '/report', {
+    headers: { accept: 'application/json' }
+  });
+  if (!r.ok) throw new Error('holder index http ' + r.status);
+  const d = await r.json();
+  const rows = Array.isArray(d.topHolders) ? d.topHolders : [];
+  if (!rows.length) throw new Error('holder index empty');
+  const pcts = rows
+    .map((h) => Number(h && h.pct))
+    .filter((n) => Number.isFinite(n) && n >= 0)
+    .sort((a, b) => b - a);
+  if (!pcts.length) throw new Error('holder index missing pct');
+  const top1 = Math.min(100, pcts[0] || 0);
+  const top10 = Math.min(100, pcts.slice(0, 10).reduce((s, v) => s + v, 0));
+  return {
+    top1,
+    top10,
+    holdersMeasured: true,
+    holderCount: pcts.length,
+    source: 'index'
+  };
+}
+
+async function measureHolders(mint, supply, decimals) {
+  try {
+    return await measureHoldersViaRpc(mint, supply, decimals);
+  } catch (_) {
+    // RPC path failed (usually 429 on getTokenLargestAccounts) — try indexed fallback
+  }
+  return measureHoldersViaRugcheck(mint);
 }
 
 function buildSignals(mintAuthority, freezeAuthority, holders) {
@@ -212,13 +248,13 @@ export default async function handler(req, res) {
       supply = Number(info.supply) / Math.pow(10, decimals);
     }
 
-    // 2. largest holders — retry across RPCs; brief pause after account read
-    let holders = { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0 };
+    // 2. largest holders — RPC first, indexed fallback when RPC rate-limits
+    let holders = { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
     try {
-      if (!holdersOnly) await sleep(180);
+      if (!holdersOnly) await sleep(120);
       holders = await measureHolders(mint, supply, decimals);
     } catch (_) {
-      holders = { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0 };
+      holders = { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
     }
 
     if (holdersOnly) {
@@ -230,6 +266,7 @@ export default async function handler(req, res) {
         top1Pct: holders.holdersMeasured ? +holders.top1.toFixed(2) : null,
         top10Pct: holders.holdersMeasured ? +holders.top10.toFixed(2) : null,
         holdersMeasured: holders.holdersMeasured,
+        holdersSource: holders.source || null,
         disclaimer: 'Patterns, not verdicts. This scan reports on-chain facts; it is not investment advice and cannot detect every risk.'
       });
     }
@@ -244,6 +281,7 @@ export default async function handler(req, res) {
       top1Pct: holders.holdersMeasured ? +holders.top1.toFixed(2) : null,
       top10Pct: holders.holdersMeasured ? +holders.top10.toFixed(2) : null,
       holdersMeasured: holders.holdersMeasured,
+      holdersSource: holders.source || null,
       score, risk, signals,
       disclaimer: 'Patterns, not verdicts. This scan reports on-chain facts; it is not investment advice and cannot detect every risk.'
     });
