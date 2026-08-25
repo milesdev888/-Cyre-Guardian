@@ -268,7 +268,9 @@
       var baseA = (a.hue === 3 ? 0.78 : a.hue === 0 ? 0.7 : 0.62) + a.a * 0.38;
       var pa = baseA * Math.max(0.18, particleAlpha);
       var col = a.hue === 0 ? COL.green : a.hue === 1 ? COL.purple : a.hue === 2 ? COL.dpurple : COL.gold;
-      // Crystal facet — solid fill + thin rim + tiny specular (no soft glow)
+      // Hard crystal fill — no white bloom / soft core
+      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'transparent';
       var sides = 6;
       var crot = a.facet * Math.PI * 2 + elapsed * 0.03;
       ctx.beginPath();
@@ -281,13 +283,13 @@
       ctx.closePath();
       ctx.fillStyle = rgba(col, pa);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,' + Math.min(0.5, pa * 0.32).toFixed(3) + ')';
-      ctx.lineWidth = 0.8;
+      ctx.strokeStyle = 'rgba(' +
+        Math.min(255, col[0] + 40) + ',' +
+        Math.min(255, col[1] + 40) + ',' +
+        Math.min(255, col[2] + 30) + ',' +
+        Math.min(1, pa).toFixed(3) + ')';
+      ctx.lineWidth = 1;
       ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(a.x - sz * 0.28, a.y - sz * 0.3, Math.max(0.4, sz * 0.14), 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.85, 0.4 + pa * 0.25).toFixed(3) + ')';
-      ctx.fill();
     }
   }
 
