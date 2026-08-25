@@ -59,20 +59,20 @@
       } else if (band < 0.28) {
         x = (Math.random() - 0.5) * 0.38; y = -0.28 + (Math.random() - 0.5) * 0.1; z = 0.58 + Math.random() * 0.14;
       }
-      /* Wide scatter targets — glass burst spills past the portrait disc */
-      var ds = 1.15 + Math.random() * 1.85;
+      /* Scatter past the disc edge — wide enough to read as a burst, still on-canvas */
+      var ds = 0.78 + Math.random() * 1.2;
       var da = Math.random() * Math.PI * 2;
-      var elev = (Math.random() - 0.45) * 1.1;
+      var elev = (Math.random() - 0.4) * 0.9;
       out.push({
         x: x, y: y, z: z,
         gx: x * (0.96 + (Math.random() - 0.5) * 0.06),
         gy: y * (0.98 + (Math.random() - 0.5) * 0.05),
         gz: z * (1.02 + (Math.random() - 0.5) * 0.08),
         dx: x + Math.cos(da) * ds,
-        dy: y + Math.sin(da) * ds * 0.72 + elev * 0.35,
-        dz: z + (Math.random() - 0.5) * ds * 0.95,
-        boom: 0.85 + Math.random() * 0.9,
-        hue: pickHue(), s: 0.38 + Math.random() * 0.78, facet: Math.random(),
+        dy: y + Math.sin(da) * ds * 0.68 + elev * 0.28,
+        dz: z + (Math.random() - 0.5) * ds * 0.75,
+        boom: 0.7 + Math.random() * 0.55,
+        hue: pickHue(), s: 0.4 + Math.random() * 0.8, facet: Math.random(),
         spark: 0.55 + Math.random() * 0.45
       });
     }
@@ -128,24 +128,24 @@
     if (reduce) return { dust: 0, form: 1, robot: 0, her: 0, burst: 0 };
     var p = (elapsed % PERIOD) / PERIOD;
     var dust = 0, form = 0, robot = 0, her = 0, burst = 0;
-    if (p < 0.16) {
+    if (p < 0.14) {
       dust = 1;
-      burst = 0.55 + 0.45 * Math.sin((p / 0.16) * Math.PI);
+      burst = 0.28 + 0.12 * Math.sin((p / 0.14) * Math.PI * 2); /* idle glass cloud */
     } else if (p < 0.32) {
-      var t = smoothstep((p - 0.16) / 0.16);
+      var t = smoothstep((p - 0.14) / 0.18);
       dust = 1 - t; form = t; robot = t;
-      burst = Math.sin(t * Math.PI); /* assemble boom */
+      burst = Math.sin(t * Math.PI); /* assemble boom — peak mid-gather */
     } else if (p < 0.48) {
       form = 1; robot = 1;
     } else if (p < 0.60) {
       var t2 = smoothstep((p - 0.48) / 0.12);
       form = 1; robot = 1 - t2; her = t2;
-    } else if (p < 0.78) {
+    } else if (p < 0.76) {
       form = 1; her = 1;
     } else {
-      var t3 = smoothstep((p - 0.78) / 0.22);
+      var t3 = smoothstep((p - 0.76) / 0.24);
       form = 1 - t3; her = 1 - t3; dust = t3;
-      burst = Math.sin(t3 * Math.PI); /* dissolve boom */
+      burst = Math.sin(t3 * Math.PI); /* dissolve boom — glass burst */
     }
     return { dust: dust, form: form, robot: robot, her: her, burst: burst };
   }
@@ -156,12 +156,12 @@
     var y0 = lerp(p.dy, p.gy, fa);
     var z0 = lerp(p.dz, p.gz, fa);
 
-    /* Outward glass boom — beads fling past the disc during burst */
+    /* Outward glass boom — push toward scatter targets (past the disc, still framed) */
     if (w.burst > 0.02) {
-      var boom = w.burst * (p.boom || 1) * 0.72;
-      x0 = lerp(x0, p.dx * 1.35, boom);
-      y0 = lerp(y0, p.dy * 1.28, boom);
-      z0 = lerp(z0, p.dz * 1.2, boom * 0.85);
+      var boom = w.burst * (p.boom || 1) * 0.9;
+      x0 = lerp(x0, p.dx, boom);
+      y0 = lerp(y0, p.dy, boom);
+      z0 = lerp(z0, p.dz, boom);
     }
 
     if (fa > 0) {
@@ -171,10 +171,9 @@
     var c = Math.cos(rot), s = Math.sin(rot);
     var xr = x0 * c - z0 * s, zr = x0 * s + z0 * c, yr = y0 * breathe;
     var persp = 2.6 / (2.6 + zr);
-    /* Slightly tighter projection so oversized canvas still frames the form */
     return {
-      x: W * 0.5 + xr * persp * W * 0.32,
-      y: H * 0.5 + yr * persp * H * 0.30,
+      x: W * 0.5 + xr * persp * W * 0.34,
+      y: H * 0.5 + yr * persp * H * 0.32,
       z: zr, a: Math.max(0.12, Math.min(1, (zr + 1.1) / 1.8)),
       hue: p.hue, s: p.s * persp, facet: p.facet, spark: p.spark
     };
