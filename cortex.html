@@ -58,27 +58,29 @@
   .dock button[data-state="armed"], .dock button[data-state="paper-only"]{color:var(--red); border-color:rgba(255,77,94,.35)}
   .dock button[data-state="live"], .dock button[data-state="watching"], .dock button[data-state="quiet"]{color:var(--cyan)}
   .toast{
-    position:fixed; left:50%; bottom:calc(110px + env(safe-area-inset-bottom));
-    transform:translateX(-50%); z-index:4; pointer-events:none;
+    position:fixed; left:50%; bottom:calc(168px + env(safe-area-inset-bottom));
+    transform:translateX(-50%); z-index:6; pointer-events:none;
     background:rgba(11,6,24,.92); border:1px solid var(--line); color:var(--frost);
     padding:8px 12px; border-radius:4px; opacity:0; transition:opacity .25s;
     max-width:min(90vw,420px); text-align:center;
   }
   .toast.show{opacity:1}
   .ledger{
-    position:fixed; right:12px; bottom:calc(110px + env(safe-area-inset-bottom));
-    z-index:3; width:min(280px, calc(100vw - 24px)); max-height:42vh; overflow:auto;
-    border:1px solid var(--line); background:rgba(20,12,40,.88); backdrop-filter:blur(8px);
-    padding:10px; border-radius:4px; display:none;
+    position:fixed; right:12px; top:calc(120px + env(safe-area-inset-top));
+    z-index:5; width:min(300px, calc(100vw - 24px)); max-height:min(52vh,420px); overflow:auto;
+    border:1px solid rgba(124,239,255,.35); background:rgba(14,8,28,.96); backdrop-filter:blur(10px);
+    padding:10px; border-radius:4px; display:none; box-shadow:0 12px 40px rgba(0,0,0,.45);
   }
-  .ledger.is-open{display:block; pointer-events:auto}
-  .ledger h2{font-size:10px; color:var(--frost); letter-spacing:.2em; margin-bottom:8px}
+  .ledger.is-open{display:block !important; pointer-events:auto}
+  .ledger h2{font-size:10px; color:var(--frost); letter-spacing:.2em; margin-bottom:8px;
+             display:flex; justify-content:space-between; align-items:center; gap:8px}
+  .ledger h2 .x{border:0; background:transparent; color:var(--dim); cursor:pointer; font:inherit; padding:0}
   .ledger p{color:var(--dim); margin-bottom:8px}
-  .ledger input, .ledger button{
+  .ledger input, .ledger #paperAdd{
     width:100%; font:inherit; letter-spacing:.06em; border-radius:4px; border:1px solid var(--line);
     background:rgba(11,6,24,.8); color:var(--frost); padding:7px 8px; margin-bottom:6px;
   }
-  .ledger button{cursor:pointer; background:linear-gradient(90deg,rgba(196,181,253,.2),rgba(124,239,255,.18))}
+  .ledger #paperAdd{cursor:pointer; background:linear-gradient(90deg,rgba(196,181,253,.2),rgba(124,239,255,.18))}
   .ledger ul{list-style:none}
   .ledger li{border-top:1px solid rgba(196,181,253,.1); padding:6px 0; color:var(--violet)}
   .ledger li small{display:block; color:var(--dim)}
@@ -124,7 +126,7 @@
 <div class="hud interactive dock" id="deskDock" aria-label="Open agent desks"></div>
 
 <div class="hud interactive ledger" id="paperLedger" aria-label="Paper ledger">
-  <h2>PAPER LEDGER</h2>
+  <h2>PAPER LEDGER <button type="button" class="x" id="paperClose" aria-label="Close">✕</button></h2>
   <p>Local notes only. No keys. No orders. Kill-switch stays armed.</p>
   <input id="paperNote" type="text" maxlength="160" placeholder="Note a pattern (not advice)…" autocomplete="off">
   <button type="button" id="paperAdd">Log paper note</button>
@@ -229,13 +231,25 @@
     return String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
   function openPaper(){
-    if(ledgerEl) ledgerEl.classList.add('is-open');
+    if(!ledgerEl) return;
+    ledgerEl.classList.add('is-open');
+    ledgerEl.style.display = 'block';
     renderPaper();
-    if(paperNote) paperNote.focus();
+    if(paperNote) setTimeout(() => paperNote.focus(), 50);
+  }
+  function closePaper(){
+    if(!ledgerEl) return;
+    ledgerEl.classList.remove('is-open');
+    ledgerEl.style.display = 'none';
   }
   function activateDesk(id){
     const act = DESK_ACTION[id] || {};
-    if(act.paper){ openPaper(); toast(act.tip || 'Paper only'); return; }
+    if(act.paper){
+      if(ledgerEl && ledgerEl.classList.contains('is-open')) closePaper();
+      else openPaper();
+      toast(act.tip || 'Paper only');
+      return;
+    }
     if(act.deferred){ toast(act.tip || (id + ' deferred')); return; }
     if(id === 'kill-switch'){ toast(act.tip || 'Kill-switch armed'); return; }
     if(act.href){
@@ -263,7 +277,8 @@
       btn.addEventListener('click', () => activateDesk(btn.getAttribute('data-desk')));
     });
   }
-  document.getElementById('paperAdd')?.addEventListener('click', () => {
+  document.getElementById('paperClose') && document.getElementById('paperClose').addEventListener('click', closePaper);
+  document.getElementById('paperAdd') && document.getElementById('paperAdd').addEventListener('click', () => {
     const note = (paperNote && paperNote.value || '').trim();
     if(!note){ toast('Add a pattern note first'); return; }
     // hard filter: no advice verbs
