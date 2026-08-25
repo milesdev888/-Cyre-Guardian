@@ -104,6 +104,7 @@
     var rot = reduce ? 0.4 : elapsed * 0.12;
     var breathe = reduce ? 1 : 1 + Math.sin(elapsed * 0.9) * 0.02;
     var scale = Math.min(W, H) * 0.28 * breathe;
+    if (!(scale > 8)) scale = Math.max(40, Math.min(W, H) * 0.28 || 40);
     var c = Math.cos(rot), s = Math.sin(rot);
     var i, p, q, col, sz;
 

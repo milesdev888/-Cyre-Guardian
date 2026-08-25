@@ -382,27 +382,10 @@ h1{
   background:rgba(12,8,24,.55);
   animation:none;
 }
-/* Soft round Guardian core sitting in the bright particle orb */
+/* Soft round core slot — hidden while net orb is the preview hero */
 .head-wrap.portrait,
 .head-wrap.portrait.net-core{
-  overflow:visible;
-  background:transparent !important;
-  border:none !important;
-  box-shadow:none !important;
-  border-radius:0 !important;
-  inset:22%;
-  z-index:2;
-}
-.head-wrap.portrait canvas{
-  position:absolute;
-  inset:-8%;
-  width:116%;
-  height:116%;
-  z-index:1;
-}
-@media (max-width:720px){
-  .orb-stage{width:min(100%, 340px)}
-  .head-wrap.portrait.net-core{inset:24%}
+  display:none !important;
 }
 .head-wrap.guardian-c7-wrap{
   inset:4%;
