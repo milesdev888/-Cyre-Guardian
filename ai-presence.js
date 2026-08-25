@@ -12,12 +12,12 @@
   css.textContent =
     /* denser cinematic glow tokens */
     'body{--ai-glow:0 0 36px rgba(0,82,255,.38),0 0 72px rgba(0,82,255,.2);--ai-glow-sm:0 0 22px rgba(0,82,255,.32)}' +
-    '.hud-bar,#cy-hud .hud-bar{box-shadow:0 12px 40px rgba(0,0,0,.5),inset 0 1px 1px rgba(255,255,255,.06),0 0 40px rgba(0,82,255,.2),0 0 70px rgba(0,82,255,.12)!important}' +
+    '.hud-bar,#cy-hud .hud-bar{box-shadow:0 12px 40px rgba(0,0,0,.5),inset 0 1px 1px rgba(255,255,255,.06),0 0 40px rgba(0,82,255,.2),0 0 70px rgba(0,82,255,.06)!important}' +
     '.nav .req,.btn.b-main{box-shadow:0 0 32px rgba(0,82,255,.45),0 0 56px rgba(0,82,255,.25)!important}' +
     /* denser cinematic bloom behind hero */
     '.hero::before{content:"";position:absolute;inset:-20% -10% auto -10%;height:120%;pointer-events:none;z-index:0;' +
-    'background:radial-gradient(ellipse 55% 45% at 70% 35%,rgba(0,82,255,.12),transparent 60%),' +
-    'radial-gradient(ellipse 50% 40% at 30% 50%,rgba(38,103,255,.08),transparent 55%);' +
+    'background:radial-gradient(ellipse 55% 45% at 70% 35%,rgba(0,82,255,.06),transparent 60%),' +
+    'radial-gradient(ellipse 50% 40% at 30% 50%,rgba(0,82,255,.04),transparent 55%);' +
     'filter:blur(40px);opacity:.9}' +
     '.hero .wrap,.hero .hero-grid{position:relative;z-index:1}' +
     /* living orbit rings */
@@ -35,8 +35,8 @@
     'box-shadow:0 0 42px rgba(0,82,255,.4),0 0 80px rgba(0,82,255,.22) !important}' +
     /* fallback orb if no portrait (wireframe-ish CSS sphere) */
     '.cy-ai-orb{position:relative;width:min(320px,78vw);aspect-ratio:1;margin:0 auto;' +
-    'border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(238,250,255,.35),rgba(0,82,255,.12) 35%,rgba(8,10,18,.9) 70%);' +
-    'border:1px solid rgba(0,82,255,.4);box-shadow:0 0 50px rgba(0,82,255,.35),0 0 90px rgba(0,82,255,.2),inset 0 0 40px rgba(0,82,255,.12);' +
+    'border-radius:50%;background:radial-gradient(circle at 35% 30%,rgba(238,250,255,.35),rgba(0,82,255,.06) 35%,rgba(8,10,18,.9) 70%);' +
+    'border:1px solid rgba(0,82,255,.4);box-shadow:0 0 50px rgba(0,82,255,.35),0 0 90px rgba(0,82,255,.2),inset 0 0 40px rgba(0,82,255,.06);' +
     'animation:cy-ai-breathe 5s ease-in-out infinite}' +
     '.cy-ai-orb::before,.cy-ai-orb::after{content:"";position:absolute;inset:12%;border-radius:50%;border:1px dashed rgba(0,82,255,.35);' +
     'animation:cy-ai-spin 28s linear infinite}' +
