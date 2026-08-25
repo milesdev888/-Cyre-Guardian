@@ -1,5 +1,5 @@
-/* vortex.js — Solana-colored particle mesh (purple #9945FF + green #14F195)
-   Bolt-on hero background. prefers-reduced-motion → static mesh. */
+/* vortex.js — Solana mesh + sparse gold accents
+   Purple #9945FF · green #14F195 · gold #FFBE50. No soft bloom. */
 (function () {
   'use strict';
   var hero = document.querySelector('.hero');
@@ -32,15 +32,14 @@
   var t0 = 0;
   var visible = true;
 
-  // Solana brand — purple + green, brighter
+  // Solana purple/green + gold accents
   var COLORS = [
     { r: 153, g:  69, b: 255 },  // #9945FF Solana purple
     { r: 120, g:  40, b: 220 },  // deep purple
-    { r: 176, g: 100, b: 255 },  // light purple
-    { r:  20, g: 241, b: 149 },  // #14F195 Solana green
-    { r:  60, g: 245, b: 175 }   // mint green accent
+    { r: 176, g: 100, b: 255 }   // light purple
   ];
   var GREEN = { r: 20, g: 241, b: 149 };
+  var GOLD  = { r: 255, g: 190, b: 80 };  // #FFBE50
   var PURPLE = { r: 153, g: 69, b: 255 };
 
   function resize() {
@@ -69,16 +68,22 @@
     this.alpha = 0.72 + Math.random() * 0.28;
     this.pulse = Math.random() * Math.PI * 2;
     this.pulseSp = 0.8 + Math.random() * 1.4;
+    var roll = Math.random();
     var c;
-    // Mostly Solana purple; green as sparse accents (~20%)
-    if (Math.random() < 0.2) {
+    // ~12% gold, ~18% green, rest purple family
+    if (roll < 0.12) {
+      c = GOLD;
+      this.kind = 'gold';
+      this.radius = 2.5 + Math.random() * 2.5;
+      this.alpha = 0.82 + Math.random() * 0.18;
+    } else if (roll < 0.30) {
       c = GREEN;
-      this.gold = true;
+      this.kind = 'green';
       this.radius = 2.4 + Math.random() * 2.4;
       this.alpha = 0.78 + Math.random() * 0.22;
     } else {
       c = COLORS[(Math.random() * 3) | 0];
-      this.gold = false;
+      this.kind = 'purple';
     }
     this.r = c.r; this.g = c.g; this.b = c.b;
   };

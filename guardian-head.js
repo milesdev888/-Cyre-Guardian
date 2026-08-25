@@ -11,24 +11,24 @@
   var t0 = performance.now(), raf = 0, visible = true;
   var robotImg = null, herImg = null, robotReady = false, herReady = false;
 
-  /* Solana brand palette — purple #9945FF + green #14F195 */
+  /* Solana purple/green + gold accents */
   var COL = {
     green:  [20,  241, 149],
     purple: [153,  69, 255],
     dpurple:[120,  40, 220],
-    mint:   [20,  241, 149]
+    gold:   [255, 190,  80]
   };
 
   function pickHue() {
     var r = Math.random();
-    if (r < 0.18) return 0; // Solana green (sparse)
-    if (r < 0.72) return 1; // Solana purple (dominant)
-    if (r < 0.90) return 2; // deep purple
-    return 3; // bright green accent
+    if (r < 0.12) return 3; // gold (sparse)
+    if (r < 0.28) return 0; // Solana green
+    if (r < 0.78) return 1; // Solana purple (dominant)
+    return 2; // deep purple
   }
   function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
   function hueColor(hue, a) {
-    var c = hue === 0 ? COL.green : hue === 1 ? COL.purple : hue === 2 ? COL.dpurple : COL.mint;
+    var c = hue === 0 ? COL.green : hue === 1 ? COL.purple : hue === 2 ? COL.dpurple : COL.gold;
     return rgba(c, a);
   }
   function dist3(a, b) {
@@ -251,8 +251,8 @@
         if (dist > maxDist || dist < 2) continue;
         alpha = (1 - dist / maxDist) * Math.min(a.a, b.a) * 0.42 * linkAlphaScale;
         if (alpha < 0.02) continue;
-        if (a.hue === 0 || b.hue === 0) col = rgba(COL.green, alpha * 0.95);
-        else if (a.hue === 3 || b.hue === 3) col = rgba(COL.mint, alpha * 0.9);
+        if (a.hue === 3 || b.hue === 3) col = rgba(COL.gold, alpha * 0.95);
+        else if (a.hue === 0 || b.hue === 0) col = rgba(COL.green, alpha * 0.95);
         else col = rgba(COL.purple, alpha * 0.9);
         ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
         linked++;
@@ -263,7 +263,7 @@
       a = projected[i];
       var sz = a.s * (1.05 + dpr * 0.4) * (0.85 + w.dust * 0.35 + w.form * 0.25);
       if (faceAmt > 0.35) sz *= 1 - faceAmt * 0.55;
-      var baseA = (a.hue === 0 || a.hue === 3 ? 0.58 : 0.5) + a.a * 0.42;
+      var baseA = (a.hue === 3 ? 0.68 : a.hue === 0 ? 0.58 : 0.5) + a.a * 0.42;
       ctx.beginPath();
       ctx.fillStyle = hueColor(a.hue, baseA * Math.max(0.12, particleAlpha));
       ctx.arc(a.x, a.y, sz, 0, Math.PI * 2);
