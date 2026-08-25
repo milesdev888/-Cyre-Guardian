@@ -204,10 +204,19 @@
     if (!ready || !img || weight < 0.05) return;
     var alpha = Math.pow(clamp(weight, 0, 1), 0.9) * maxAlpha;
     var iw = img.naturalWidth || 600, ih = img.naturalHeight || 600;
-    var size = Math.min(W, H) * 0.54, dw = size, dh = size * (ih / iw);
-    if (dh > H * 0.58) { dh = H * 0.58; dw = dh * (iw / ih); }
+    var size = Math.min(W, H) * 0.52, dw = size, dh = size * (ih / iw);
+    if (dh > H * 0.56) { dh = H * 0.56; dw = dh * (iw / ih); }
     var dx = (W - dw) * 0.5, dy = (H - dh) * 0.42;
+    var cx = W * 0.5, cy = H * 0.48;
+    var R = Math.min(dw, dh) * 0.49;
+
     ctx.save();
+    /* Round portrait — soft edge, no ring/border stroke */
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+
     ctx.globalAlpha = alpha;
     ctx.globalCompositeOperation = 'source-over';
     ctx.drawImage(img, dx, dy, dw, dh);
@@ -221,17 +230,15 @@
     eg.addColorStop(1, 'rgba(5,8,18,0)');
     ctx.fillStyle = eg;
     ctx.fillRect(dx, dy + dh * 0.22, dw, dh * 0.4);
-    /* Soft edge fade — no hard circular frame */
-    var cx = W * 0.5, cy = H * 0.48;
-    var R = Math.min(W, H) * 0.34;
-    var rg = ctx.createRadialGradient(cx, cy, R * 0.62, cx, cy, R);
-    rg.addColorStop(0, 'rgba(5,8,18,0)');
-    rg.addColorStop(0.72, 'rgba(5,8,18,0)');
-    rg.addColorStop(1, 'rgba(5,8,18,1)');
-    ctx.globalAlpha = alpha;
+
+    /* Feather the rim so it doesn't read as a hard disc */
+    var rg = ctx.createRadialGradient(cx, cy, R * 0.78, cx, cy, R);
+    rg.addColorStop(0, 'rgba(0,0,0,0)');
+    rg.addColorStop(1, 'rgba(0,0,0,1)');
+    ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = 'destination-out';
     ctx.fillStyle = rg;
-    ctx.fillRect(dx - 4, dy - 4, dw + 8, dh + 8);
+    ctx.fillRect(cx - R - 2, cy - R - 2, R * 2 + 4, R * 2 + 4);
     ctx.restore();
   }
 
