@@ -11,6 +11,13 @@ const FALLBACKS = String(process.env.SOLANA_RPC_FALLBACK || '')
 const RPCS = [PRIMARY, ...FALLBACKS].filter((u, i, a) => u && a.indexOf(u) === i);
 const ALLOWED = ['https://cyre.dev', 'https://www.cyre.dev'];
 
+function isAllowedRequest(origin, referer) {
+  if (ALLOWED.some((a) => origin === a || referer.startsWith(a))) return true;
+  // Vercel preview deploys for this project (so PR scans can resolve name/symbol)
+  const preview = /^https:\/\/cyre-guardian[\w.-]*\.vercel\.app/;
+  return preview.test(origin) || preview.test(referer);
+}
+
 // best-effort per-instance throttle (same pattern as api/chat.js)
 let calls = 0, windowStart = Date.now();
 
@@ -181,19 +188,7 @@ async function measureHoldersViaRugcheck(mint) {
   return { ...holders, name: meta.name, symbol: meta.symbol };
 }
 
-async function fetchTokenMeta(mint, seeded) {
-  let name = seeded && seeded.name || null;
-  let symbol = seeded && seeded.symbol || null;
-  if (name || symbol) return { name, symbol };
-
-  try {
-    const d = await fetchRugcheckReport(mint);
-    const meta = metaFromRugcheckReport(d);
-    name = meta.name;
-    symbol = meta.symbol;
-    if (name || symbol) return { name, symbol };
-  } catch (_) { /* try Jupiter */ }
-
+async function fetchMetaViaJupiter(mint) {
   try {
     const r = await fetch(
       'https://lite-api.jup.ag/tokens/v2/search?query=' + encodeURIComponent(mint),
@@ -211,6 +206,22 @@ async function fetchTokenMeta(mint, seeded) {
   } catch (_) {
     return { name: null, symbol: null };
   }
+}
+
+async function fetchTokenMeta(mint, seeded) {
+  let name = seeded && seeded.name || null;
+  let symbol = seeded && seeded.symbol || null;
+  if (name || symbol) return { name, symbol };
+
+  try {
+    const d = await fetchRugcheckReport(mint);
+    const meta = metaFromRugcheckReport(d);
+    name = meta.name;
+    symbol = meta.symbol;
+    if (name || symbol) return { name, symbol };
+  } catch (_) { /* try Jupiter */ }
+
+  return fetchMetaViaJupiter(mint);
 }
 
 async function measureHolders(mint, supply, decimals) {
@@ -266,8 +277,8 @@ export default async function handler(req, res) {
   // origin gate
   const origin = req.headers.origin || '';
   const referer = req.headers.referer || '';
-  const ok = ALLOWED.some((a) => origin === a || referer.startsWith(a));
-  if (!ok) return res.status(403).json({ error: 'forbidden' });
+  if (!isAllowedRequest(origin, referer))
+    return res.status(403).json({ error: 'forbidden' });
 
   // throttle: 60 scans/min per warm instance
   const now = Date.now();
@@ -290,12 +301,8 @@ export default async function handler(req, res) {
 
     if (holdersOnly) {
       // Prefer index (no RPC). Only hit chain if the index has no topHolders.
-      try {
-        holders = await measureHoldersViaRugcheck(mint);
-        meta = { name: holders.name || null, symbol: holders.symbol || null };
-      } catch (_) {
-        holders = { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
-      }
+      const holdersP = measureHoldersViaRugcheck(mint).catch(() => null);
+      const jupMetaP = fetchMetaViaJupiter(mint);
       const tokSupply = await rpc('getTokenSupply', [mint, { commitment: 'confirmed' }]);
       const v = tokSupply && tokSupply.value;
       if (!v) return res.status(404).json({ error: 'mint supply not found' });
@@ -304,17 +311,24 @@ export default async function handler(req, res) {
       if (!Number.isFinite(supply)) {
         supply = Number(v.amount) / Math.pow(10, decimals);
       }
+      holders = (await holdersP) || { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
+      meta = { name: holders.name || null, symbol: holders.symbol || null };
       if (!holders.holdersMeasured) {
         try { holders = await measureHoldersViaRpc(mint, supply, decimals); }
         catch (_) { /* leave unmeasured */ }
+      }
+      if (!meta.name || !meta.symbol) {
+        const jup = await jupMetaP;
+        meta = { name: meta.name || jup.name, symbol: meta.symbol || jup.symbol };
       }
       if (!meta.name && !meta.symbol) {
         meta = await fetchTokenMeta(mint, meta);
       }
     } else {
-      // Mint account + holder index in parallel so holders don't wait on (or share) RPC quota
+      // Mint account + holder index + Jupiter meta in parallel
       const acctP = rpc('getAccountInfo', [mint, { encoding: 'jsonParsed', commitment: 'confirmed' }]);
       const holdersP = measureHoldersViaRugcheck(mint).catch(() => null);
+      const jupMetaP = fetchMetaViaJupiter(mint);
       const acct = await acctP;
       if (!acct || !acct.value) return res.status(404).json({ error: 'account not found' });
       const parsed = acct.value.data && acct.value.data.parsed;
@@ -332,6 +346,10 @@ export default async function handler(req, res) {
       if (!holders.holdersMeasured) {
         try { holders = await measureHoldersViaRpc(mint, supply, decimals); }
         catch (_) { /* leave unmeasured */ }
+      }
+      if (!meta.name || !meta.symbol) {
+        const jup = await jupMetaP;
+        meta = { name: meta.name || jup.name, symbol: meta.symbol || jup.symbol };
       }
       if (!meta.name && !meta.symbol) {
         meta = await fetchTokenMeta(mint, meta);
