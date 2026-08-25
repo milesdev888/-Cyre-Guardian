@@ -29,12 +29,7 @@
     '0%,100%{opacity:.55;filter:drop-shadow(0 0 6px rgba(95,208,255,.4))}' +
     '50%{opacity:1;filter:drop-shadow(0 0 14px rgba(155,123,255,.55))}}' +
     '.orbit{isolation:isolate}' +
-    '.orbit .ring.r1{animation:cy-ai-spin 56s linear infinite, cy-ai-ring-pulse 5.5s ease-in-out infinite !important;' +
-    'border-color:rgba(95,208,255,.35) !important}' +
-    '.orbit .ring.r2{animation:cy-ai-spin 38s linear infinite reverse, cy-ai-ring-pulse 4.2s ease-in-out infinite .6s !important;' +
-    'border-color:rgba(155,123,255,.4) !important}' +
-    '.orbit .ring.r3{animation:cy-ai-breathe 4.8s ease-in-out infinite !important;' +
-    'border-color:rgba(95,208,255,.65) !important}' +
+    
     '.portrait{animation:cy-ai-breathe 5.2s ease-in-out infinite !important;' +
     'border-color:rgba(95,208,255,.55) !important;' +
     'box-shadow:0 0 42px rgba(95,208,255,.4),0 0 80px rgba(155,123,255,.22) !important}' +
@@ -47,7 +42,7 @@
     'animation:cy-ai-spin 28s linear infinite}' +
     '.cy-ai-orb::after{inset:22%;border-style:solid;border-color:rgba(155,123,255,.4);animation-direction:reverse;animation-duration:20s}' +
     '@media (prefers-reduced-motion:reduce){' +
-    '.orbit .ring.r1,.orbit .ring.r2,.orbit .ring.r3,.portrait,.cy-ai-orb,.cy-ai-orb::before,.cy-ai-orb::after{animation:none !important}' +
+    '.cy-ai-orb,.cy-ai-orb::before,.cy-ai-orb::after{animation:none !important}' +
     '.hero::before{opacity:.55}}';
   document.head.appendChild(css);
 
