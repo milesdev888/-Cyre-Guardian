@@ -385,8 +385,8 @@ h1{
   place-items:center;
   pointer-events:none;
   animation:agent-node-float 7s ease-in-out infinite;
+  animation-delay:var(--d, 0s);
 }
-.agent-node:nth-child(odd){animation-delay:-2.2s}
 .agent-node .node-orbits{
   position:absolute;
   inset:-10px;
@@ -518,6 +518,7 @@ h1{
   box-shadow:none;
   border-radius:0;
   inset:0;
+  z-index:2;
 }
 .head-wrap.portrait canvas{
   position:absolute;
