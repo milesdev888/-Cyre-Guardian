@@ -99,7 +99,7 @@
     try {
       var im = new Image();
       im.decoding = 'async';
-      im.onload = function () { onOk(im); };
+      im.onload = function () { onOk(im); if (reduce) drawFrame(performance.now()); };
       im.onerror = function () { onOk(null); };
       im.src = src;
     } catch (e) { onOk(null); }
