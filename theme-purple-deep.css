@@ -139,7 +139,7 @@ h1,h2,.section h2,.trust-band h2,.access-band h2,.footer-brand{
 }
 .kicker::before{
   background: linear-gradient(135deg, #9945FF, #14F195) !important;
-  box-shadow: 0 0 6px rgba(153,69,255,.4) !important;
+  box-shadow: 0 0 0 2px rgba(153,69,255,.35), 0 0 8px rgba(153,69,255,.5) !important;
   animation: blink-glow-solana 1.8s ease-in-out infinite;
 }
 .hero-blink{
