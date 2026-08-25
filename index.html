@@ -14,8 +14,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/homepage.css?v=orbit-rg">
-  <link rel="stylesheet" href="/theme-purple-deep.css?v=orbit-rg">
+  <link rel="stylesheet" href="/homepage.css?v=perfect-circle">
+  <link rel="stylesheet" href="/theme-purple-deep.css?v=perfect-circle">
   <script defer src="/guardian-chain-live.js"></script>
   <script defer src="/hero-meteors.js?v=redeploy1"></script>
   <script defer src="/guardian-popout.js"></script>
@@ -23,7 +23,7 @@
   <script defer src="/rwa-widget.js"></script>
   <script defer src="/ai-presence.js"></script>
   <script defer src="/footer-polish.js"></script>
-  <script defer src="/guardian-head.js?v=orbit-rg"></script>
+  <script defer src="/guardian-head.js?v=perfect-circle"></script>
 </head>
 <body>
   <div class="bg-grid" aria-hidden="true"></div>
@@ -64,6 +64,32 @@
       <div class="hero-visual" aria-label="Guardian visual">
           <div class="orb-stage orbit">
           <div class="orbit-ring ring r1" aria-hidden="true"></div>
+          <!-- Nodes sit on the perfect circle (r≈42% from center) -->
+          <div class="agent-node" style="--x:18%;--y:28%">
+            <span class="node-orbits" aria-hidden="true"></span>
+            <span class="node-core"></span>
+            <span class="node-meta"><i class="dot live"></i>SCAN</span>
+          </div>
+          <div class="agent-node" style="--x:14%;--y:68%">
+            <span class="node-orbits" aria-hidden="true"></span>
+            <span class="node-core"></span>
+            <span class="node-meta"><i class="dot live"></i>WATCH</span>
+          </div>
+          <div class="agent-node" style="--x:78%;--y:70%">
+            <span class="node-orbits" aria-hidden="true"></span>
+            <span class="node-core"></span>
+            <span class="node-meta"><i class="dot live"></i>SWAP</span>
+          </div>
+          <div class="agent-node" style="--x:86%;--y:48%">
+            <span class="node-orbits" aria-hidden="true"></span>
+            <span class="node-core"></span>
+            <span class="node-meta"><i class="dot live"></i>SCORE</span>
+          </div>
+          <div class="agent-node" style="--x:78%;--y:24%">
+            <span class="node-orbits" aria-hidden="true"></span>
+            <span class="node-core gate"></span>
+            <span class="node-meta gate"><i class="dot risk"></i>GATE</span>
+          </div>
           <div class="head-wrap portrait" role="img" aria-label="Guardian wireframe particle head">
             <canvas id="guardian-head" width="640" height="800" aria-hidden="true"></canvas>
           </div>

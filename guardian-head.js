@@ -208,7 +208,7 @@
     if (dh > H * 0.56) { dh = H * 0.56; dw = dh * (iw / ih); }
     var dx = (W - dw) * 0.5, dy = (H - dh) * 0.42;
     var cx = W * 0.5, cy = H * 0.48;
-    var R = Math.min(dw, dh) * 0.49;
+    var R = Math.max(8, Math.min(dw, dh) * 0.49);
 
     ctx.save();
     /* Round portrait — soft edge, no ring/border stroke */

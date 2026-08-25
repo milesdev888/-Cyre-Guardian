@@ -59,7 +59,11 @@ body::after{
   background:transparent !important;
   border:none !important;
   box-shadow:none !important;
-  border-radius:0 !important;
+  border-radius:50% !important;
+}
+.orbit-ring.r1{
+  inset:8% !important;
+  border-radius:50% !important;
 }
 .orbit-ring.r2,
 .orbit-ring.r3{

@@ -348,8 +348,8 @@ h1{
 .hero-visual{position:relative;display:grid;place-items:center;min-height:420px}
 .orb-stage{
   position:relative;
-  width:min(100%, 380px);
-  aspect-ratio:1;
+  width:min(100%, 400px);
+  aspect-ratio:1 / 1;
   display:grid;
   place-items:center;
 }
@@ -357,20 +357,21 @@ h1{
 .glow,
 .head-wrap{
   position:absolute;
-  border-radius:999px;
+  border-radius:50%;
 }
 .glow{
   display:none !important;
 }
-/* Single orbit only — round green + red markers, no extra rings */
+/* Perfect circle — equal inset on a 1:1 stage (uneven inset made an ellipse) */
 .orbit-ring{
-  border:1.5px solid rgba(72,140,255,.5);
+  border:1.5px solid rgba(72,140,255,.55);
   pointer-events:none;
   box-shadow:none;
   filter:none;
+  border-radius:50%;
 }
 .orbit-ring.r1{
-  inset:6% 10%;
+  inset:8%;
   animation:orbit-spin 72s linear infinite;
 }
 .orbit-ring.r2,
@@ -400,31 +401,99 @@ h1{
   box-shadow:none;
   filter:none;
 }
+/* Satellite nodes on the perfect orbit */
+.agent-node{
+  position:absolute;
+  left:var(--x);
+  top:var(--y);
+  z-index:3;
+  width:40px;
+  height:40px;
+  transform:translate(-50%,-50%);
+  display:grid;
+  place-items:center;
+  pointer-events:none;
+}
+.agent-node .node-orbits{
+  position:absolute;
+  inset:-8px;
+  border-radius:50%;
+  border:1px solid rgba(186,224,255,.3);
+}
+.agent-node .node-orbits::before{
+  content:"";
+  position:absolute;
+  inset:5px;
+  border-radius:50%;
+  border:1px solid rgba(72,140,255,.25);
+  transform:rotate(25deg) scaleX(1.12);
+}
+.agent-node .node-core{
+  width:8px;height:8px;
+  border-radius:50%;
+  background:#c8e7ff;
+  box-shadow:0 0 10px rgba(95,208,255,.5);
+  z-index:1;
+}
+.agent-node .node-core.gate{
+  background:#FF4D5E;
+  box-shadow:0 0 10px rgba(255,77,94,.55);
+}
+.agent-node .node-meta{
+  position:absolute;
+  top:calc(100% + 4px);
+  left:50%;
+  transform:translateX(-50%);
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  white-space:nowrap;
+  font-size:9px;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:rgba(230,240,255,.8);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+.agent-node .node-meta.gate{color:rgba(255,180,188,.9)}
+.agent-node .node-meta .dot{
+  width:5px;height:5px;border-radius:50%;display:inline-block;
+}
+.agent-node .node-meta .dot.live{background:#3DDC84}
+.agent-node .node-meta .dot.risk{background:#FF4D5E}
+@media (max-width:720px){
+  .orb-stage{width:min(100%, 320px)}
+  .agent-node{width:34px;height:34px}
+  .agent-node .node-meta{font-size:8px}
+}
 .head-wrap{
-  inset:12%;
+  /* Perfect circle core for the Guardian face */
+  width:56%;
+  height:56%;
+  inset:auto;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
   overflow:hidden;
   border-radius:50%;
-  border:1px solid rgba(176,148,255,.4);
+  border:none;
   box-shadow:none;
   filter:none;
-  /* Flat disc — no dark bottom “sphere shadow” */
-  background:rgba(12,8,24,.55);
+  background:transparent;
   animation:none;
+  z-index:2;
 }
-/* Portrait morph: let sapphire glass burst spill with no inner disc frame */
 .head-wrap.portrait{
-  overflow:visible;
+  overflow:hidden;
   background:transparent;
   border:none;
   box-shadow:none;
-  border-radius:0;
-  inset:0;
+  border-radius:50%;
 }
 .head-wrap.portrait canvas{
   position:absolute;
-  inset:-22%;
-  width:144%;
-  height:144%;
+  inset:0;
+  width:100%;
+  height:100%;
   z-index:1;
 }
 .head-wrap.guardian-c7-wrap{
