@@ -91,11 +91,30 @@ Light aggregator. `Cache-Control: no-store`. Soft-fail expensive deps.
 
 ## 5. BUILD ORDER
 
-1. **Ship visual + status API** (this PR): `cortex.html` reads `/api/cortex`; SPEC inventory.
-2. **Homepage embed** — merge/land PR #82 (banner → cortex iframe) when founder-ready.
-3. **Paper ledger (optional)** — local-only execution journal, still no keys.
+1. **Ship visual + status API** (done): `cortex.html` reads `/api/cortex`; SPEC inventory.
+2. **Make it operable** (this layer): clickable desks → live products; paper ledger; Guardian App entry (`/app#cortex`).
+3. **Homepage embed** — merge/land PR #82 (banner → cortex iframe) when founder-ready.
 4. **Research ingest** — filings/sentiment only after sources are verified (no scraping secrets into repo).
 5. **Memory substrate** — vector store / embeddings only with explicit cost caps.
+
+---
+
+## 5b. HOW TO GET THE PRODUCT WORKING (ops)
+
+Cortex is a **control surface** over desks that already exist. It is not a live trading fund.
+
+| Step | Who | Action |
+|---|---|---|
+| 1 | Founder | Merge PR that ships `/cortex` + `/api/cortex` |
+| 2 | Founder | Confirm Vercel env: `SOLANA_RPC` (required for slot), optional `PYTH_LAZER_API_KEY` (risk desk measured) |
+| 3 | Anyone | Open `https://cyre.dev/cortex` — graph + HUD sync every 30s |
+| 4 | Anyone | Use desk dock / click nodes: **signals** → `/signals`, **risk** → `/oracle`, **watchlist** → `/watch`, **execution** → paper ledger |
+| 5 | Anyone | Or open **Guardian App → Neural Cortex** (`/app#cortex`) |
+| 6 | Founder | Optional: merge homepage cortex banner (PR #82) so visitors see the graph on `/` |
+
+**Working definition:** desks that are `live`/`quiet`/`watching` open a real measured product; deferred desks show a toast and do nothing else; execution only writes local paper notes; kill-switch stays armed.
+
+**Not in scope until SPEC rewrite:** custody, signing, live orders, AUM, returns, or raising capital.
 
 ---
 

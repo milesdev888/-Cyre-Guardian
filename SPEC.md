@@ -80,16 +80,16 @@ cyre.dev/tokenomics and @Cyredev888.
 | `apps.html` | Redirects to `/app` (legacy hub URL). |
 | `app.html` | **Guardian Console** — single entry for all products → cyre.dev/app. |
 | `app-redirect.js` | Standalone product URLs redirect to `/app#view` (skipped when `?embed=1` for iframes). |
-| `guardian-app.js` | Console routing, quick lookup, iframe loader, session context for address/mint. |
+| `guardian-app.js` | Console routing, quick lookup, iframe loader, session context for address/mint. Includes **Neural Cortex** (`/app#cortex`). |
 | `guardian-app.css` | Console shell styles (sidebar, dashboard, bottom nav). |
 | `embed-mode.js` / `embed-mode.css` | Hides page chrome when tools run inside Guardian App iframes (`?embed=1`). |
 | `scan.html` | Guardian Token Scan + Protected Swap (phase 2) — paste mint → cyre.dev/scan. Scan via `/api/token`; swap via Jupiter Plugin after gate. See `SWAP-SPEC.md`. |
 | `scan-swap.js` | Scan-before-swap gate state machine (SWAP-SPEC §6). |
 | `swap-config.js` | Jupiter referral pubkey + 50 bps fee config (fill after referral.jup.ag setup). |
 | `SWAP-SPEC.md` | Guardian Protected Swap constitution + build order. |
-| `cortex.html` | **Guardian Neural Cortex** — full-bleed agent-desk graph (research / signals / risk / execution…). Visual of the agent-fund org chart; HUD syncs to `/api/cortex`. No custody; execution paper-only. See `CORTEX-SPEC.md`. |
-| `CORTEX-SPEC.md` | Agent-fund / Neural Cortex constitution — desk map, non-negotiables, build order. |
-| `api/cortex.js` | GET `/api/cortex` — light desk-status aggregator (chain slot + soft oracle counters). Measured only; `Cache-Control: no-store`. No LLM. |
+| `cortex.html` | **Guardian Neural Cortex** — agent-desk graph + operable dock (click desk → live product or paper ledger). HUD syncs to `/api/cortex`. No custody; execution paper-only. See `CORTEX-SPEC.md`. |
+| `CORTEX-SPEC.md` | Agent-fund / Neural Cortex constitution — desk map, how-to-run ops, build order. |
+| `api/cortex.js` | GET `/api/cortex` — light desk-status aggregator (chain slot + in-process oracle counters). Measured only; `Cache-Control: no-store`. No LLM. |
 | `api/token.js` | GET `/api/token?mint=` — mint/freeze authority + holder concentration + project `name`/`symbol` (RugCheck metadata + Jupiter search; client also falls back to DexScreener). Tries `getTokenLargestAccounts` on `SOLANA_RPC` (+ optional `SOLANA_RPC_FALLBACK`); if rate-limited, falls back to RugCheck measured `topHolders` pct only (never their risk score). Optional `&holders=1` light retry. Origin-locked to cyre.dev (+ this project's Vercel previews); 60/min throttle. |
 | `watcher.js` | Render cron `guardian-watcher` (*/15): full wallet scan + optional tweets. **Keep paused / DRY_RUN** when RPC credits matter; site pulse is separate. |
 | `mention-grader.js` | Render cron `guardian-mention-grader` (*/10): @mention + address → public grade reply via bridge. |

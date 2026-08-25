@@ -50,15 +50,37 @@ async function getSlot() {
   return d.result;
 }
 
-/** Soft oracle pull — same origin relative URL on Vercel, absolute fallback. */
-async function fetchOracle(req) {
-  const proto = (req.headers['x-forwarded-proto'] || 'https').toString().split(',')[0].trim();
-  const host = (req.headers['x-forwarded-host'] || req.headers.host || '').toString().split(',')[0].trim();
-  if (!host) return null;
-  const url = `${proto}://${host}/api/oracle`;
-  const r = await fetch(url, { headers: { accept: 'application/json' } });
-  if (!r.ok) return null;
-  return r.json();
+/** Soft oracle pull — in-process (no self-HTTP; works on Vercel + local). */
+async function fetchOracle() {
+  try {
+    const { default: oracleHandler } = await import('./oracle.js');
+    return await new Promise((resolve) => {
+      let settled = false;
+      const done = (body) => {
+        if (settled) return;
+        settled = true;
+        resolve(body && typeof body === 'object' ? body : null);
+      };
+      const res = {
+        setHeader() {},
+        status() {
+          return this;
+        },
+        json(body) {
+          done(body);
+          return this;
+        },
+      };
+      Promise.resolve(oracleHandler({ method: 'GET', query: {}, headers: {} }, res))
+        .then(() => {
+          if (!settled) done(null);
+        })
+        .catch(() => done(null));
+    });
+  } catch (e) {
+    console.error('cortex oracle import', e && e.message);
+    return null;
+  }
 }
 
 function buildDesks(chain, oracle) {
@@ -158,7 +180,7 @@ export default async function handler(req, res) {
 
   let oracle = null;
   try {
-    oracle = await fetchOracle(req);
+    oracle = await fetchOracle();
   } catch (e) {
     console.error('cortex oracle', e && e.message);
   }

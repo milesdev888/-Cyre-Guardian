@@ -7,6 +7,7 @@
   var VIEWS = {
     home: { title: 'Guardian Console', subtitle: 'All products in one workspace', frame: null },
     scan: { title: 'Token Scan & Swap', subtitle: 'Look first, swap second', frame: '/scan?embed=1&v=cb1' },
+    cortex: { title: 'Neural Cortex', subtitle: 'Agent desks — watch only', frame: '/cortex?embed=1' },
     check: { title: 'Address Check', subtitle: 'Six explainable signals', frame: '/check?embed=1' },
     watch: { title: 'Watch', subtitle: 'Measured wallet alerts', frame: '/watch?embed=1' },
     score: { title: 'Wallet Score', subtitle: 'Shareable score card', frame: '/score?embed=1' },
@@ -21,6 +22,7 @@
   };
 
   var QUICK_CARDS = [
+    { id: 'cortex', tag: 'Monitor', title: 'Neural Cortex', desc: 'Agent-fund desks live — research, signals, risk, paper execution.' },
     { id: 'scan', tag: 'Trade', title: 'Scan & Swap', desc: 'Mint authority, freeze, holders — then Jupiter swap.' },
     { id: 'check', tag: 'Analyze', title: 'Check', desc: 'Paste an address for a measured risk band.' },
     { id: 'watch', tag: 'Monitor', title: 'Watch', desc: 'Up to 10 wallets — burst, dormant, failures.' },
@@ -32,6 +34,7 @@
   ];
 
   var MORE_ITEMS = [
+    { id: 'cortex', label: 'Neural Cortex', hint: 'Desks' },
     { id: 'tokenomics', label: 'Tokenomics', hint: '$C7' },
     { id: 'roadmap', label: 'Roadmap', hint: 'Plan' },
     { id: 'airdrop', label: 'Airdrop', hint: '3M' },
@@ -67,7 +70,7 @@
     var base = VIEWS[id] && VIEWS[id].frame;
     if (!base) return null;
     var url = base;
-    if (state.context && id !== 'tokenomics' && id !== 'roadmap' && id !== 'airdrop' && id !== 'guardian') {
+    if (state.context && id !== 'tokenomics' && id !== 'roadmap' && id !== 'airdrop' && id !== 'guardian' && id !== 'cortex') {
       var sep = url.indexOf('?') >= 0 ? '&' : '?';
       if (id === 'scan') url += sep + 'mint=' + encodeURIComponent(state.context);
       else url += sep + 'address=' + encodeURIComponent(state.context);
