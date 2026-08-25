@@ -87,7 +87,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `scan-swap.js` | Scan-before-swap gate state machine (SWAP-SPEC §6). |
 | `swap-config.js` | Jupiter referral pubkey + 50 bps fee config (fill after referral.jup.ag setup). |
 | `SWAP-SPEC.md` | Guardian Protected Swap constitution + build order. |
-| `api/token.js` | GET `/api/token?mint=` — mint/freeze authority + holder concentration. Tries `getTokenLargestAccounts` on `SOLANA_RPC` (+ optional `SOLANA_RPC_FALLBACK`); if rate-limited, falls back to RugCheck measured `topHolders` pct only (never their risk score). Optional `&holders=1` light retry. Origin-locked to cyre.dev; 60/min throttle. |
+| `api/token.js` | GET `/api/token?mint=` — mint/freeze authority + holder concentration + token `name`/`symbol` (RugCheck report metadata; Jupiter token search fallback). Tries `getTokenLargestAccounts` on `SOLANA_RPC` (+ optional `SOLANA_RPC_FALLBACK`); if rate-limited, falls back to RugCheck measured `topHolders` pct only (never their risk score). Optional `&holders=1` light retry. Origin-locked to cyre.dev; 60/min throttle. |
 | `watcher.js` | Render cron `guardian-watcher` (*/15): full wallet scan + optional tweets. **Keep paused / DRY_RUN** when RPC credits matter; site pulse is separate. |
 | `mention-grader.js` | Render cron `guardian-mention-grader` (*/10): @mention + address → public grade reply via bridge. |
 | `api/chat.js` | Guardian chat (Anthropic). HARDENED: origin-locked to cyre.dev, role-sanitized, haiku model, daily cap. Keep all guardrails. |

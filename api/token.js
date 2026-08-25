@@ -123,9 +123,38 @@ async function measureHoldersViaRpc(mint, supply, decimals) {
   };
 }
 
-// Fallback when RPC rate-limits getTokenLargestAccounts: RugCheck's measured topHolders.
-// We only read percentage fields — never their risk score / "rugged" labels.
-async function measureHoldersViaRugcheck(mint) {
+function cleanMetaField(v) {
+  const s = String(v == null ? '' : v).trim();
+  if (!s || s === 'unknown' || s === 'Unknown') return null;
+  return s.slice(0, 64);
+}
+
+function metaFromRugcheckReport(d) {
+  if (!d || typeof d !== 'object') return { name: null, symbol: null };
+  const tm = d.tokenMeta || (d.token_extensions && d.token_extensions.tokenMetadata) || d.fileMeta || {};
+  return {
+    name: cleanMetaField(tm.name),
+    symbol: cleanMetaField(tm.symbol)
+  };
+}
+
+function holdersFromRugcheckReport(d) {
+  const rows = Array.isArray(d && d.topHolders) ? d.topHolders : [];
+  const pcts = rows
+    .map((h) => Number(h && h.pct))
+    .filter((n) => Number.isFinite(n) && n >= 0)
+    .sort((a, b) => b - a);
+  if (!pcts.length) return null;
+  return {
+    top1: Math.min(100, pcts[0] || 0),
+    top10: Math.min(100, pcts.slice(0, 10).reduce((s, v) => s + v, 0)),
+    holdersMeasured: true,
+    holderCount: pcts.length,
+    source: 'index'
+  };
+}
+
+async function fetchRugcheckReport(mint) {
   let lastErr = null;
   for (let attempt = 0; attempt < 3; attempt++) {
     try {
@@ -133,29 +162,55 @@ async function measureHoldersViaRugcheck(mint) {
         headers: { accept: 'application/json' }
       });
       if (!r.ok) throw new Error('holder index http ' + r.status);
-      const d = await r.json();
-      const rows = Array.isArray(d.topHolders) ? d.topHolders : [];
-      if (!rows.length) throw new Error('holder index empty');
-      const pcts = rows
-        .map((h) => Number(h && h.pct))
-        .filter((n) => Number.isFinite(n) && n >= 0)
-        .sort((a, b) => b - a);
-      if (!pcts.length) throw new Error('holder index missing pct');
-      const top1 = Math.min(100, pcts[0] || 0);
-      const top10 = Math.min(100, pcts.slice(0, 10).reduce((s, v) => s + v, 0));
-      return {
-        top1,
-        top10,
-        holdersMeasured: true,
-        holderCount: pcts.length,
-        source: 'index'
-      };
+      return await r.json();
     } catch (e) {
       lastErr = e;
       await sleep(250 * (attempt + 1));
     }
   }
   throw lastErr || new Error('holder index unavailable');
+}
+
+// Indexed holders + token name/symbol from the same RugCheck report.
+// We only read pct + metadata fields — never their risk score / "rugged" labels.
+async function measureHoldersViaRugcheck(mint) {
+  const d = await fetchRugcheckReport(mint);
+  const meta = metaFromRugcheckReport(d);
+  const holders = holdersFromRugcheckReport(d);
+  if (!holders) throw new Error('holder index empty');
+  return { ...holders, name: meta.name, symbol: meta.symbol };
+}
+
+async function fetchTokenMeta(mint, seeded) {
+  let name = seeded && seeded.name || null;
+  let symbol = seeded && seeded.symbol || null;
+  if (name || symbol) return { name, symbol };
+
+  try {
+    const d = await fetchRugcheckReport(mint);
+    const meta = metaFromRugcheckReport(d);
+    name = meta.name;
+    symbol = meta.symbol;
+    if (name || symbol) return { name, symbol };
+  } catch (_) { /* try Jupiter */ }
+
+  try {
+    const r = await fetch(
+      'https://lite-api.jup.ag/tokens/v2/search?query=' + encodeURIComponent(mint),
+      { headers: { accept: 'application/json' } }
+    );
+    if (!r.ok) return { name: null, symbol: null };
+    const arr = await r.json();
+    const rows = Array.isArray(arr) ? arr : [];
+    const hit = rows.find((t) => t && t.id === mint) || rows[0];
+    if (!hit) return { name: null, symbol: null };
+    return {
+      name: cleanMetaField(hit.name),
+      symbol: cleanMetaField(hit.symbol)
+    };
+  } catch (_) {
+    return { name: null, symbol: null };
+  }
 }
 
 async function measureHolders(mint, supply, decimals) {
@@ -231,11 +286,13 @@ export default async function handler(req, res) {
     let decimals = 0;
     let supply = 0;
     let holders = { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
+    let meta = { name: null, symbol: null };
 
     if (holdersOnly) {
       // Prefer index (no RPC). Only hit chain if the index has no topHolders.
       try {
         holders = await measureHoldersViaRugcheck(mint);
+        meta = { name: holders.name || null, symbol: holders.symbol || null };
       } catch (_) {
         holders = { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
       }
@@ -250,6 +307,9 @@ export default async function handler(req, res) {
       if (!holders.holdersMeasured) {
         try { holders = await measureHoldersViaRpc(mint, supply, decimals); }
         catch (_) { /* leave unmeasured */ }
+      }
+      if (!meta.name && !meta.symbol) {
+        meta = await fetchTokenMeta(mint, meta);
       }
     } else {
       // Mint account + holder index in parallel so holders don't wait on (or share) RPC quota
@@ -268,9 +328,13 @@ export default async function handler(req, res) {
       supply = Number(info.supply) / Math.pow(10, decimals);
 
       holders = (await holdersP) || { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
+      meta = { name: holders.name || null, symbol: holders.symbol || null };
       if (!holders.holdersMeasured) {
         try { holders = await measureHoldersViaRpc(mint, supply, decimals); }
         catch (_) { /* leave unmeasured */ }
+      }
+      if (!meta.name && !meta.symbol) {
+        meta = await fetchTokenMeta(mint, meta);
       }
     }
 
@@ -278,6 +342,8 @@ export default async function handler(req, res) {
       res.setHeader('cache-control', 'no-store');
       return res.status(200).json({
         mint,
+        name: meta.name,
+        symbol: meta.symbol,
         supply,
         decimals,
         top1Pct: holders.holdersMeasured ? +holders.top1.toFixed(2) : null,
@@ -292,7 +358,10 @@ export default async function handler(req, res) {
 
     res.setHeader('cache-control', 'no-store');
     return res.status(200).json({
-      mint, supply, decimals,
+      mint,
+      name: meta.name,
+      symbol: meta.symbol,
+      supply, decimals,
       mintAuthorityRevoked: !mintAuthority,
       freezeAuthorityRevoked: !freezeAuthority,
       top1Pct: holders.holdersMeasured ? +holders.top1.toFixed(2) : null,

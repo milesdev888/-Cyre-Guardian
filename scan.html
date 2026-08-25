@@ -36,6 +36,12 @@ button.ghost{background:transparent;border:1px solid rgba(95,208,255,.35);color:
 .risk-banner b{font-family:Sora,Inter,sans-serif;font-size:22px}
 .r-LOW b{color:var(--live)} .r-MEDIUM b{color:var(--amber)} .r-HIGH b{color:var(--red)}
 .risk-banner small{display:block;color:var(--dim);margin-top:4px}
+.token-id{display:none;border-radius:16px;padding:16px 18px;margin-bottom:16px;border:1px solid rgba(95,208,255,.22);background:rgba(13,16,23,.7);backdrop-filter:blur(14px)}
+.token-id small{color:var(--dim);font-size:11px;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:6px}
+.token-id .token-id-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px}
+.token-id .token-name{font-family:Sora,Inter,sans-serif;font-size:20px;font-weight:800;color:var(--text);line-height:1.2}
+.token-id .token-symbol{font-size:14px;font-weight:700;color:var(--ice)}
+.token-id .token-mint{display:block;margin-top:8px;font-size:12px;color:var(--dim);word-break:break-all;font-variant-numeric:tabular-nums}
 .sig{display:flex;gap:12px;align-items:flex-start;background:rgba(13,16,23,.7);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px;backdrop-filter:blur(14px)}
 .sig i{flex:none;width:10px;height:10px;border-radius:50%;margin-top:5px}
 .i-good{background:var(--live)} .i-info{background:var(--ice)} .i-med{background:var(--amber)} .i-high{background:var(--red)}
@@ -123,6 +129,14 @@ a{color:var(--ice)}
 
   <div id="report">
     <div class="risk-banner" id="banner"><b id="riskword"></b><small id="riskscore"></small></div>
+    <div class="token-id" id="token-id">
+      <small>Token</small>
+      <div class="token-id-row">
+        <span class="token-name" id="token-name"></span>
+        <span class="token-symbol" id="token-symbol"></span>
+      </div>
+      <span class="token-mint" id="token-mint"></span>
+    </div>
     <div class="facts" id="facts"></div>
     <div id="signals"></div>
     <div class="disclaim">Patterns, not verdicts. This scan reports on-chain facts at the moment you run it; it is not investment advice, cannot detect every risk, and a clean scan is not a recommendation to buy. CYRE never DMs you or asks you to connect a wallet anywhere but this page.</div>
@@ -186,6 +200,10 @@ async function scan(){
 
     go.textContent = 'Measuring holders…';
     var hold = await holdP;
+    if (hold && hold.d) {
+      if (!d.name && hold.d.name) d.name = hold.d.name;
+      if (!d.symbol && hold.d.symbol) d.symbol = hold.d.symbol;
+    }
     if (hold && hold.r && hold.r.ok && hold.d && hold.d.holdersMeasured) {
       d.top1Pct = hold.d.top1Pct;
       d.top10Pct = hold.d.top10Pct;
@@ -229,6 +247,7 @@ async function scan(){
     b.className = 'risk-banner r-'+d.risk;
     document.getElementById('riskword').textContent = d.risk+' RISK PATTERN';
     document.getElementById('riskscore').textContent = scoreLine(d);
+    renderTokenId(d, m);
     document.getElementById('facts').innerHTML =
       fact('Mint authority', d.mintAuthorityRevoked?'Revoked ✓':'ACTIVE ⚠') +
       fact('Freeze authority', d.freezeAuthorityRevoked?'Revoked ✓':'ACTIVE ⚠') +
@@ -243,6 +262,19 @@ async function scan(){
   go.disabled = false; go.textContent = 'Scan';
 }
 function fact(k,v){ return '<div class="fact"><small>'+k+'</small><b>'+v+'</b></div>'; }
+function renderTokenId(d, mint){
+  var box = document.getElementById('token-id');
+  var name = (d && d.name) ? String(d.name).trim() : '';
+  var symbol = (d && d.symbol) ? String(d.symbol).trim() : '';
+  if (!name && !symbol) {
+    box.style.display = 'none';
+    return;
+  }
+  document.getElementById('token-name').textContent = name || 'Unnamed token';
+  document.getElementById('token-symbol').textContent = symbol ? ('$' + symbol) : '';
+  document.getElementById('token-mint').textContent = mint || (d && d.mint) || '';
+  box.style.display = 'block';
+}
 function scoreLine(d){
   var supply = 'supply ' + Number(d.supply).toLocaleString();
   var s = Number(d.score) || 0;
