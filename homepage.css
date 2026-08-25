@@ -376,7 +376,8 @@ h1{
 .orbit-ring.r3{
   display:none !important;
 }
-/* ONE true circle: equal width/height, centered — never uneven inset */
+/* ONE true circle: equal width/height, centered.
+   Use CSS `translate` (not `transform`) so spin/breathe animations cannot knock geometry off-center. */
 .orbit-ring{
   pointer-events:none;
   box-shadow:none;
@@ -391,7 +392,9 @@ h1{
   width:84%;
   height:84%;
   border:1.5px solid rgba(72,140,255,.55);
-  transform:translate(-50%,-50%);
+  translate:-50% -50%;
+  transform:none;
+  transform-origin:50% 50%;
   animation:orbit-spin 72s linear infinite;
 }
 .orbit-ring.r1::after{
@@ -479,14 +482,17 @@ h1{
   .agent-node .node-meta{font-size:8px}
 }
 .head-wrap{
-  /* Perfect circular face core, dead-center */
+  /* Perfect circular face core, dead-center.
+     CSS `translate` stays put while ai-presence `transform:scale()` breathes. */
   width:46%;
   height:46%;
   aspect-ratio:1 / 1;
   inset:auto;
   top:50%;
   left:50%;
-  transform:translate(-50%,-50%);
+  translate:-50% -50%;
+  transform:none;
+  transform-origin:50% 50%;
   overflow:hidden;
   border-radius:50%;
   border:none;
@@ -512,12 +518,18 @@ h1{
   object-fit:cover;
 }
 .head-wrap.guardian-c7-wrap{
-  inset:4%;
+  inset:auto;
+  top:50%;
+  left:50%;
+  width:92%;
+  height:92%;
+  translate:-50% -50%;
   overflow:visible;
   border:none;
   border-radius:50%;
   background:transparent;
   box-shadow:none;
+  transform:none;
   animation:guardian-c7-float 7s ease-in-out infinite;
 }
 .guardian-c7{
@@ -537,12 +549,12 @@ h1{
   inset:2%;
   background:radial-gradient(circle at 50% 44%, rgba(95,208,255,.42), rgba(95,208,255,.12) 42%, transparent 72%);
 }
-.orb-stage.guardian-c7-stage .orbit-ring.r1{inset:0 8%;border-color:rgba(95,208,255,.28)}
-.orb-stage.guardian-c7-stage .orbit-ring.r2{inset:6% 4%;border-color:rgba(155,123,255,.24)}
-.orb-stage.guardian-c7-stage .orbit-ring.r3{inset:14% 10%;border-color:rgba(95,208,255,.2)}
+.orb-stage.guardian-c7-stage .orbit-ring.r1{border-color:rgba(95,208,255,.28)}
+.orb-stage.guardian-c7-stage .orbit-ring.r2{border-color:rgba(155,123,255,.24)}
+.orb-stage.guardian-c7-stage .orbit-ring.r3{border-color:rgba(95,208,255,.2)}
 @keyframes guardian-c7-float{
-  0%,100%{transform:translateY(0) scale(1)}
-  50%{transform:translateY(-6px) scale(1.015)}
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.015)}
 }
 .head-wrap canvas{
   width:100%;
@@ -669,7 +681,7 @@ footer{padding:26px 0 16px}
   0%,100%{transform:translateY(0) scale(1)}
   50%{transform:translateY(-8px) scale(1.012)}
 }
-@keyframes orbit-spin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes orbit-spin{to{transform:rotate(360deg)}}
 @keyframes orbit-pulse{
   0%,100%{opacity:.75}
   50%{opacity:1}
@@ -727,5 +739,4 @@ footer{padding:26px 0 16px}
 @media (prefers-reduced-motion: reduce){
   html{scroll-behavior:auto}
   *,*::before,*::after{animation:none!important;transition:none!important}
-  .glow,.head-wrap{transform:none!important}
 }

@@ -20,7 +20,7 @@
     'radial-gradient(ellipse 50% 40% at 30% 50%,rgba(95,208,255,.14),transparent 55%);' +
     'filter:blur(40px);opacity:.9}' +
     '.hero .wrap,.hero .hero-grid{position:relative;z-index:1}' +
-    /* living orbit rings */
+    /* living orbit rings — rotate only; ring is inset-centered in homepage.css */
     '@keyframes cy-ai-spin{to{transform:rotate(360deg)}}' +
     '@keyframes cy-ai-breathe{' +
     '0%,100%{transform:scale(1);box-shadow:0 0 28px rgba(95,208,255,.28),0 0 60px rgba(155,123,255,.14),inset 0 0 22px rgba(95,208,255,.08)}' +
@@ -30,12 +30,14 @@
     '50%{opacity:1;filter:drop-shadow(0 0 14px rgba(155,123,255,.55))}}' +
     '.orbit{isolation:isolate}' +
     '.orbit .ring.r1{animation:cy-ai-spin 56s linear infinite, cy-ai-ring-pulse 5.5s ease-in-out infinite !important;' +
-    'border-color:rgba(95,208,255,.35) !important}' +
+    'border-color:rgba(95,208,255,.35) !important;transform-origin:50% 50%}' +
     '.orbit .ring.r2{animation:cy-ai-spin 38s linear infinite reverse, cy-ai-ring-pulse 4.2s ease-in-out infinite .6s !important;' +
-    'border-color:rgba(155,123,255,.4) !important}' +
+    'border-color:rgba(155,123,255,.4) !important;transform-origin:50% 50%}' +
     '.orbit .ring.r3{animation:cy-ai-breathe 4.8s ease-in-out infinite !important;' +
-    'border-color:rgba(95,208,255,.65) !important}' +
+    'border-color:rgba(95,208,255,.65) !important;transform-origin:50% 50%}' +
+    /* breathe scales in place — .head-wrap/.portrait must be inset-centered, not translate-centered */
     '.portrait{animation:cy-ai-breathe 5.2s ease-in-out infinite !important;' +
+    'transform-origin:50% 50%;' +
     'border-color:rgba(95,208,255,.55) !important;' +
     'box-shadow:0 0 42px rgba(95,208,255,.4),0 0 80px rgba(155,123,255,.22) !important}' +
     /* fallback orb if no portrait (wireframe-ish CSS sphere) */

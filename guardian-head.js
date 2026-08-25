@@ -8,7 +8,7 @@
   var ctx = canvas.getContext('2d');
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var dpr = Math.min(Math.max(window.devicePixelRatio || 1, 3), 4);
-  var W = 640, H = 800, points = [], facets = [];
+  var W = 640, H = 640, points = [], facets = [];
   var t0 = performance.now(), raf = 0, visible = true;
   var robotImg = null, herImg = null, robotReady = false, herReady = false;
   var freezeP = null;
