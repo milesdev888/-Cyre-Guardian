@@ -47,7 +47,7 @@ body::after{
 }
 
 .glow{
-  background:radial-gradient(circle at 50% 40%, rgba(196,181,253,.5), rgba(124,239,255,.18) 42%, rgba(107,63,160,.14) 68%, transparent 78%);
+  background:radial-gradient(circle at 50% 40%, rgba(196,181,253,.22), rgba(124,239,255,.06) 48%, transparent 72%);
 }
 .head-wrap{
   border-color:rgba(196,181,253,.45);
@@ -61,25 +61,25 @@ body::after{
 .orbit-ring.r3{border-color:rgba(153,69,255,.55)}
 .orbit-ring.r1::after{
   background:
-    radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0 22%, transparent 42%),
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.9) 0 18%, transparent 38%),
     linear-gradient(145deg, #c9a0ff, #9945FF 55%, #6b2fd4) !important;
-  box-shadow:0 0 0 1.5px rgba(255,255,255,.35), 0 0 10px rgba(153,69,255,.7) !important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.4) !important;
   border-radius:20% !important;
   transform:translateX(-50%) rotate(30deg) !important;
 }
 .orbit-ring.r2::after{
   background:
-    radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0 22%, transparent 42%),
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.9) 0 18%, transparent 38%),
     linear-gradient(145deg, #9fffd8, #14F195 55%, #0ab872) !important;
-  box-shadow:0 0 0 1.5px rgba(255,255,255,.35), 0 0 10px rgba(20,241,149,.7) !important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.4) !important;
   border-radius:20% !important;
   transform:translateX(-50%) rotate(30deg) !important;
 }
 .orbit-ring.r3::after{
   background:
-    radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0 22%, transparent 42%),
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.9) 0 18%, transparent 38%),
     linear-gradient(145deg, #ffe6a8, #FFBE50 55%, #d49220) !important;
-  box-shadow:0 0 0 1.5px rgba(255,255,255,.4), 0 0 10px rgba(255,190,80,.7) !important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.45) !important;
   border-radius:20% !important;
 }
 

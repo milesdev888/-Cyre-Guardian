@@ -360,40 +360,40 @@ h1{
 }
 .glow{
   inset:8%;
-  background:radial-gradient(circle at 50% 40%, rgba(153,69,255,.42), rgba(20,241,149,.16) 45%, rgba(153,69,255,.06) 68%, transparent 78%);
-  filter:blur(16px);
+  background:radial-gradient(circle at 50% 40%, rgba(153,69,255,.18), rgba(20,241,149,.06) 48%, transparent 72%);
+  filter:blur(10px);
   animation:breathe 6.5s ease-in-out infinite;
 }
 .orbit-ring{border:1.5px solid rgba(153,69,255,.45);pointer-events:none}
-.orbit-ring.r1{inset:4% 14%;animation:orbit-spin 52s linear infinite}
-.orbit-ring.r2{inset:10% 8%;border-color:rgba(20,241,149,.42);animation:orbit-spin 38s linear infinite reverse}
-.orbit-ring.r3{inset:18% 16%;border-style:dashed;border-color:rgba(153,69,255,.5);animation:orbit-pulse 5.2s ease-in-out infinite}
+.orbit-ring.r1{inset:4% 14%;animation:orbit-spin 72s linear infinite}
+.orbit-ring.r2{inset:10% 8%;border-color:rgba(20,241,149,.42);animation:orbit-spin 58s linear infinite reverse}
+.orbit-ring.r3{inset:18% 16%;border-style:dashed;border-color:rgba(153,69,255,.5);animation:orbit-pulse 7s ease-in-out infinite}
 .orbit-ring.r1::after,
 .orbit-ring.r2::after,
 .orbit-ring.r3::after{
   content:"";
   position:absolute;
-  top:-6px;left:50%;
-  width:13px;height:13px;
+  top:-5px;left:50%;
+  width:11px;height:11px;
   border-radius:20%;
   transform:translateX(-50%) rotate(30deg);
   background:
-    radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0 22%, transparent 42%),
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.9) 0 18%, transparent 38%),
     linear-gradient(145deg, #c9a0ff, #9945FF 55%, #6b2fd4);
-  box-shadow:0 0 0 1.5px rgba(255,255,255,.35), 0 0 10px rgba(153,69,255,.7);
+  box-shadow:0 0 0 1px rgba(255,255,255,.4);
 }
 .orbit-ring.r2::after{
   background:
-    radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0 22%, transparent 42%),
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.9) 0 18%, transparent 38%),
     linear-gradient(145deg, #9fffd8, #14F195 55%, #0ab872);
-  box-shadow:0 0 0 1.5px rgba(255,255,255,.35), 0 0 10px rgba(20,241,149,.7);
+  box-shadow:0 0 0 1px rgba(255,255,255,.4);
 }
 .orbit-ring.r3::after{
-  top:auto;bottom:-6px;left:18%;
+  top:auto;bottom:-5px;left:18%;
   background:
-    radial-gradient(circle at 32% 28%, rgba(255,255,255,.95) 0 22%, transparent 42%),
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,.9) 0 18%, transparent 38%),
     linear-gradient(145deg, #ffe6a8, #FFBE50 55%, #d49220);
-  box-shadow:0 0 0 1.5px rgba(255,255,255,.4), 0 0 10px rgba(255,190,80,.7);
+  box-shadow:0 0 0 1px rgba(255,255,255,.45);
 }
 .head-wrap{
   inset:12%;
