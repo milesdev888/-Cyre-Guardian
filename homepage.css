@@ -398,6 +398,29 @@ h1{
   background:rgba(12,8,24,.55);
   animation:none;
 }
+/* Portrait morph: let sapphire glass burst spill past the disc */
+.head-wrap.portrait{
+  overflow:visible;
+  background:transparent;
+  border-color:rgba(72,140,255,.35);
+}
+.head-wrap.portrait::before{
+  content:"";
+  position:absolute;
+  inset:18%;
+  border-radius:50%;
+  background:rgba(12,8,24,.55);
+  border:1px solid rgba(72,140,255,.28);
+  pointer-events:none;
+  z-index:0;
+}
+.head-wrap.portrait canvas{
+  position:absolute;
+  inset:-22%;
+  width:144%;
+  height:144%;
+  z-index:1;
+}
 .head-wrap.guardian-c7-wrap{
   inset:4%;
   overflow:visible;
