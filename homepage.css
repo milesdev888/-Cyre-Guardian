@@ -371,21 +371,21 @@ h1{
 .orbit-ring.r3::after{
   content:"";
   position:absolute;
-  top:-4px;left:50%;
-  width:8px;height:8px;
+  top:-5px;left:50%;
+  width:10px;height:10px;
   border-radius:50%;
   transform:translateX(-50%);
-  background:#488CFF;
+  background:#3DDC84;
   border:none;
   box-shadow:none;
   filter:none;
 }
 .orbit-ring.r2::after{
-  background:#1248BE;
+  background:#FF4D5E;
 }
 .orbit-ring.r3::after{
-  top:auto;bottom:-4px;left:18%;
-  background:#BAE0FF;
+  top:auto;bottom:-5px;left:18%;
+  background:#FF4D5E;
 }
 .head-wrap{
   inset:12%;

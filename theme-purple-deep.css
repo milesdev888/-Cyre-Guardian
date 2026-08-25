@@ -59,24 +59,30 @@ body::after{
 .orbit-ring.r2{border-color:rgba(18,72,190,.55)}
 .orbit-ring.r3{border-color:rgba(186,224,255,.4)}
 .orbit-ring.r1::after{
-  background:#488CFF !important;
+  background:#3DDC84 !important;
   box-shadow:none !important;
   border:none !important;
   border-radius:50% !important;
   transform:translateX(-50%) !important;
+  width:10px !important;
+  height:10px !important;
 }
 .orbit-ring.r2::after{
-  background:#1248BE !important;
+  background:#FF4D5E !important;
   box-shadow:none !important;
   border:none !important;
   border-radius:50% !important;
   transform:translateX(-50%) !important;
+  width:10px !important;
+  height:10px !important;
 }
 .orbit-ring.r3::after{
-  background:#BAE0FF !important;
+  background:#FF4D5E !important;
   box-shadow:none !important;
   border:none !important;
   border-radius:50% !important;
+  width:10px !important;
+  height:10px !important;
 }
 
 .status-chip{
