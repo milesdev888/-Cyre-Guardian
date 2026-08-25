@@ -24,10 +24,11 @@
     '#cy-banner .cyb-in{position:relative;z-index:2;max-width:1080px;margin:0 auto;padding:72px 24px 56px;text-align:center}' +
     '#cy-banner h2{font-family:Sora,system-ui,sans-serif;font-weight:700;font-size:clamp(26px,4.5vw,44px);color:#e8ecf3;margin:0 0 14px;letter-spacing:-.01em}' +
     '#cy-banner p{color:#8892a4;font-size:clamp(14px,1.8vw,17px);max-width:640px;margin:0 auto 26px;line-height:1.7}' +
-    '#cy-banner .cyb-frame{display:block;width:100%;height:70vh;border:1px solid rgba(196,181,253,.16);border-radius:16px;pointer-events:none;background:#05060a;box-sizing:border-box}' +
+    '#cy-banner .cyb-embed{width:100%;height:70vh;border:1px solid rgba(196,181,253,.16);border-radius:16px;overflow:hidden;background:#05060a;box-sizing:border-box}' +
+    '#cy-banner .cyb-frame{display:block;width:100%;height:100%;border:0;pointer-events:none;background:#05060a}' +
     '#cy-banner .cyb-full{display:inline-block;margin-top:16px;font:500 14px Inter,system-ui,sans-serif;color:var(--gold,#5fd0ff);text-decoration:none}' +
     '#cy-banner .cyb-full:hover,#cy-banner .cyb-full:focus-visible{color:#e8ecf3;text-decoration:underline}' +
-    '@media (max-width:640px){#cy-banner .cyb-in{padding:56px 20px 44px}#cy-banner .cyb-frame{height:60vh}}';
+    '@media (max-width:640px){#cy-banner .cyb-in{padding:56px 20px 44px}#cy-banner .cyb-embed{height:60vh}}';
   document.head.appendChild(css);
 
   var sec = document.createElement('section');
@@ -36,7 +37,7 @@
     '<div class="cyb-in">' +
       '<h2>Inside the Guardian.</h2>' +
       '<p>The agent graph, live \u2014 research, signals, execution, risk. Patterns, not verdicts.</p>' +
-      '<iframe class="cyb-frame" src="/cortex.html" loading="lazy" title="Guardian Neural Cortex"></iframe>' +
+      '<div class="cyb-embed"><iframe class="cyb-frame" src="/cortex.html" loading="lazy" title="Guardian Neural Cortex"></iframe></div>' +
       '<a class="cyb-full" href="/cortex">Open full screen \u2192</a>' +
     '</div>';
 
