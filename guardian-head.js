@@ -201,7 +201,7 @@
       if (!a || !b || !c) continue;
       alpha = m * 0.18 * Math.min(a.a, b.a, c.a);
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.closePath();
-      ctx.fillStyle = 'rgba(112,72,220,' + (alpha * 0.2).toFixed(3) + ')'; ctx.fill();
+      ctx.fillStyle = 'rgba(40,90,200,' + (alpha * 0.18).toFixed(3) + ')'; ctx.fill();
       ctx.strokeStyle = hueColor(f.hue, alpha); ctx.stroke();
     }
   }
