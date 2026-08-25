@@ -273,7 +273,7 @@ export default async function handler(req, res) {
 
     const { signals, score, risk } = buildSignals(mintAuthority, freezeAuthority, holders);
 
-    res.setHeader('cache-control', 's-maxage=60');
+    res.setHeader('cache-control', 'no-store');
     return res.status(200).json({
       mint, supply, decimals,
       mintAuthorityRevoked: !mintAuthority,
