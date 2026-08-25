@@ -1,5 +1,5 @@
-/* vortex.js — hero meteor field (replaces particle mesh)
-   Calm Solana purple / green / gold streaks. No soft bloom, no network mesh. */
+/* vortex.js — hero meteor field
+   Sapphire glass streaks — deep / mid / ice only. No soft bloom. */
 (function () {
   'use strict';
   var hero = document.querySelector('.hero');
@@ -29,10 +29,9 @@
   var raf = 0, t0 = 0, visible = true, resizeTimer = 0;
 
   var PALETTE = [
-    { r: 153, g: 69, b: 255 },   // Solana purple
-    { r: 20, g: 241, b: 149 },   // Solana green
-    { r: 255, g: 190, b: 80 },   // gold
-    { r: 124, g: 239, b: 255 }   // cyan accent
+    { r: 18,  g: 72,  b: 190 },  // deep sapphire
+    { r: 72,  g: 140, b: 255 },  // bright sapphire
+    { r: 186, g: 224, b: 255 }   // ice glass
   ];
 
   function applySize(w, h) {

@@ -11,24 +11,22 @@
   var t0 = performance.now(), raf = 0, visible = true;
   var robotImg = null, herImg = null, robotReady = false, herReady = false;
 
-  /* Solana purple/green + gold accents */
+  /* Sapphire glass — 3 tones only */
   var COL = {
-    green:  [20,  241, 149],
-    purple: [153,  69, 255],
-    dpurple:[120,  40, 220],
-    gold:   [255, 190,  80]
+    deep:  [18,  72,  190],  // deep sapphire
+    mid:   [72, 140, 255],  // bright sapphire
+    ice:   [186, 224, 255]  // ice glass
   };
 
   function pickHue() {
     var r = Math.random();
-    if (r < 0.12) return 3; // gold (sparse)
-    if (r < 0.28) return 0; // Solana green
-    if (r < 0.78) return 1; // Solana purple (dominant)
-    return 2; // deep purple
+    if (r < 0.28) return 0; // deep
+    if (r < 0.68) return 1; // mid (dominant)
+    return 2; // ice
   }
   function rgba(c, a) { return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a + ')'; }
   function hueColor(hue, a) {
-    var c = hue === 0 ? COL.green : hue === 1 ? COL.purple : hue === 2 ? COL.dpurple : COL.gold;
+    var c = hue === 0 ? COL.deep : hue === 1 ? COL.mid : COL.ice;
     return rgba(c, a);
   }
   function dist3(a, b) {
@@ -203,7 +201,7 @@
       if (!a || !b || !c) continue;
       alpha = m * 0.18 * Math.min(a.a, b.a, c.a);
       ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.lineTo(c.x, c.y); ctx.closePath();
-      ctx.fillStyle = 'rgba(112,72,220,' + (alpha * 0.2).toFixed(3) + ')'; ctx.fill();
+      ctx.fillStyle = 'rgba(40,90,200,' + (alpha * 0.18).toFixed(3) + ')'; ctx.fill();
       ctx.strokeStyle = hueColor(f.hue, alpha); ctx.stroke();
     }
   }
@@ -241,9 +239,9 @@
         if (dist > maxDist || dist < 2) continue;
         alpha = (1 - dist / maxDist) * Math.min(a.a, b.a) * 0.28 * linkAlphaScale;
         if (alpha < 0.02) continue;
-        if (a.hue === 3 || b.hue === 3) col = rgba(COL.gold, alpha * 0.95);
-        else if (a.hue === 0 || b.hue === 0) col = rgba(COL.green, alpha * 0.95);
-        else col = rgba(COL.purple, alpha * 0.9);
+        if (a.hue === 2 || b.hue === 2) col = rgba(COL.ice, alpha * 0.9);
+        else if (a.hue === 0 || b.hue === 0) col = rgba(COL.deep, alpha * 0.95);
+        else col = rgba(COL.mid, alpha * 0.9);
         ctx.strokeStyle = col; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
         linked++;
       }
@@ -255,7 +253,7 @@
       var burst = Math.max(w.dust, 1 - w.form);
       var sz = a.s * (0.55 + dpr * 0.22) * (0.75 + burst * 0.45 + w.form * 0.15);
       if (faceAmt > 0.35) sz *= 1 - faceAmt * 0.6;
-      var col = a.hue === 0 ? COL.green : a.hue === 1 ? COL.purple : a.hue === 2 ? COL.dpurple : COL.gold;
+      var col = a.hue === 0 ? COL.deep : a.hue === 1 ? COL.mid : COL.ice;
       var glass = 0.28 + a.a * 0.22 + burst * 0.12;
       var pa = glass * Math.max(0.12, particleAlpha);
       var spark = (a.spark || 0.7) * (0.7 + burst * 0.5);
