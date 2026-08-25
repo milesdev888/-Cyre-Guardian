@@ -1,5 +1,5 @@
 /* guardian-head.js — dust → robot → her photo → dust
-   Soft, no bright eyes / no eye bloom. Robot=/robot.jpg, her=/guardian2.jpg.
+   Small glassy beads that sparkle on burst. Robot=/robot.jpg, her=/guardian2.jpg.
    prefers-reduced-motion → static soft mesh. FAB popout unchanged. */
 (function () {
   var canvas = document.getElementById('guardian-head');
