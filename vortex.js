@@ -26,8 +26,8 @@
   var ctx = canvas.getContext('2d');
   var width = 0, height = 0, dpr = 1;
   var nodes = [];
-  var NODE_COUNT = 88;
-  var CONNECTION_DIST = 180;
+  var NODE_COUNT = 96;
+  var CONNECTION_DIST = 200;
   var raf = 0;
   var t0 = 0;
   var visible = true;
@@ -65,17 +65,17 @@
     var ang = Math.random() * Math.PI * 2;
     this.vx = Math.cos(ang) * speed;
     this.vy = Math.sin(ang) * speed;
-    this.radius = 1.35 + Math.random() * 2.1;
-    this.alpha = 0.55 + Math.random() * 0.4;
+    this.radius = 2.2 + Math.random() * 2.6;
+    this.alpha = 0.72 + Math.random() * 0.28;
     this.pulse = Math.random() * Math.PI * 2;
     this.pulseSp = 0.8 + Math.random() * 1.4;
     var c;
-    // Mostly Solana purple; green as sparse accents (~22%)
-    if (Math.random() < 0.22) {
+    // Mostly Solana purple; green as sparse accents (~20%)
+    if (Math.random() < 0.2) {
       c = GREEN;
       this.gold = true;
-      this.radius = 1.5 + Math.random() * 2.0;
-      this.alpha = 0.62 + Math.random() * 0.35;
+      this.radius = 2.4 + Math.random() * 2.4;
+      this.alpha = 0.78 + Math.random() * 0.22;
     } else {
       c = COLORS[(Math.random() * 3) | 0];
       this.gold = false;
@@ -111,7 +111,7 @@
     ctx.beginPath();
     ctx.arc(this.x, this.y, rad, 0, Math.PI * 2);
     ctx.strokeStyle = 'rgba(' + this.r + ',' + this.g + ',' + this.b + ',' + Math.min(1, a * 0.85).toFixed(3) + ')';
-    ctx.lineWidth = 0.9;
+    ctx.lineWidth = 1.15;
     ctx.stroke();
   };
 
@@ -129,7 +129,7 @@
         var dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < CONNECTION_DIST) {
           var t = 1 - dist / CONNECTION_DIST;
-          var alpha = t * 0.22;
+          var alpha = t * 0.32;
           // Solana purple links — clearer mesh, still no bloom
           var r = 153;
           var g = 69;
@@ -138,7 +138,7 @@
           ctx.moveTo(nodes[i].x, nodes[i].y);
           ctx.lineTo(nodes[j].x, nodes[j].y);
           ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + alpha.toFixed(3) + ')';
-          ctx.lineWidth = 0.55 + t * 0.55;
+          ctx.lineWidth = 0.7 + t * 0.7;
           ctx.stroke();
         }
       }

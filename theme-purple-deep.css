@@ -61,15 +61,15 @@ body::after{
 .orbit-ring.r3{border-color:rgba(153,69,255,.55)}
 .orbit-ring.r1::after{
   background:#9945FF !important;
-  box-shadow:0 0 0 2px rgba(153,69,255,.4), 0 0 8px rgba(153,69,255,.7) !important;
+  box-shadow:0 0 0 2px rgba(153,69,255,.45), 0 0 10px rgba(153,69,255,.75) !important;
 }
 .orbit-ring.r2::after{
   background:#14F195 !important;
-  box-shadow:0 0 0 2px rgba(20,241,149,.45), 0 0 8px rgba(20,241,149,.7) !important;
+  box-shadow:0 0 0 2px rgba(20,241,149,.5), 0 0 10px rgba(20,241,149,.75) !important;
 }
 .orbit-ring.r3::after{
   background:linear-gradient(135deg,#9945FF,#14F195) !important;
-  box-shadow:0 0 0 2px rgba(153,69,255,.35), 0 0 8px rgba(153,69,255,.55) !important;
+  box-shadow:0 0 0 2px rgba(153,69,255,.4), 0 0 10px rgba(153,69,255,.6) !important;
 }
 
 .status-chip{

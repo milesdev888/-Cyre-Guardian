@@ -71,7 +71,7 @@
         dx: x + Math.cos(da) * ds,
         dy: y + Math.sin(da) * ds * 0.55,
         dz: z + (Math.random() - 0.5) * ds * 0.7,
-        hue: pickHue(), s: 1.05 + Math.random() * 1.85, facet: Math.random()
+        hue: pickHue(), s: 1.35 + Math.random() * 2.1, facet: Math.random()
       });
     }
     return out;
