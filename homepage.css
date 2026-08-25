@@ -386,8 +386,8 @@ h1{
 }
 .orbit-ring.r3::after{
   top:auto;bottom:-6px;left:18%;
-  background:linear-gradient(135deg,#9945FF,#14F195);
-  box-shadow:0 0 0 2px rgba(153,69,255,.4), 0 0 10px rgba(153,69,255,.6);
+  background:#FFBE50;
+  box-shadow:0 0 0 2px rgba(255,190,80,.45), 0 0 10px rgba(255,190,80,.7);
 }
 .head-wrap{
   inset:12%;

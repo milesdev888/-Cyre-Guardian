@@ -68,8 +68,8 @@ body::after{
   box-shadow:0 0 0 2px rgba(20,241,149,.5), 0 0 10px rgba(20,241,149,.75) !important;
 }
 .orbit-ring.r3::after{
-  background:linear-gradient(135deg,#9945FF,#14F195) !important;
-  box-shadow:0 0 0 2px rgba(153,69,255,.4), 0 0 10px rgba(153,69,255,.6) !important;
+  background:#FFBE50 !important;
+  box-shadow:0 0 0 2px rgba(255,190,80,.45), 0 0 10px rgba(255,190,80,.7) !important;
 }
 
 .status-chip{
