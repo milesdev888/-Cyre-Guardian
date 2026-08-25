@@ -27,6 +27,18 @@
       ]
     },
     {
+      "source": "/cortex",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/cortex.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
       "source": "/app",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }

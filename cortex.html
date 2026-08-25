@@ -65,23 +65,24 @@
 
 <div class="hud panel pl">
   <h2>LINK RESOLVE</h2>
-  <div class="row"><span>graph pass</span><i id="pPass">—</i></div>
+  <div class="row"><span>slot</span><i id="pPass">—</i></div>
   <div class="row"><span>hot node</span><i id="pHot">—</i></div>
   <div class="row"><span>status</span><i id="pStat" style="color:var(--green)">WATCHING</i></div>
+  <div class="row"><span>execution</span><i id="pExec" style="color:var(--dim)">paper-only</i></div>
 </div>
 
 <div class="hud panel pr">
   <h2>SIGNAL STREAM</h2>
-  <div class="row"><span>research</span><i id="v0">0%</i></div><div class="bar"><b id="b0"></b></div>
-  <div class="row"><span>signals</span><i id="v1">0%</i></div><div class="bar"><b id="b1"></b></div>
-  <div class="row"><span>risk</span><i id="v2">0%</i></div><div class="bar"><b id="b2"></b></div>
+  <div class="row"><span>research</span><i id="v0">—</i></div><div class="bar"><b id="b0"></b></div>
+  <div class="row"><span>signals</span><i id="v1">—</i></div><div class="bar"><b id="b1"></b></div>
+  <div class="row"><span>risk</span><i id="v2">—</i></div><div class="bar"><b id="b2"></b></div>
 </div>
 
 <div class="hud bot">
   <div class="track"><b id="prog"></b></div>
   <div class="meta">
-    <span>cyre.dev · patterns, not verdicts</span>
-    <span>sync <i id="hPct">0%</i></span>
+    <span>cyre.dev · patterns, not verdicts · kill-switch <i id="hKill">armed</i></span>
+    <span>desk sync <i id="hPct">—</i></span>
   </div>
 </div>
 
@@ -144,15 +145,26 @@
     pulseCount++;
   }
 
-  // status tags flashing on nodes (Guardian's live-tagging language)
-  const TAGS = [
-    {w:'SETTLED', c:'#3ddc84'}, {w:'SIG VALID', c:'#3ddc84'}, {w:'ATTEST', c:'#3ddc84'},
-    {w:'FLAG', c:'#ff4d5e'}, {w:'HOLD', c:'#ff4d5e'}, {w:'RISK 0.91', c:'#ff4d5e'}
-  ];
-  function spawnTag(){
-    const n = NODES[1 + (Math.random()*(NODES.length-1))|0];
-    n.tag = TAGS[(Math.random()*TAGS.length)|0];
+  // Measured tags only (no invented risk scores). Decorative motion stays separate.
+  function tagNode(id, tag){
+    const n = NODES.find(x => x.id === id);
+    if(!n || !tag) return;
+    n.tag = tag;
     n.tagT = 1;
+  }
+  function applyMeasuredTags(data){
+    if(!data) return;
+    if(data.chain && data.chain.ok) tagNode('chain feed', {w:'SETTLED', c:'#3ddc84'});
+    if(data.killSwitch === 'armed') tagNode('kill-switch', {w:'HOLD', c:'#ff4d5e'});
+    if(data.execution === 'paper-only') tagNode('execution', {w:'HOLD', c:'#ff4d5e'});
+    if(data.oracle && data.oracle.ok && data.oracle.patternsTriggered > 0){
+      tagNode('risk', {w:'FLAG', c:'#ff4d5e'});
+    } else if(data.oracle && data.oracle.ok && data.oracle.feedsEvaluated > 0){
+      tagNode('risk', {w:'SIG VALID', c:'#3ddc84'});
+    }
+    if(data.signals && data.signals.policy === 'empty-default-list'){
+      tagNode('signals', {w:'ATTEST', c:'#3ddc84'});
+    }
   }
 
   // pre-render a soft glow sprite per hue for cheap bloom
@@ -172,25 +184,72 @@
   // HUD refs
   const $ = id => document.getElementById(id);
   const hNodes=$('hNodes'), hLinks=$('hLinks'), hPulse=$('hPulse'), hEpoch=$('hEpoch'),
-        pPass=$('pPass'), pHot=$('pHot'), prog=$('prog'), hPct=$('hPct');
+        pPass=$('pPass'), pHot=$('pHot'), pStat=$('pStat'), pExec=$('pExec'),
+        prog=$('prog'), hPct=$('hPct'), hKill=$('hKill');
   hNodes.textContent = NODES.length;
   hLinks.textContent = LINKS.length;
 
-  let t=0, epoch=0, hudT=0;
-  function hud(){
-    epoch++;
-    hEpoch.textContent = epoch.toLocaleString();
-    hPulse.textContent = pulseCount.toLocaleString();
-    pPass.textContent = (22000 + epoch).toLocaleString();
-    pHot.textContent = NODES[1+((epoch)%(NODES.length-1))].id;
-    for(let i=0;i<3;i++){
-      const v = 25+Math.round(Math.random()*70);
-      $('v'+i).textContent = v+'%';
-      $('b'+i).style.width = v+'%';
+  let t=0, syncCount=0, live=null;
+  function setStreamRow(i, row){
+    const label = $('v'+i), bar = $('b'+i);
+    if(!row){ label.textContent='—'; bar.style.width='0%'; return; }
+    if(row.mode === 'deferred' || row.pct == null){
+      label.textContent = 'deferred';
+      bar.style.width = '0%';
+      return;
     }
-    const pc = Math.round(42 + 40*Math.abs(Math.sin(epoch*.09)));
-    prog.style.width = pc+'%';
-    hPct.textContent = pc+'%';
+    if(row.mode === 'quiet'){
+      label.textContent = 'quiet';
+      bar.style.width = '0%';
+      return;
+    }
+    const pct = Math.max(0, Math.min(100, Number(row.pct)||0));
+    label.textContent = pct + '%';
+    bar.style.width = pct + '%';
+  }
+  function hudFromLive(){
+    hPulse.textContent = pulseCount.toLocaleString();
+    hEpoch.textContent = syncCount.toLocaleString();
+    if(!live){
+      pPass.textContent = '—';
+      pHot.textContent = '—';
+      hPct.textContent = '—';
+      prog.style.width = '0%';
+      return;
+    }
+    pStat.textContent = live.status || 'WATCHING';
+    pExec.textContent = live.execution || 'paper-only';
+    hKill.textContent = live.killSwitch || 'armed';
+    pHot.textContent = live.hotNode || '—';
+    if(live.pass != null) pPass.textContent = Number(live.pass).toLocaleString();
+    else if(live.chain && live.chain.slot != null) pPass.textContent = Number(live.chain.slot).toLocaleString();
+    else pPass.textContent = '—';
+    const s = live.stream || {};
+    setStreamRow(0, s.research);
+    setStreamRow(1, s.signals);
+    setStreamRow(2, s.risk);
+    const liveDesks = (live.desks || []).filter(d => d.state === 'live' || d.state === 'watching' || d.state === 'quiet' || d.state === 'armed' || d.state === 'paper-only').length;
+    const total = (live.desks && live.desks.length) || NODES.length;
+    const pc = total ? Math.round(100 * liveDesks / total) : 0;
+    prog.style.width = pc + '%';
+    hPct.textContent = pc + '%';
+  }
+
+  async function pullCortex(){
+    try{
+      const r = await fetch('/api/cortex', { cache: 'no-store' });
+      if(!r.ok) throw new Error('cortex ' + r.status);
+      const data = await r.json();
+      if(!data || data.ok === false) throw new Error('cortex payload');
+      live = data;
+      syncCount++;
+      applyMeasuredTags(data);
+      hudFromLive();
+    }catch(e){
+      // keep last-good HUD; decorative graph continues
+      console.warn('cortex sync', e && e.message);
+      hudFromLive();
+    }
   }
 
   function step(){
@@ -216,10 +275,8 @@
     }
     if(!RM){
       if(Math.random()<.14) spawnPulse();
-      if(Math.random()<.008) spawnTag();
     }
-    hudT++;
-    if(hudT%70===0) hud();
+    if(t % 30 === 0) hudFromLive();
   }
 
   function draw(){
@@ -292,8 +349,10 @@
   size();
   // settle + first paint
   for(let i=0;i<90;i++) step();
-  hud(); draw();
+  hudFromLive(); draw();
   loop();
+  pullCortex();
+  setInterval(pullCortex, 30000);
 })();
 </script>
 </body>
