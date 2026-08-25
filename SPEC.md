@@ -55,7 +55,8 @@ cyre.dev/tokenomics and @Cyredev888.
 | `ai-presence.js` | SUPER AI idle: denser glow, orbit breathe/pulse, `.portrait` / orb rings (works with wireframe head wrap); reduced-motion safe. Loaded by `ai-vibe-loader.js`. |
 | `footer-polish.js` | Footer Docs/Security → `/roadmap`; Privacy/Terms/Support → mailto. |
 | `launch-banner.js` | Self-mounting: 3D word-funnel canvas banner (robot core), $C7 + Roadmap nav links, hero $C7 button (emblem), glass CSS loader, AI-vibe loader hook, claims-safe HUD bar. |
-| `vortex.js` | Living particle/network mesh behind hero — violet-heavy mood (`#7048dc` / `#9b7bff`) with cyan accents (`#5fd0ff`) and sparse gold/amber dots (~12%; `#d4a84b` / `#ffb454`); continuous motion; static frame if `prefers-reduced-motion`. |
+| `vortex.js` | Living particle/network mesh behind hero — violet-heavy mood (`#7048dc` / `#9b7bff`) with cyan accents (`#5fd0ff`) and sparse gold/amber dots (~12%; `#d4a84b` / `#ffb454`); continuous motion; static frame if `prefers-reduced-motion`. Restored as the live hero field (replaces sapphire `hero-meteors.js` experiment). |
+| `hero-meteors.js` | Optional sapphire-only meteor field (retired from homepage wiring; kept for rollback). |
 | `homepage.css` | Homepage redesign styles (cyan Check glow, wireframe head stage, compact chips, single nav). |
 | `guardian-head.js` | Homepage hero canvas — **dust → mesh → photo → dust** (~22s): 0–16% dust; 16–30% dust→mesh; 30–48% dense violet/cyan particle wireframe head (soft eye bloom, no solid cartoon eyes); 48–60% mesh→photo; 60–82% her photo (`/guardian2.jpg` full-portrait crossfade, no circle crop/rim); 82–100% photo→dust. Fallback `/robot.jpg` if portrait fails. `prefers-reduced-motion` → static mesh. FAB/popout still uses `/guardian2.jpg`. |
 | `guardian-voice.js` | "Hear Guardian": tap → talking video → mp3 → speech-synth fallback chain; robot morph. |
