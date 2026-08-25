@@ -61,8 +61,8 @@ body::after{
   box-shadow:none !important;
 }
 .orbit-ring{border-color:rgba(72,140,255,.5);box-shadow:none !important;filter:none !important}
-.orbit-ring.r2{border-color:rgba(18,72,190,.55)}
-.orbit-ring.r3{border-color:rgba(186,224,255,.4)}
+.orbit-ring.r2,
+.orbit-ring.r3{display:none !important}
 .orbit-ring.r1::after{
   background:#3DDC84 !important;
   box-shadow:none !important;
@@ -72,16 +72,7 @@ body::after{
   width:10px !important;
   height:10px !important;
 }
-.orbit-ring.r2::after{
-  background:#FF4D5E !important;
-  box-shadow:none !important;
-  border:none !important;
-  border-radius:50% !important;
-  transform:translateX(-50%) !important;
-  width:10px !important;
-  height:10px !important;
-}
-.orbit-ring.r3::after{
+.orbit-ring.r1::before{
   background:#FF4D5E !important;
   box-shadow:none !important;
   border:none !important;

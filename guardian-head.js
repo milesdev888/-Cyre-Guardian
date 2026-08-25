@@ -200,13 +200,6 @@
     };
   }
 
-  function portraitClipPath() {
-    var R = Math.min(W, H) * 0.27;
-    ctx.beginPath();
-    ctx.arc(W * 0.5, H * 0.5, R, 0, Math.PI * 2);
-    ctx.closePath();
-  }
-
   function drawPortrait(img, ready, weight, maxAlpha) {
     if (!ready || !img || weight < 0.05) return;
     var alpha = Math.pow(clamp(weight, 0, 1), 0.9) * maxAlpha;
@@ -215,8 +208,6 @@
     if (dh > H * 0.58) { dh = H * 0.58; dw = dh * (iw / ih); }
     var dx = (W - dw) * 0.5, dy = (H - dh) * 0.42;
     ctx.save();
-    portraitClipPath();
-    ctx.clip();
     ctx.globalAlpha = alpha;
     ctx.globalCompositeOperation = 'source-over';
     ctx.drawImage(img, dx, dy, dw, dh);
@@ -230,6 +221,17 @@
     eg.addColorStop(1, 'rgba(5,8,18,0)');
     ctx.fillStyle = eg;
     ctx.fillRect(dx, dy + dh * 0.22, dw, dh * 0.4);
+    /* Soft edge fade — no hard circular frame */
+    var cx = W * 0.5, cy = H * 0.48;
+    var R = Math.min(W, H) * 0.34;
+    var rg = ctx.createRadialGradient(cx, cy, R * 0.62, cx, cy, R);
+    rg.addColorStop(0, 'rgba(5,8,18,0)');
+    rg.addColorStop(0.72, 'rgba(5,8,18,0)');
+    rg.addColorStop(1, 'rgba(5,8,18,1)');
+    ctx.globalAlpha = alpha;
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.fillStyle = rg;
+    ctx.fillRect(dx - 4, dy - 4, dw + 8, dh + 8);
     ctx.restore();
   }
 
