@@ -46,6 +46,26 @@
     '.hero::before{opacity:.55}}';
   document.head.appendChild(css);
 
+  /* JS-driven orbit spin — runs even where CSS animations are suppressed */
+  (function () {
+    function start() {
+      var ring = document.querySelector('.orbit-ring.r1');
+      if (!ring) return;
+      ring.style.animation = 'none';
+      var PERIOD = 36000, t0 = performance.now();
+      function frame(now) {
+        if (!document.hidden) {
+          var deg = ((now - t0) % PERIOD) / PERIOD * 360;
+          ring.style.transform = 'translate(-50%,-50%) rotate(' + deg.toFixed(2) + 'deg)';
+        }
+        requestAnimationFrame(frame);
+      }
+      requestAnimationFrame(frame);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+    else start();
+  })();
+
   function ensureOrb() {
     if (document.querySelector('.portrait, .cy-ai-orb')) return;
     var host = document.querySelector('.hero .orbit') || document.querySelector('.hero-grid > div:last-child') || document.querySelector('.hero .wrap');
