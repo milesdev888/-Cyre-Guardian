@@ -362,38 +362,12 @@ h1{
 .glow{
   display:none !important;
 }
-.orbit-ring{border:1.5px solid rgba(72,140,255,.5);pointer-events:none;box-shadow:none;filter:none}
-.orbit-ring.r1{inset:6% 10%;animation:orbit-spin 72s linear infinite}
+/* No orbit circles on the hero — glass burst only */
+.orbit-ring,
+.orbit-ring.r1,
 .orbit-ring.r2,
-.orbit-ring.r3{display:none !important}
-.orbit-ring.r1::after,
-.orbit-ring.r2::after,
-.orbit-ring.r3::after{
-  content:"";
-  position:absolute;
-  top:-5px;left:50%;
-  width:10px;height:10px;
-  border-radius:50%;
-  transform:translateX(-50%);
-  background:#3DDC84;
-  border:none;
-  box-shadow:none;
-  filter:none;
-}
-.orbit-ring.r1::before{
-  content:"";
-  position:absolute;
-  bottom:-5px;left:18%;
-  width:10px;height:10px;
-  border-radius:50%;
-  background:#FF4D5E;
-  border:none;
-  box-shadow:none;
-  filter:none;
-}
-.orbit-ring.r2::after,
-.orbit-ring.r3::after{
-  display:none;
+.orbit-ring.r3{
+  display:none !important;
 }
 .head-wrap{
   inset:12%;
