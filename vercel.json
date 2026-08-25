@@ -21,7 +21,7 @@
       ]
     },
     {
-      "source": "/(vortex|hero-meteors|guardian-head).js",
+      "source": "/(vortex|hero-meteors|guardian-head|guardian-net).js",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
       ]
