@@ -218,23 +218,10 @@
     var linkAlphaScale = (1 - faceAmt * 0.88) * (0.2 + w.form * 0.55 + w.dust * 0.35);
 
     ctx.clearRect(0, 0, W, H);
-
-    // Quiet ambient — no soft bloom wash over particles
-    var g = ctx.createRadialGradient(W * 0.5, H * 0.42, 10, W * 0.5, H * 0.48, W * 0.44);
-    g.addColorStop(0, 'rgba(112,72,220,' + (0.03 + w.form * 0.02).toFixed(3) + ')');
-    g.addColorStop(0.5, 'rgba(155,123,255,' + (0.02 + w.form * 0.015).toFixed(3) + ')');
-    g.addColorStop(1, 'rgba(5,8,18,0)');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
 
     for (i = 0; i < points.length; i++) projected.push(projectPoint(points[i], rot, breathe, w));
-
-    if (w.dust > 0.05) {
-      var dg = ctx.createRadialGradient(W * 0.5, H * 0.48, 5, W * 0.5, H * 0.5, W * 0.52);
-      dg.addColorStop(0, 'rgba(112,72,220,' + (0.04 * w.dust).toFixed(3) + ')');
-      dg.addColorStop(0.5, 'rgba(155,123,255,' + (0.02 * w.dust).toFixed(3) + ')');
-      dg.addColorStop(1, 'rgba(5,8,18,0)');
-      ctx.fillStyle = dg; ctx.fillRect(0, 0, W, H);
-    }
 
     drawFacets(projected, w);
     // Robot then half-human her — dimmed, no drawn eyes
