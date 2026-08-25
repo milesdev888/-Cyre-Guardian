@@ -108,18 +108,18 @@
   Node.prototype.reset = function () {
     this.x = Math.random() * width;
     this.y = Math.random() * height;
-    // Clear continuous drift (visible while idle — not only on scroll)
-    var speed = reduce ? 0 : (0.42 + Math.random() * 0.7);
+    // Calm continuous drift (readable idle motion, not frantic)
+    var speed = reduce ? 0 : (0.08 + Math.random() * 0.14);
     var ang = Math.random() * Math.PI * 2;
     this.vx = Math.cos(ang) * speed;
     this.vy = Math.sin(ang) * speed;
     this.radius = 2.0 + Math.random() * 2.4;
     this.alpha = 0.82 + Math.random() * 0.18;
     this.pulse = Math.random() * Math.PI * 2;
-    this.pulseSp = 1.1 + Math.random() * 1.6;
+    this.pulseSp = 0.45 + Math.random() * 0.7;
     this.facet = (Math.random() * 6) | 0;
     this.spark = 0.55 + Math.random() * 0.45;
-    this.spin = (Math.random() - 0.5) * 0.9;
+    this.spin = (Math.random() - 0.5) * 0.25;
     var roll = Math.random();
     var c;
     if (roll < 0.12) {
@@ -141,9 +141,9 @@
   };
   Node.prototype.update = function (dt) {
     if (reduce) return;
-    // Gentle orbital wind so paths curve (reads as “alive”)
-    this.vx += Math.sin(this.pulse * 0.7) * 0.035 * dt * 60;
-    this.vy += Math.cos(this.pulse * 0.55) * 0.03 * dt * 60;
+    // Soft curved path — low amplitude so motion stays calm
+    this.vx += Math.sin(this.pulse * 0.55) * 0.008 * dt * 60;
+    this.vy += Math.cos(this.pulse * 0.4) * 0.007 * dt * 60;
     this.x += this.vx * (60 * dt);
     this.y += this.vy * (60 * dt);
     this.pulse += this.pulseSp * dt;
@@ -152,23 +152,24 @@
     if (this.x > width + 24) this.x = -24;
     if (this.y < -24) this.y = height + 24;
     if (this.y > height + 24) this.y = -24;
-    this.vx += (Math.random() - 0.5) * 0.02;
-    this.vy += (Math.random() - 0.5) * 0.02;
+    this.vx += (Math.random() - 0.5) * 0.004;
+    this.vy += (Math.random() - 0.5) * 0.004;
     var sp = Math.sqrt(this.vx * this.vx + this.vy * this.vy) || 0.001;
-    var max = 1.15;
-    var min = 0.28;
+    var max = 0.28;
+    var min = 0.05;
     if (sp > max) { this.vx = this.vx / sp * max; this.vy = this.vy / sp * max; }
     else if (sp < min) { this.vx = this.vx / sp * min; this.vy = this.vy / sp * min; }
   };
 
   Node.prototype.draw = function () {
-    var breath = 1 + (reduce ? 0 : 0.12 * Math.sin(this.pulse));
+    var breath = 1 + (reduce ? 0 : 0.06 * Math.sin(this.pulse));
     var rad = this.radius * breath;
-    var a = this.alpha * (0.92 + (reduce ? 0.08 : 0.08 * Math.sin(this.pulse * 0.7)));
+    var a = this.alpha * (0.94 + (reduce ? 0.06 : 0.06 * Math.sin(this.pulse * 0.7)));
     var x = this.x, y = this.y;
     var sides = 6;
-    var rot = (this.facet / 6) * Math.PI + (reduce ? 0 : this.pulse * 0.12);
+    var rot = (this.facet / 6) * Math.PI + (reduce ? 0 : this.pulse * 0.05);
 
+    // Solid crystal facet only — no soft halo / outer glow
     ctx.beginPath();
     for (var i = 0; i <= sides; i++) {
       var ang = rot + (i / sides) * Math.PI * 2;
@@ -180,24 +181,15 @@
     ctx.fillStyle = 'rgba(' + this.r + ',' + this.g + ',' + this.b + ',' + a.toFixed(3) + ')';
     ctx.fill();
 
-    ctx.strokeStyle = 'rgba(255,255,255,' + Math.min(0.85, a * 0.55 * this.spark).toFixed(3) + ')';
-    ctx.lineWidth = Math.max(0.7, rad * 0.18);
+    // Thin hard rim (1px) — not a glow
+    ctx.strokeStyle = 'rgba(255,255,255,' + Math.min(0.55, a * 0.35 * this.spark).toFixed(3) + ')';
+    ctx.lineWidth = 0.85;
     ctx.stroke();
 
+    // Tiny hard specular — sharp pin, not bloom
     ctx.beginPath();
-    ctx.arc(x, y, rad * 0.42, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(' +
-      Math.min(255, this.r + 70) + ',' +
-      Math.min(255, this.g + 70) + ',' +
-      Math.min(255, this.b + 50) + ',' +
-      Math.min(1, a * 0.95).toFixed(3) + ')';
-    ctx.fill();
-
-    var sx = x - rad * 0.28;
-    var sy = y - rad * 0.32;
-    ctx.beginPath();
-    ctx.arc(sx, sy, Math.max(0.55, rad * 0.22), 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,255,255,' + Math.min(1, 0.55 + this.spark * 0.4).toFixed(3) + ')';
+    ctx.arc(x - rad * 0.28, y - rad * 0.3, Math.max(0.45, rad * 0.16), 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,' + Math.min(0.9, 0.45 + this.spark * 0.3).toFixed(3) + ')';
     ctx.fill();
   };
 
@@ -216,7 +208,7 @@
         var dist = Math.sqrt(dx * dx + dy * dy);
         if (dist < CONNECTION_DIST) {
           var t = 1 - dist / CONNECTION_DIST;
-          var alpha = t * 0.38;
+          var alpha = t * 0.22;
           var a = nodes[i], b = nodes[j];
           var r = 168, g = 92, bch = 255;
           if (a.kind === 'gold' || b.kind === 'gold') { r = 255; g = 200; bch = 110; alpha *= 0.9; }
@@ -240,9 +232,9 @@
     ctx.clearRect(0, 0, width, height);
 
     var g = ctx.createRadialGradient(width * 0.55, height * 0.35, 0, width * 0.5, height * 0.5, Math.max(width, height) * 0.75);
-    g.addColorStop(0, 'rgba(153,69,255,0.08)');
-    g.addColorStop(0.45, 'rgba(153,69,255,0.03)');
-    g.addColorStop(1, 'rgba(5,6,10,0.38)');
+    g.addColorStop(0, 'rgba(153,69,255,0.04)');
+    g.addColorStop(0.5, 'rgba(153,69,255,0.015)');
+    g.addColorStop(1, 'rgba(5,6,10,0.12)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, width, height);
 
