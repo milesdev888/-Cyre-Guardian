@@ -69,13 +69,13 @@ body::after{
   width:84% !important;
   height:84% !important;
   border-radius:50% !important;
-  border-color:rgba(255,140,50,.92) !important;
+  border-color:rgba(0,82,255,.92) !important;
   box-shadow:
-    0 0 14px rgba(255,170,60,.9),
-    0 0 34px rgba(255,110,30,.55),
-    0 0 68px rgba(255,60,10,.3),
-    inset 0 0 16px rgba(255,170,70,.6),
-    inset 0 0 42px rgba(255,100,30,.28) !important;
+    0 0 14px rgba(0,82,255,.75),
+    0 0 34px rgba(38,103,255,.45),
+    0 0 68px rgba(0,82,255,.28),
+    inset 0 0 16px rgba(87,139,255,.35),
+    inset 0 0 42px rgba(0,82,255,.18) !important;
   filter:none !important;
 }
 .orbit-ring.r2,

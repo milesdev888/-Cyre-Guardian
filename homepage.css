@@ -392,9 +392,11 @@ h1{
   left:50%;
   width:84%;
   height:84%;
-  border:5px solid rgba(150,196,255,.85);
-box-shadow:0 0 14px rgba(110,168,255,.3);
-
+  border:5px solid rgba(0,82,255,.9);
+  box-shadow:
+    0 0 14px rgba(0,82,255,.55),
+    0 0 34px rgba(38,103,255,.3),
+    inset 0 0 16px rgba(0,82,255,.2);
   transform:translate(-50%,-50%);
   animation:orbit-spin 36s linear infinite;
 }
