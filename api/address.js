@@ -85,6 +85,10 @@ async function x402Gate(req) {
   if (!X402_ENABLED) return null;          // gate disarmed — everything free
   if (isSiteRequest(req)) return null;     // cyre.dev visitors stay free
 
+  // Internal services (mention-grader, watchers) bypass with a shared key.
+  const internalKey = process.env.X402_INTERNAL_KEY || '';
+  if (internalKey && req.headers['x-guardian-key'] === internalKey) return null;
+
   const lanes = armedLanes();
   if (!lanes.length) {
     console.error('x402: X402_ENABLED but no treasury set (X402_PAY_TO / X402_PAY_TO_BASE) — serving free');
