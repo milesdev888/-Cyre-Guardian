@@ -1,11 +1,117 @@
-// api/address.mjs — CYRE address profile
-// Reads Solana chain history and returns an explainable risk profile.
-// Optional env var: SOLANA_RPC (defaults to public mainnet RPC)
+// api/address.js — CYRE address profile + x402 payment gate
+// Site visitors (cyre.dev) stay FREE. Direct API callers (agents) pay per query via x402.
+//
+// Env vars (all optional — gate is OFF until X402_ENABLED=true):
+//   SOLANA_RPC        RPC endpoint (defaults to public mainnet)
+//   X402_ENABLED      "true" to arm the payment gate (default: off, everything free)
+//   X402_PAY_TO       Treasury wallet address that receives USDC (REQUIRED when enabled)
+//   X402_NETWORK      "devnet" or "mainnet" (default: devnet — rehearse first)
+//   X402_PRICE        Price in USDC atomic units, 6 decimals (default: 5000 = $0.005)
+//   X402_FACILITATOR  Facilitator base URL (default: https://x402.org/facilitator — testnet only;
+//                     mainnet needs a production facilitator, e.g. Coinbase CDP)
 
 const RPC = process.env.SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
 const B58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const DAY = 86400;
 
+// ---------- x402 config ----------
+const X402_ENABLED = process.env.X402_ENABLED === 'true';
+const PAY_TO = process.env.X402_PAY_TO || '';
+const NET = (process.env.X402_NETWORK || 'devnet').toLowerCase();
+const PRICE = String(process.env.X402_PRICE || '5000'); // $0.005 USDC
+const FACILITATOR = (process.env.X402_FACILITATOR || 'https://x402.org/facilitator').replace(/\/$/, '');
+
+const NETWORKS = {
+  mainnet: {
+    caip2: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+    usdc: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'
+  },
+  devnet: {
+    caip2: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1',
+    usdc: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'
+  }
+};
+const CHAIN = NETWORKS[NET] || NETWORKS.devnet;
+
+function paymentRequirements(resourceUrl) {
+  return {
+    scheme: 'exact',
+    network: CHAIN.caip2,
+    maxAmountRequired: PRICE,
+    asset: CHAIN.usdc,
+    payTo: PAY_TO,
+    resource: resourceUrl,
+    description: 'Guardian address profile — explainable on-chain risk signals. Patterns, not verdicts.',
+    mimeType: 'application/json',
+    maxTimeoutSeconds: 60
+  };
+}
+
+function isSiteRequest(req) {
+  const src = String(req.headers.origin || req.headers.referer || '');
+  return /^https:\/\/(www\.)?cyre\.dev(\/|$)/.test(src);
+}
+
+async function facilitator(path, body) {
+  const r = await fetch(FACILITATOR + path, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) throw new Error('facilitator ' + path + ' ' + r.status);
+  return r.json();
+}
+
+// Returns null if the request may proceed; otherwise an object {status, body} to send.
+async function x402Gate(req) {
+  if (!X402_ENABLED) return null;          // gate disarmed — everything free
+  if (isSiteRequest(req)) return null;     // cyre.dev visitors stay free
+  if (!PAY_TO) {
+    console.error('x402: X402_ENABLED but X402_PAY_TO missing — serving free');
+    return null;                           // misconfig must never break the product
+  }
+
+  const proto = req.headers['x-forwarded-proto'] || 'https';
+  const host = req.headers['x-forwarded-host'] || req.headers.host || 'cyre.dev';
+  const resourceUrl = proto + '://' + host + '/api/address';
+  const requirements = paymentRequirements(resourceUrl);
+
+  const header = req.headers['x-payment'];
+  if (!header) {
+    return {
+      status: 402,
+      body: {
+        x402Version: 1,
+        error: 'Payment required',
+        accepts: [requirements]
+      }
+    };
+  }
+
+  let payment;
+  try {
+    payment = JSON.parse(Buffer.from(String(header), 'base64').toString('utf8'));
+  } catch (e) {
+    return { status: 402, body: { x402Version: 1, error: 'Malformed X-PAYMENT header', accepts: [requirements] } };
+  }
+
+  try {
+    const v = await facilitator('/verify', { x402Version: 1, paymentPayload: payment, paymentRequirements: requirements });
+    if (!v || v.isValid !== true) {
+      return { status: 402, body: { x402Version: 1, error: (v && v.invalidReason) || 'Payment invalid', accepts: [requirements] } };
+    }
+    const s = await facilitator('/settle', { x402Version: 1, paymentPayload: payment, paymentRequirements: requirements });
+    if (!s || s.success !== true) {
+      return { status: 402, body: { x402Version: 1, error: (s && s.errorReason) || 'Settlement failed', accepts: [requirements] } };
+    }
+    return { settled: s }; // caller attaches X-PAYMENT-RESPONSE
+  } catch (e) {
+    console.error('x402 facilitator error', e && e.message);
+    return { status: 502, body: { error: 'Payment processor unreachable. Try again shortly.' } };
+  }
+}
+
+// ---------- chain reads (unchanged) ----------
 async function rpc(method, params) {
   const r = await fetch(RPC, {
     method: 'POST',
@@ -26,6 +132,17 @@ export default async function handler(req, res) {
 
   if (!B58.test(address)) {
     return res.status(400).json({ error: 'That does not look like a Solana address.' });
+  }
+
+  // ----- x402 gate -----
+  const gate = await x402Gate(req);
+  if (gate && gate.status) {
+    return res.status(gate.status).json(gate.body);
+  }
+  if (gate && gate.settled) {
+    try {
+      res.setHeader('X-PAYMENT-RESPONSE', Buffer.from(JSON.stringify(gate.settled)).toString('base64'));
+    } catch (e) { /* non-fatal */ }
   }
 
   try {
