@@ -33,7 +33,7 @@ const DEFAULT_FACILITATOR = 'https://x402.org/facilitator';
 const CDP_FACILITATOR = 'https://api.cdp.coinbase.com/platform/v2/x402';
 const CDP_KEY_ID = process.env.CDP_API_KEY_ID || '';
 const CDP_KEY_SECRET = process.env.CDP_API_KEY_SECRET || '';
-const NET_BASE = (process.env.X402_NETWORK_BASE || NET).toLowerCase();
+const NET_BASE = (process.env.X402_NETWORK_BASE || 'mainnet').toLowerCase();
 
 // Each lane: CAIP-2 network id + USDC contract per environment, its own treasury + facilitator.
 const LANES = [
@@ -46,7 +46,7 @@ const LANES = [
   },
   {
     name: 'base',
-    payTo: process.env.X402_PAY_TO_BASE || '',
+    payTo: process.env.X402_PAY_TO_BASE || '0x9Ff25C4acf1DcDDf15fD2702C127A285f1dFa712',
     facilitator: (process.env.X402_FACILITATOR_BASE || (CDP_KEY_ID && CDP_KEY_SECRET ? CDP_FACILITATOR : DEFAULT_FACILITATOR)).replace(/\/$/, ''),
     mainnet: { network: 'eip155:8453', usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' },
     devnet: { network: 'eip155:84532', usdc: '0x036CbD53842c5426634e7929541eC2318f3dCF7e' } // Base Sepolia
