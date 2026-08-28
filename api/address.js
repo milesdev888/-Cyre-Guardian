@@ -75,6 +75,11 @@ function laneRequirements(lane) {
   };
 }
 
+function normAddr(v) {
+  const s = String(v || '');
+  return s.startsWith('0x') ? s.toLowerCase() : s;
+}
+
 // x402 v2 "resource" object — service metadata is what Bazaar uses to render the listing.
 function resourceInfo(resourceUrl) {
   return {
@@ -280,8 +285,26 @@ async function x402Gate(req) {
     return { status: 402, body: paymentRequired(resourceUrl, accepts, 'Unsupported payment network') };
   }
   const lane = lanes[idx];
-  // Must match the signed offer exactly — CDP rejects mismatches between payload.accepted and paymentRequirements.
-  const requirements = (payment && payment.accepted) || accepts[idx];
+  const expected = accepts[idx];
+  const accepted = payment && payment.accepted;
+  if (!accepted) {
+    return { status: 402, body: paymentRequired(resourceUrl, accepts, 'Malformed payment payload') };
+  }
+  try {
+    if (BigInt(accepted.amount || '0') < BigInt(expected.amount || '0')) {
+      return { status: 402, body: paymentRequired(resourceUrl, accepts, 'amount_too_low') };
+    }
+  } catch (e) {
+    return { status: 402, body: paymentRequired(resourceUrl, accepts, 'amount_too_low') };
+  }
+  if (accepted.scheme !== expected.scheme ||
+      accepted.network !== expected.network ||
+      normAddr(accepted.asset) !== normAddr(expected.asset) ||
+      normAddr(accepted.payTo) !== normAddr(expected.payTo)) {
+    return { status: 402, body: paymentRequired(resourceUrl, accepts, 'offer_mismatch') };
+  }
+  // Forward the client-signed offer once pinned fields match Guardian's lane.
+  const requirements = accepted;
 
   try {
     // paymentPayload is forwarded untouched so any echoed "extensions.bazaar" reaches the facilitator.
