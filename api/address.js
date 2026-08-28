@@ -175,9 +175,18 @@ function cdpPrivateKey() {
     return { key: crypto.createPrivateKey(secret), alg: 'ES256' };
   }
   const raw = Buffer.from(secret, 'base64');
-  const seed = raw.subarray(0, 32); // Ed25519: 64 bytes = seed + public
-  const pkcs8 = Buffer.concat([Buffer.from('302e020100300506032b657004220420', 'hex'), seed]);
-  return { key: crypto.createPrivateKey({ key: pkcs8, format: 'der', type: 'pkcs8' }), alg: 'EdDSA' };
+  if (raw.length !== 64) {
+    throw new Error('CDP Ed25519 secret must decode to 64 bytes');
+  }
+  const seed = raw.subarray(0, 32);
+  const publicKey = raw.subarray(32);
+  return {
+    key: crypto.createPrivateKey({
+      key: { kty: 'OKP', crv: 'Ed25519', d: seed.toString('base64url'), x: publicKey.toString('base64url') },
+      format: 'jwk'
+    }),
+    alg: 'EdDSA'
+  };
 }
 
 function cdpJwt(method, urlPath) {
@@ -213,8 +222,19 @@ async function callFacilitator(base, path, body) {
     headers,
     body: JSON.stringify(body)
   });
-  if (!r.ok) throw new Error('facilitator ' + path + ' ' + r.status + ' ' + (await r.text()).slice(0, 300));
-  return r.json();
+  const text = await r.text();
+  let data;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch (e) {
+    data = null;
+  }
+  // CDP verify/settle often return structured JSON on 400 (invalid payment), not just hard failures.
+  if (data && (Object.prototype.hasOwnProperty.call(data, 'isValid') || Object.prototype.hasOwnProperty.call(data, 'success'))) {
+    return data;
+  }
+  if (!r.ok) throw new Error('facilitator ' + path + ' ' + r.status + ' ' + text.slice(0, 300));
+  return data || {};
 }
 
 // Returns null if the request may proceed; otherwise an object {status, body} to send.
@@ -260,17 +280,20 @@ async function x402Gate(req) {
     return { status: 402, body: paymentRequired(resourceUrl, accepts, 'Unsupported payment network') };
   }
   const lane = lanes[idx];
-  const requirements = accepts[idx];
+  // Must match the signed offer exactly — CDP rejects mismatches between payload.accepted and paymentRequirements.
+  const requirements = (payment && payment.accepted) || accepts[idx];
 
   try {
     // paymentPayload is forwarded untouched so any echoed "extensions.bazaar" reaches the facilitator.
     const v = await callFacilitator(lane.facilitator, '/verify', { x402Version: 2, paymentPayload: payment, paymentRequirements: requirements });
     if (!v || v.isValid !== true) {
-      return { status: 402, body: paymentRequired(resourceUrl, accepts, (v && v.invalidReason) || 'Payment invalid') };
+      const reason = (v && (v.invalidMessage || v.invalidReason)) || 'Payment invalid';
+      return { status: 402, body: paymentRequired(resourceUrl, accepts, reason) };
     }
     const s = await callFacilitator(lane.facilitator, '/settle', { x402Version: 2, paymentPayload: payment, paymentRequirements: requirements });
     if (!s || s.success !== true) {
-      return { status: 402, body: paymentRequired(resourceUrl, accepts, (s && s.errorReason) || 'Settlement failed') };
+      const reason = (s && (s.errorMessage || s.errorReason)) || 'Settlement failed';
+      return { status: 402, body: paymentRequired(resourceUrl, accepts, reason) };
     }
     return { settled: s }; // caller attaches PAYMENT-RESPONSE
   } catch (e) {
