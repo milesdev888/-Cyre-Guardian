@@ -275,7 +275,7 @@ async function x402Gate(req) {
     return { settled: s }; // caller attaches PAYMENT-RESPONSE
   } catch (e) {
     console.error('x402 facilitator error', e && e.message);
-    return { status: 502, body: { error: 'Payment processor unreachable. Try again shortly.' } };
+    return { status: 502, body: { error: (e && e.message) || 'Payment processor unreachable. Try again shortly.' } };
   }
 }
 
