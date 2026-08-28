@@ -1,5 +1,5 @@
 // api/address.js — CYRE address profile + x402 payment gate
-// Site visitors (cyre.dev) stay FREE. Direct API callers (agents) pay per query via x402.
+// Site visitors (cyre.dev) stay FREE. Direct API callers (agents) pay per query via x402 (protocol v2).
 //
 // Env vars (all optional — gate is OFF until X402_ENABLED=true):
 //   SOLANA_RPC             RPC endpoint (defaults to public mainnet)
@@ -48,8 +48,8 @@ const LANES = [
     name: 'base',
     payTo: process.env.X402_PAY_TO_BASE || '0x9Ff25C4acf1DcDDf15fD2702C127A285f1dFa712',
     facilitator: (process.env.X402_FACILITATOR_BASE || (CDP_KEY_ID && CDP_KEY_SECRET ? CDP_FACILITATOR : DEFAULT_FACILITATOR)).replace(/\/$/, ''),
-    mainnet: { network: 'eip155:8453', usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' },
-    devnet: { network: 'eip155:84532', usdc: '0x036CbD53842c5426634e7929541eC2318f3dCF7e' } // Base Sepolia
+    mainnet: { network: 'eip155:8453', usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', extra: { name: 'USD Coin', version: '2' } },
+    devnet: { network: 'eip155:84532', usdc: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', extra: { name: 'USDC', version: '2' } } // Base Sepolia
   }
 ];
 
@@ -61,42 +61,100 @@ function laneNet(lane) {
   return lane.name === 'base' ? NET_BASE : NET;
 }
 
-function laneRequirements(lane, resourceUrl) {
+function laneRequirements(lane) {
   const env = laneNet(lane) === 'mainnet' ? lane.mainnet : lane.devnet;
+  // x402 v2 PaymentRequirements: CAIP-2 network, atomic "amount", asset's EIP-712 domain in extra.
   return {
     scheme: 'exact',
     network: env.network,
-    maxAmountRequired: PRICE,
+    amount: PRICE,
     asset: env.usdc,
     payTo: lane.payTo,
-    resource: resourceUrl,
+    maxTimeoutSeconds: 60,
+    extra: env.extra || {}
+  };
+}
+
+// x402 v2 "resource" object — service metadata is what Bazaar uses to render the listing.
+function resourceInfo(resourceUrl) {
+  return {
+    url: resourceUrl,
     description: DESCRIPTION,
     mimeType: 'application/json',
-    maxTimeoutSeconds: 60,
-    outputSchema: {
+    serviceName: 'CYRE Guardian',
+    tags: ['risk', 'fraud', 'solana', 'wallet', 'security'],
+    iconUrl: 'https://cyre.dev/favicon.png'
+  };
+}
+
+// Bazaar discovery extension (x402 v2 shape, mirrors @x402/extensions declareDiscoveryExtension for GET).
+// Agents echo this into their PaymentPayload; the facilitator catalogs the route on settle.
+const DISCOVERY = {
+  bazaar: {
+    info: {
       input: {
         type: 'http',
         method: 'GET',
-        queryParams: {
-          address: { type: 'string', required: true, description: 'Solana address (base58) to grade' }
-        }
+        queryParams: { address: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM' }
       },
       output: {
-        ok: 'boolean',
-        address: 'string',
-        score: 'number (0-100 risk score)',
-        riskLevel: 'LOW | MEDIUM | HIGH',
-        signals: 'array of explainable risk signals',
-        profile: 'object with wallet age, activity, balance stats'
+        type: 'json',
+        example: {
+          ok: true,
+          address: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
+          score: 12,
+          riskLevel: 'LOW',
+          signals: [{ id: 'fresh', name: 'Fresh wallet', points: 0, triggered: false, detail: 'First seen 900+ days ago' }],
+          profile: { ageDays: 912, txCount: 1000, solBalance: 3.2 }
+        }
       }
     },
-    extra: {
-      name: 'Guardian Address Profile',
-      discoverable: true,
-      provider: 'CYRE Guardian — cyre.dev',
-      category: 'risk-and-fraud'
+    schema: {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        input: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'http' },
+            method: { type: 'string', enum: ['GET', 'HEAD', 'DELETE'] },
+            queryParams: {
+              type: 'object',
+              properties: {
+                address: { type: 'string', description: 'Solana wallet or program address (base58) to risk-grade' }
+              },
+              required: ['address']
+            }
+          },
+          required: ['type', 'method'],
+          additionalProperties: false
+        },
+        output: {
+          type: 'object',
+          properties: {
+            type: { type: 'string' },
+            example: {
+              type: 'object',
+              properties: {
+                ok: { type: 'boolean' },
+                address: { type: 'string' },
+                score: { type: 'number', description: '0-100 risk score (higher = riskier)' },
+                riskLevel: { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH'] },
+                signals: { type: 'array', description: 'Explainable risk signals with points and detail' },
+                profile: { type: 'object', description: 'Wallet age, activity and balance stats' }
+              }
+            }
+          },
+          required: ['type']
+        }
+      },
+      required: ['input']
     }
-  };
+  }
+};
+
+function paymentRequired(resourceUrl, accepts, error) {
+  return { x402Version: 2, error, resource: resourceInfo(resourceUrl), accepts, extensions: DISCOVERY };
 }
 
 function isSiteRequest(req) {
@@ -155,7 +213,7 @@ async function callFacilitator(base, path, body) {
     headers,
     body: JSON.stringify(body)
   });
-  if (!r.ok) throw new Error('facilitator ' + path + ' ' + r.status);
+  if (!r.ok) throw new Error('facilitator ' + path + ' ' + r.status + ' ' + (await r.text()).slice(0, 300));
   return r.json();
 }
 
@@ -177,41 +235,44 @@ async function x402Gate(req) {
   const proto = req.headers['x-forwarded-proto'] || 'https';
   const host = req.headers['x-forwarded-host'] || req.headers.host || 'cyre.dev';
   const resourceUrl = proto + '://' + host + '/api/address';
-  const accepts = lanes.map((l) => laneRequirements(l, resourceUrl));
+  const accepts = lanes.map((l) => laneRequirements(l));
 
-  const header = req.headers['x-payment'];
+  // x402 v2 header is PAYMENT-SIGNATURE; X-PAYMENT kept as a v1-client fallback.
+  const header = req.headers['payment-signature'] || req.headers['x-payment'];
   if (!header) {
-    return { status: 402, body: { x402Version: 1, error: 'Payment required', accepts } };
+    return { status: 402, body: paymentRequired(resourceUrl, accepts, 'Payment required') };
   }
 
   let payment;
   try {
     payment = JSON.parse(Buffer.from(String(header), 'base64').toString('utf8'));
   } catch (e) {
-    return { status: 402, body: { x402Version: 1, error: 'Malformed X-PAYMENT header', accepts } };
+    return { status: 402, body: paymentRequired(resourceUrl, accepts, 'Malformed PAYMENT-SIGNATURE header') };
   }
 
-  // Route to the lane the agent chose to pay on.
+  // Route to the lane the agent chose to pay on (v2: network lives in payload.accepted; v1: top-level).
+  const paidNetwork = payment && ((payment.accepted && payment.accepted.network) || payment.network);
   const idx = lanes.findIndex((l) => {
     const env = laneNet(l) === 'mainnet' ? l.mainnet : l.devnet;
-    return payment && payment.network === env.network;
+    return paidNetwork === env.network;
   });
   if (idx === -1) {
-    return { status: 402, body: { x402Version: 1, error: 'Unsupported payment network', accepts } };
+    return { status: 402, body: paymentRequired(resourceUrl, accepts, 'Unsupported payment network') };
   }
   const lane = lanes[idx];
   const requirements = accepts[idx];
 
   try {
-    const v = await callFacilitator(lane.facilitator, '/verify', { x402Version: 1, paymentPayload: payment, paymentRequirements: requirements });
+    // paymentPayload is forwarded untouched so any echoed "extensions.bazaar" reaches the facilitator.
+    const v = await callFacilitator(lane.facilitator, '/verify', { x402Version: 2, paymentPayload: payment, paymentRequirements: requirements });
     if (!v || v.isValid !== true) {
-      return { status: 402, body: { x402Version: 1, error: (v && v.invalidReason) || 'Payment invalid', accepts } };
+      return { status: 402, body: paymentRequired(resourceUrl, accepts, (v && v.invalidReason) || 'Payment invalid') };
     }
-    const s = await callFacilitator(lane.facilitator, '/settle', { x402Version: 1, paymentPayload: payment, paymentRequirements: requirements });
+    const s = await callFacilitator(lane.facilitator, '/settle', { x402Version: 2, paymentPayload: payment, paymentRequirements: requirements });
     if (!s || s.success !== true) {
-      return { status: 402, body: { x402Version: 1, error: (s && s.errorReason) || 'Settlement failed', accepts } };
+      return { status: 402, body: paymentRequired(resourceUrl, accepts, (s && s.errorReason) || 'Settlement failed') };
     }
-    return { settled: s }; // caller attaches X-PAYMENT-RESPONSE
+    return { settled: s }; // caller attaches PAYMENT-RESPONSE
   } catch (e) {
     console.error('x402 facilitator error', e && e.message);
     return { status: 502, body: { error: 'Payment processor unreachable. Try again shortly.' } };
@@ -244,11 +305,16 @@ export default async function handler(req, res) {
   // ----- x402 gate -----
   const gate = await x402Gate(req);
   if (gate && gate.status) {
+    if (gate.status === 402) {
+      try { res.setHeader('PAYMENT-REQUIRED', Buffer.from(JSON.stringify(gate.body)).toString('base64')); } catch (e) { /* non-fatal */ }
+    }
     return res.status(gate.status).json(gate.body);
   }
   if (gate && gate.settled) {
     try {
-      res.setHeader('X-PAYMENT-RESPONSE', Buffer.from(JSON.stringify(gate.settled)).toString('base64'));
+      const b64 = Buffer.from(JSON.stringify(gate.settled)).toString('base64');
+      res.setHeader('PAYMENT-RESPONSE', b64);   // x402 v2
+      res.setHeader('X-PAYMENT-RESPONSE', b64); // v1 clients
     } catch (e) { /* non-fatal */ }
   }
 
