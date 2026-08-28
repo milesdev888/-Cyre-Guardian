@@ -2,6 +2,10 @@
 // Facts about a token mint before you trade it. Patterns, not verdicts.
 // GET /api/token?mint=<address>
 // Optional: &holders=1 → holders-only retry (uses getTokenSupply + largest accounts).
+// Site + Vercel previews stay FREE. Agents pay via x402 (see ./_x402.js).
+//   X402_PRICE_TOKEN — atomic USDC (default 10000 = $0.01)
+
+import { createX402Gate, applyX402Result, isCyreOrPreviewRequest } from './_x402.js';
 
 const PRIMARY = process.env.SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
 const FALLBACKS = String(process.env.SOLANA_RPC_FALLBACK || '')
@@ -9,14 +13,86 @@ const FALLBACKS = String(process.env.SOLANA_RPC_FALLBACK || '')
   .map((s) => s.trim())
   .filter(Boolean);
 const RPCS = [PRIMARY, ...FALLBACKS].filter((u, i, a) => u && a.indexOf(u) === i);
-const ALLOWED = ['https://cyre.dev', 'https://www.cyre.dev'];
 
-function isAllowedRequest(origin, referer) {
-  if (ALLOWED.some((a) => origin === a || referer.startsWith(a))) return true;
-  // Vercel preview deploys for this project (so PR scans can resolve name/symbol)
-  const preview = /^https:\/\/cyre-guardian[\w.-]*\.vercel\.app/;
-  return preview.test(origin) || preview.test(referer);
-}
+const TOKEN_DESCRIPTION = 'Guardian token scan — mint/freeze authority, holder concentration, and supply facts. Patterns, not verdicts.';
+
+const TOKEN_DISCOVERY = {
+  bazaar: {
+    info: {
+      input: {
+        type: 'http',
+        method: 'GET',
+        queryParams: { mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' }
+      },
+      output: {
+        type: 'json',
+        example: {
+          mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+          name: 'USD Coin',
+          symbol: 'USDC',
+          supply: 1000000,
+          decimals: 6,
+          mintAuthorityRevoked: true,
+          freezeAuthorityRevoked: true,
+          score: 0,
+          risk: 'LOW',
+          signals: [{ level: 'good', text: 'Mint authority revoked — supply is fixed.' }]
+        }
+      }
+    },
+    schema: {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        input: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'http' },
+            method: { type: 'string', enum: ['GET', 'HEAD', 'DELETE'] },
+            queryParams: {
+              type: 'object',
+              properties: {
+                mint: { type: 'string', description: 'Solana token mint address (base58)' }
+              },
+              required: ['mint']
+            }
+          },
+          required: ['type', 'method'],
+          additionalProperties: false
+        },
+        output: {
+          type: 'object',
+          properties: {
+            type: { type: 'string' },
+            example: {
+              type: 'object',
+              properties: {
+                mint: { type: 'string' },
+                name: { type: 'string' },
+                symbol: { type: 'string' },
+                score: { type: 'number' },
+                risk: { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH'] },
+                signals: { type: 'array' }
+              }
+            }
+          },
+          required: ['type']
+        }
+      },
+      required: ['input']
+    }
+  }
+};
+
+const x402Gate = createX402Gate({
+  price: String(process.env.X402_PRICE_TOKEN || '10000'),
+  resourcePath: '/api/token',
+  description: TOKEN_DESCRIPTION,
+  serviceName: 'CYRE Guardian',
+  tags: ['risk', 'fraud', 'solana', 'token', 'security'],
+  discovery: TOKEN_DISCOVERY,
+  isFree: isCyreOrPreviewRequest
+});
 
 // best-effort per-instance throttle (same pattern as api/chat.js)
 let calls = 0, windowStart = Date.now();
@@ -274,11 +350,9 @@ function buildSignals(mintAuthority, freezeAuthority, holders) {
 }
 
 export default async function handler(req, res) {
-  // origin gate
-  const origin = req.headers.origin || '';
-  const referer = req.headers.referer || '';
-  if (!isAllowedRequest(origin, referer))
-    return res.status(403).json({ error: 'forbidden' });
+  // x402 gate (site + Vercel preview stay free)
+  const gate = await x402Gate(req);
+  if (applyX402Result(res, gate)) return;
 
   // throttle: 60 scans/min per warm instance
   const now = Date.now();

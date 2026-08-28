@@ -18,82 +18,17 @@
 //   X402_FACILITATOR_BASE  Base facilitator URL (default: https://x402.org/facilitator — testnet;
 //                          mainnet needs a production facilitator, e.g. Coinbase CDP)
 // An agent gets ALL armed lanes in the 402 "accepts" list and pays on whichever chain it prefers.
+// Gate implementation: ./_x402.js
+
+import { createX402Gate, applyX402Result, isCyreSiteRequest } from './_x402.js';
 
 const RPC = process.env.SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
 const B58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const DAY = 86400;
 
-// ---------- x402 config ----------
-const X402_ENABLED = process.env.X402_ENABLED === 'true';
-const NET = (process.env.X402_NETWORK || 'devnet').toLowerCase();
-const PRICE = String(process.env.X402_PRICE || '5000'); // $0.005 USDC (6 decimals on both chains)
 const DESCRIPTION = 'Guardian address profile — explainable on-chain risk signals. Patterns, not verdicts.';
 
-const DEFAULT_FACILITATOR = 'https://x402.org/facilitator';
-const CDP_FACILITATOR = 'https://api.cdp.coinbase.com/platform/v2/x402';
-const CDP_KEY_ID = process.env.CDP_API_KEY_ID || '';
-const CDP_KEY_SECRET = process.env.CDP_API_KEY_SECRET || '';
-const NET_BASE = (process.env.X402_NETWORK_BASE || 'mainnet').toLowerCase();
-
-// Each lane: CAIP-2 network id + USDC contract per environment, its own treasury + facilitator.
-const LANES = [
-  {
-    name: 'solana',
-    payTo: process.env.X402_PAY_TO || '',
-    facilitator: (process.env.X402_FACILITATOR || DEFAULT_FACILITATOR).replace(/\/$/, ''),
-    mainnet: { network: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp', usdc: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
-    devnet: { network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1', usdc: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU' }
-  },
-  {
-    name: 'base',
-    payTo: process.env.X402_PAY_TO_BASE || '0x9Ff25C4acf1DcDDf15fD2702C127A285f1dFa712',
-    facilitator: (process.env.X402_FACILITATOR_BASE || (CDP_KEY_ID && CDP_KEY_SECRET ? CDP_FACILITATOR : DEFAULT_FACILITATOR)).replace(/\/$/, ''),
-    mainnet: { network: 'eip155:8453', usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', extra: { name: 'USD Coin', version: '2' } },
-    devnet: { network: 'eip155:84532', usdc: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', extra: { name: 'USDC', version: '2' } } // Base Sepolia
-  }
-];
-
-function armedLanes() {
-  return LANES.filter((l) => l.payTo);
-}
-
-function laneNet(lane) {
-  return lane.name === 'base' ? NET_BASE : NET;
-}
-
-function laneRequirements(lane) {
-  const env = laneNet(lane) === 'mainnet' ? lane.mainnet : lane.devnet;
-  // x402 v2 PaymentRequirements: CAIP-2 network, atomic "amount", asset's EIP-712 domain in extra.
-  return {
-    scheme: 'exact',
-    network: env.network,
-    amount: PRICE,
-    asset: env.usdc,
-    payTo: lane.payTo,
-    maxTimeoutSeconds: 60,
-    extra: env.extra || {}
-  };
-}
-
-function normAddr(v) {
-  const s = String(v || '');
-  return s.startsWith('0x') ? s.toLowerCase() : s;
-}
-
-// x402 v2 "resource" object — service metadata is what Bazaar uses to render the listing.
-function resourceInfo(resourceUrl) {
-  return {
-    url: resourceUrl,
-    description: DESCRIPTION,
-    mimeType: 'application/json',
-    serviceName: 'CYRE Guardian',
-    tags: ['risk', 'fraud', 'solana', 'wallet', 'security'],
-    iconUrl: 'https://cyre.dev/favicon.png'
-  };
-}
-
 // Bazaar discovery extension (x402 v2 shape, mirrors @x402/extensions declareDiscoveryExtension for GET).
-// Agents echo this into their PaymentPayload; the facilitator catalogs the route on settle.
 const DISCOVERY = {
   bazaar: {
     info: {
@@ -158,172 +93,15 @@ const DISCOVERY = {
   }
 };
 
-function paymentRequired(resourceUrl, accepts, error) {
-  return { x402Version: 2, error, resource: resourceInfo(resourceUrl), accepts, extensions: DISCOVERY };
-}
-
-function isSiteRequest(req) {
-  const src = String(req.headers.origin || req.headers.referer || '');
-  return /^https:\/\/(www\.)?cyre\.dev(\/|$)/.test(src);
-}
-
-// ---- Coinbase CDP JWT (zero-dep; Node crypto only) ----
-// Supports both CDP secret formats: Ed25519 (base64, new keys) and ECDSA P-256 (PEM, legacy keys).
-function b64url(buf) {
-  return Buffer.from(buf).toString('base64').replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
-}
-
-function cdpPrivateKey() {
-  const crypto = require('crypto');
-  const secret = CDP_KEY_SECRET.trim();
-  if (secret.includes('BEGIN')) {
-    return { key: crypto.createPrivateKey(secret), alg: 'ES256' };
-  }
-  const raw = Buffer.from(secret, 'base64');
-  if (raw.length !== 64) {
-    throw new Error('CDP Ed25519 secret must decode to 64 bytes');
-  }
-  const seed = raw.subarray(0, 32);
-  const publicKey = raw.subarray(32);
-  return {
-    key: crypto.createPrivateKey({
-      key: { kty: 'OKP', crv: 'Ed25519', d: seed.toString('base64url'), x: publicKey.toString('base64url') },
-      format: 'jwk'
-    }),
-    alg: 'EdDSA'
-  };
-}
-
-function cdpJwt(method, urlPath) {
-  const crypto = require('crypto');
-  const { key, alg } = cdpPrivateKey();
-  const now = Math.floor(Date.now() / 1000);
-  const header = { alg, kid: CDP_KEY_ID, typ: 'JWT', nonce: crypto.randomBytes(16).toString('hex') };
-  const payload = {
-    iss: 'cdp',
-    sub: CDP_KEY_ID,
-    nbf: now,
-    exp: now + 120,
-    uris: [method + ' ' + 'api.cdp.coinbase.com' + urlPath]
-  };
-  const signingInput = b64url(JSON.stringify(header)) + '.' + b64url(JSON.stringify(payload));
-  let sig;
-  if (alg === 'EdDSA') {
-    sig = crypto.sign(null, Buffer.from(signingInput), key);
-  } else {
-    sig = crypto.sign('sha256', Buffer.from(signingInput), { key, dsaEncoding: 'ieee-p1363' });
-  }
-  return signingInput + '.' + b64url(sig);
-}
-
-async function callFacilitator(base, path, body) {
-  const headers = { 'content-type': 'application/json' };
-  if (base.includes('api.cdp.coinbase.com') && CDP_KEY_ID && CDP_KEY_SECRET) {
-    const urlPath = new URL(base + path).pathname;
-    headers.authorization = 'Bearer ' + cdpJwt('POST', urlPath);
-  }
-  const r = await fetch(base + path, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify(body)
-  });
-  const text = await r.text();
-  let data;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch (e) {
-    data = null;
-  }
-  // CDP verify/settle often return structured JSON on 400 (invalid payment), not just hard failures.
-  if (data && (Object.prototype.hasOwnProperty.call(data, 'isValid') || Object.prototype.hasOwnProperty.call(data, 'success'))) {
-    return data;
-  }
-  if (!r.ok) throw new Error('facilitator ' + path + ' ' + r.status + ' ' + text.slice(0, 300));
-  return data || {};
-}
-
-// Returns null if the request may proceed; otherwise an object {status, body} to send.
-async function x402Gate(req) {
-  if (!X402_ENABLED) return null;          // gate disarmed — everything free
-  if (isSiteRequest(req)) return null;     // cyre.dev visitors stay free
-
-  // Internal services (mention-grader, watchers) bypass with a shared key.
-  const internalKey = process.env.X402_INTERNAL_KEY || '';
-  if (internalKey && req.headers['x-guardian-key'] === internalKey) return null;
-
-  const lanes = armedLanes();
-  if (!lanes.length) {
-    console.error('x402: X402_ENABLED but no treasury set (X402_PAY_TO / X402_PAY_TO_BASE) — serving free');
-    return null;                           // misconfig must never break the product
-  }
-
-  const proto = req.headers['x-forwarded-proto'] || 'https';
-  const host = req.headers['x-forwarded-host'] || req.headers.host || 'cyre.dev';
-  const resourceUrl = proto + '://' + host + '/api/address';
-  const accepts = lanes.map((l) => laneRequirements(l));
-
-  // x402 v2 header is PAYMENT-SIGNATURE; X-PAYMENT kept as a v1-client fallback.
-  const header = req.headers['payment-signature'] || req.headers['x-payment'];
-  if (!header) {
-    return { status: 402, body: paymentRequired(resourceUrl, accepts, 'Payment required') };
-  }
-
-  let payment;
-  try {
-    payment = JSON.parse(Buffer.from(String(header), 'base64').toString('utf8'));
-  } catch (e) {
-    return { status: 402, body: paymentRequired(resourceUrl, accepts, 'Malformed PAYMENT-SIGNATURE header') };
-  }
-
-  // Route to the lane the agent chose to pay on (v2: network lives in payload.accepted; v1: top-level).
-  const paidNetwork = payment && ((payment.accepted && payment.accepted.network) || payment.network);
-  const idx = lanes.findIndex((l) => {
-    const env = laneNet(l) === 'mainnet' ? l.mainnet : l.devnet;
-    return paidNetwork === env.network;
-  });
-  if (idx === -1) {
-    return { status: 402, body: paymentRequired(resourceUrl, accepts, 'Unsupported payment network') };
-  }
-  const lane = lanes[idx];
-  const expected = accepts[idx];
-  const accepted = payment && payment.accepted;
-  if (!accepted) {
-    return { status: 402, body: paymentRequired(resourceUrl, accepts, 'Malformed payment payload') };
-  }
-  try {
-    if (BigInt(accepted.amount || '0') < BigInt(expected.amount || '0')) {
-      return { status: 402, body: paymentRequired(resourceUrl, accepts, 'amount_too_low') };
-    }
-  } catch (e) {
-    return { status: 402, body: paymentRequired(resourceUrl, accepts, 'amount_too_low') };
-  }
-  if (accepted.scheme !== expected.scheme ||
-      accepted.network !== expected.network ||
-      normAddr(accepted.asset) !== normAddr(expected.asset) ||
-      normAddr(accepted.payTo) !== normAddr(expected.payTo)) {
-    return { status: 402, body: paymentRequired(resourceUrl, accepts, 'offer_mismatch') };
-  }
-  // Forward the client-signed offer once pinned fields match Guardian's lane.
-  const requirements = accepted;
-
-  try {
-    // paymentPayload is forwarded untouched so any echoed "extensions.bazaar" reaches the facilitator.
-    const v = await callFacilitator(lane.facilitator, '/verify', { x402Version: 2, paymentPayload: payment, paymentRequirements: requirements });
-    if (!v || v.isValid !== true) {
-      const reason = (v && (v.invalidMessage || v.invalidReason)) || 'Payment invalid';
-      return { status: 402, body: paymentRequired(resourceUrl, accepts, reason) };
-    }
-    const s = await callFacilitator(lane.facilitator, '/settle', { x402Version: 2, paymentPayload: payment, paymentRequirements: requirements });
-    if (!s || s.success !== true) {
-      const reason = (s && (s.errorMessage || s.errorReason)) || 'Settlement failed';
-      return { status: 402, body: paymentRequired(resourceUrl, accepts, reason) };
-    }
-    return { settled: s }; // caller attaches PAYMENT-RESPONSE
-  } catch (e) {
-    console.error('x402 facilitator error', e && e.message);
-    return { status: 502, body: { error: 'Payment processor unreachable. Try again shortly.', detail: String((e && e.message) || e).slice(0, 300) } };
-  }
-}
+const x402Gate = createX402Gate({
+  price: String(process.env.X402_PRICE || '5000'),
+  resourcePath: '/api/address',
+  description: DESCRIPTION,
+  serviceName: 'CYRE Guardian',
+  tags: ['risk', 'fraud', 'solana', 'wallet', 'security'],
+  discovery: DISCOVERY,
+  isFree: isCyreSiteRequest
+});
 
 // ---------- chain reads (unchanged) ----------
 async function rpc(method, params) {
@@ -350,19 +128,7 @@ export default async function handler(req, res) {
 
   // ----- x402 gate -----
   const gate = await x402Gate(req);
-  if (gate && gate.status) {
-    if (gate.status === 402) {
-      try { res.setHeader('PAYMENT-REQUIRED', Buffer.from(JSON.stringify(gate.body)).toString('base64')); } catch (e) { /* non-fatal */ }
-    }
-    return res.status(gate.status).json(gate.body);
-  }
-  if (gate && gate.settled) {
-    try {
-      const b64 = Buffer.from(JSON.stringify(gate.settled)).toString('base64');
-      res.setHeader('PAYMENT-RESPONSE', b64);   // x402 v2
-      res.setHeader('X-PAYMENT-RESPONSE', b64); // v1 clients
-    } catch (e) { /* non-fatal */ }
-  }
+  if (applyX402Result(res, gate)) return;
 
   try {
     const [sigs, bal] = await Promise.all([
