@@ -45,7 +45,8 @@ async function pmGet(path, params = {}, authed = false) {
   for (const [k, v] of Object.entries(clean)) Array.isArray(v) ? v.forEach(x => qs.append(k, x)) : qs.append(k, v);
   const url = `${BASE}${path}${qs.toString() ? '?' + qs : ''}`;
   const headers = { accept: 'application/json' };
-  if (authed) Object.assign(headers, authHeaders('GET', path));
+  // Polymarket US returns 401 on nominally-public endpoints without a key, so sign everything when keys exist
+  if (authed || process.env.POLYMARKET_KEY_ID) Object.assign(headers, authHeaders('GET', path));
   const r = await fetch(url, { headers });
   const body = await r.json().catch(() => ({}));
   return { status: r.status, body };
@@ -64,7 +65,8 @@ const TOOLS = [
     run: async () => {
       const r = await pmGet('/v1/account/balances', {}, true);
       if (r.status !== 200) return fail(r, 'auth check');
-      return `OK — connected. Balance $${r.body.currentBalance} ${r.body.currency || 'USD'}, buying power $${r.body.buyingPower}`;
+      const b = Array.isArray(r.body.balances) ? r.body.balances[0] : r.body;
+      return `OK — connected. Balance $${b?.currentBalance} ${b?.currency || 'USD'}, buying power $${b?.buyingPower}`;
     },
   },
   {
@@ -204,7 +206,7 @@ async function handleRpc(msg) {
     return rpcResult(id, {
       protocolVersion: params?.protocolVersion || '2025-03-26',
       capabilities: { tools: {} },
-      serverInfo: { name: 'cyre-polymarket-bridge', version: '1.0.0' },
+      serverInfo: { name: 'cyre-polymarket-bridge', version: '1.0.1' },
     });
   }
   if (method === 'notifications/initialized' || (method && method.startsWith('notifications/'))) return null;
