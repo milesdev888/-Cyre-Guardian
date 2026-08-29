@@ -350,16 +350,24 @@ function buildSignals(mintAuthority, freezeAuthority, holders) {
 }
 
 export default async function handler(req, res) {
-  // x402 gate (site + Vercel preview stay free)
-  const gate = await x402Gate(req);
-  if (applyX402Result(res, gate)) return;
+  const mint = (req.query.mint || '').trim();
+
+  // ----- x402 gate, quote step -----
+  // Unpaid callers get the 402 quote BEFORE any input validation, so Bazaar's
+  // /validate crawler (bare probe, no params) sees a 402 and not a 400.
+  // Nothing is computed or billed here.
+  const hasPayment = !!(req.headers['payment-signature'] || req.headers['x-payment']);
+  if (!hasPayment) {
+    const quote = await x402Gate(req);
+    if (applyX402Result(res, quote)) return;
+  }
 
   // throttle: 60 scans/min per warm instance
   const now = Date.now();
   if (now - windowStart > 60000) { calls = 0; windowStart = now; }
   if (++calls > 60) return res.status(429).json({ error: 'slow down' });
 
-  const mint = (req.query.mint || '').trim();
+  // ----- input validation (refusals stay free — runs before any settle) -----
   if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint))
     return res.status(400).json({ error: 'not a valid Solana address' });
 
@@ -373,13 +381,33 @@ export default async function handler(req, res) {
     let holders = { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
     let meta = { name: null, symbol: null };
 
+    // ----- mint existence BEFORE settle (reuse result downstream; no duplicate RPC) -----
+    let supplyValue = null;
+    let mintInfo = null;
+    if (holdersOnly) {
+      const tokSupply = await rpc('getTokenSupply', [mint, { commitment: 'confirmed' }]);
+      supplyValue = tokSupply && tokSupply.value;
+      if (!supplyValue) return res.status(404).json({ error: 'mint supply not found' });
+    } else {
+      const acct = await rpc('getAccountInfo', [mint, { encoding: 'jsonParsed', commitment: 'confirmed' }]);
+      if (!acct || !acct.value) return res.status(404).json({ error: 'account not found' });
+      const parsed = acct.value.data && acct.value.data.parsed;
+      if (!parsed || parsed.type !== 'mint')
+        return res.status(400).json({ error: 'address is not a token mint' });
+      mintInfo = parsed.info;
+    }
+
+    // ----- x402 gate, verify + settle step (paid callers only; mint already resolved) -----
+    if (hasPayment) {
+      const gate = await x402Gate(req);
+      if (applyX402Result(res, gate)) return;
+    }
+
     if (holdersOnly) {
       // Prefer index (no RPC). Only hit chain if the index has no topHolders.
       const holdersP = measureHoldersViaRugcheck(mint).catch(() => null);
       const jupMetaP = fetchMetaViaJupiter(mint);
-      const tokSupply = await rpc('getTokenSupply', [mint, { commitment: 'confirmed' }]);
-      const v = tokSupply && tokSupply.value;
-      if (!v) return res.status(404).json({ error: 'mint supply not found' });
+      const v = supplyValue;
       decimals = Number(v.decimals) || 0;
       supply = Number(v.uiAmount);
       if (!Number.isFinite(supply)) {
@@ -399,17 +427,9 @@ export default async function handler(req, res) {
         meta = await fetchTokenMeta(mint, meta);
       }
     } else {
-      // Mint account + holder index + Jupiter meta in parallel
-      const acctP = rpc('getAccountInfo', [mint, { encoding: 'jsonParsed', commitment: 'confirmed' }]);
       const holdersP = measureHoldersViaRugcheck(mint).catch(() => null);
       const jupMetaP = fetchMetaViaJupiter(mint);
-      const acct = await acctP;
-      if (!acct || !acct.value) return res.status(404).json({ error: 'account not found' });
-      const parsed = acct.value.data && acct.value.data.parsed;
-      if (!parsed || parsed.type !== 'mint')
-        return res.status(400).json({ error: 'address is not a token mint' });
-
-      const info = parsed.info;
+      const info = mintInfo;
       mintAuthority = info.mintAuthority || null;   // null = revoked
       freezeAuthority = info.freezeAuthority || null;
       decimals = info.decimals;
