@@ -112,6 +112,10 @@ img{max-width:100%;display:block}
   border:1px solid rgba(0,82,255,.42);
   box-shadow:0 0 16px rgba(0,82,255,.45), 0 0 28px rgba(87,139,255,.32);
 }
+.brand-r{
+  color:var(--cb-blue);
+  text-shadow:0 0 10px rgba(0,82,255,.75), 0 0 22px rgba(0,82,255,.45);
+}
 .nav-links a.nav-token{
   display:inline-flex;
   align-items:center;
