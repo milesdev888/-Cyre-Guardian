@@ -79,7 +79,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/chain-pulse.js` | GET `/api/chain-pulse` — one cached `getSlot` / 30s (`CHAIN_PULSE_CACHE_SEC`). Light UI pulse; **not** the Render watcher cron. |
 | `apps.html` | Redirects to `/app` (legacy hub URL). |
 | `app.html` | **Guardian Console** — single entry for all products → cyre.dev/app. |
-| `app-redirect.js` | Standalone product URLs redirect to `/app#view` (skipped when `?embed=1` for iframes). |
+| `app-redirect.js` | Standalone product URLs redirect to `/app#view` (skipped when `?embed=1` for iframes). **`/check` and `/scan` do not redirect** — they stay standalone for ad landings (no $C7 app chrome). |
 | `guardian-app.js` | Console routing, quick lookup, iframe loader, session context for address/mint. |
 | `guardian-app.css` | Console shell styles (sidebar, dashboard, bottom nav). |
 | `embed-mode.js` / `embed-mode.css` | Hides page chrome when tools run inside Guardian App iframes (`?embed=1`). |
