@@ -104,11 +104,11 @@ img{max-width:100%;display:block}
   font-size:14px;
 }
 .brand-orb{
-  width:22px;
-  height:22px;
+  width:24px;
+  height:24px;
   border-radius:50%;
   flex:none;
-  background:url('/cyre-token-icon-128.png') center/cover no-repeat;
+  background:url('/cyre-token-ticker-128.png') center/cover no-repeat;
   border:1px solid rgba(0,82,255,.42);
   box-shadow:0 0 16px rgba(0,82,255,.45), 0 0 28px rgba(87,139,255,.32);
 }
