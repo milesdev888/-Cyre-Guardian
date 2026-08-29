@@ -122,13 +122,26 @@ function signal(id, name, points, triggered, detail) {
 export default async function handler(req, res) {
   const address = String((req.query && req.query.address) || '').trim();
 
+  // ----- x402 gate, quote step -----
+  // Unpaid callers get the 402 quote BEFORE any input validation, so Bazaar's
+  // /validate crawler (bare probe, no params) sees a 402 and not a 400.
+  // Nothing is computed or billed here.
+  const hasPayment = !!(req.headers['payment-signature'] || req.headers['x-payment']);
+  if (!hasPayment) {
+    const quote = await x402Gate(req);
+    if (applyX402Result(res, quote)) return;
+  }
+
+  // ----- input validation (refusals stay free — runs before any settle) -----
   if (!B58.test(address)) {
     return res.status(400).json({ error: 'That does not look like a Solana address.' });
   }
 
-  // ----- x402 gate -----
-  const gate = await x402Gate(req);
-  if (applyX402Result(res, gate)) return;
+  // ----- x402 gate, verify + settle step (paid callers only) -----
+  if (hasPayment) {
+    const gate = await x402Gate(req);
+    if (applyX402Result(res, gate)) return;
+  }
 
   try {
     const [sigs, bal] = await Promise.all([
