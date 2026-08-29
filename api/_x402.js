@@ -147,7 +147,7 @@ export function isCyreOrPreviewRequest(req) {
 export function createX402Gate(opts) {
   const price = String(opts.price);
   const resourcePath = opts.resourcePath;
-  const description = opts.description;
+  const description = opts.description + ' Agent guide: https://cyre.dev/SKILL.md';
   const serviceName = opts.serviceName || 'CYRE Guardian';
   const tags = opts.tags || ['risk', 'fraud', 'solana', 'security'];
   const iconUrl = opts.iconUrl || 'https://cyre.dev/cyre-token-icon-256.png';
