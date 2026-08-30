@@ -7,14 +7,15 @@
 //   CDP_API_KEY_ID, CDP_API_KEY_SECRET
 //   X402_PAY_TO, X402_FACILITATOR, X402_PAY_TO_BASE, X402_FACILITATOR_BASE
 //   -- BNB Chain / B402 lane (dormant until X402_PAY_TO_BSC is set) --
-//   X402_PAY_TO_BSC, X402_NETWORK_BSC (mainnet|testnet), X402_ASSET_BSC, X402_FACILITATOR_BSC
-//   B402_CLIENT_ID | B402_API_KEY, B402_ACCESS_TOKEN | B402_API_SECRET, B402_RSA_PRIVATE_KEY
-//   B402_SIGNER_ADDRESS, B402_SPENDER_ADDRESS (from POST /papi/v2/b402/supported — forward in extra)
-//   X402_INTERNAL_KEY — bypass via x-guardian-key header
-// See docs/B402-RESEARCH.md
+//   X402_PAY_TO_BSC, X402_NETWORK_BSC (mainnet|testnet), X402_ASSET_BSC
+//   X402_FACILITATOR_BSC — Render relay base (default …/internal/b402); Vercel never holds B402 secrets
+//   Optional extra fallbacks if relay /supported unavailable: B402_SIGNER_ADDRESS, B402_SPENDER_ADDRESS
+//   X402_INTERNAL_KEY — bypass via x-guardian-key; also auth to the B402 relay
+// See docs/B402-RESEARCH.md · docs/B402-ENV.md
 
 const DEFAULT_FACILITATOR = 'https://x402.org/facilitator';
 const CDP_FACILITATOR = 'https://api.cdp.coinbase.com/platform/v2/x402';
+const DEFAULT_B402_RELAY = 'https://cyre-fraud-prediction.onrender.com/internal/b402';
 const CDP_KEY_ID = process.env.CDP_API_KEY_ID || '';
 const CDP_KEY_SECRET = process.env.CDP_API_KEY_SECRET || '';
 const X402_ENABLED = process.env.X402_ENABLED === 'true';
@@ -33,6 +34,13 @@ const BSC_ASSETS = {
   }
 };
 
+const BSC_EXTRA_TTL_MS = 5 * 60 * 1000;
+const SETTLE_POLL_MS = 10000;
+const SETTLE_POLL_INTERVAL_MS = 400;
+
+/** @type {{ at: number, key: string, extra: object|null }} */
+let bscExtraCache = { at: 0, key: '', extra: null };
+
 function bscAssetConfig() {
   const net = (process.env.X402_NETWORK_BSC || 'mainnet').toLowerCase();
   const envKey = net === 'testnet' ? 'testnet' : 'mainnet';
@@ -46,22 +54,16 @@ function buildBscLane() {
   const asset = bscAssetConfig();
   const net = (process.env.X402_NETWORK_BSC || 'mainnet').toLowerCase();
   const network = net === 'testnet' ? 'eip155:97' : 'eip155:56';
-  const extra = {
-    name: process.env.X402_ASSET_BSC_NAME || asset.name,
-    version: process.env.X402_ASSET_BSC_VERSION || asset.version,
-    assetTransferMethod: process.env.X402_BSC_TRANSFER_METHOD || 'permit2-exact',
-    signerAddress: process.env.B402_SIGNER_ADDRESS || '',
-    spenderAddress: process.env.B402_SPENDER_ADDRESS || ''
-  };
   return {
     name: 'bsc',
     payTo,
-    facilitator: String(process.env.X402_FACILITATOR_BSC || '').replace(/\/$/, ''),
-    auth: 'b402',
-    verifyPath: '/papi/v2/b402/verify',
-    settlePath: '/papi/v2/b402/settle',
-    mainnet: { network, usdc: asset.address, decimals: asset.decimals, extra, scheme: 'exact' },
-    devnet: { network, usdc: asset.address, decimals: asset.decimals, extra, scheme: 'exact' }
+    facilitator: String(process.env.X402_FACILITATOR_BSC || DEFAULT_B402_RELAY).replace(/\/$/, ''),
+    auth: 'relay',
+    verifyPath: '/verify',
+    settlePath: '/settle',
+    // extra filled at offer time from /supported (or env fallback) — never guess
+    mainnet: { network, usdc: asset.address, decimals: asset.decimals, extra: {}, scheme: 'exact' },
+    devnet: { network, usdc: asset.address, decimals: asset.decimals, extra: {}, scheme: 'exact' }
   };
 }
 
@@ -107,6 +109,10 @@ export function armedLanes() {
 
 export function listArmedLaneNames() {
   return armedLanes().map((l) => l.name);
+}
+
+export function clearBscExtraCache() {
+  bscExtraCache = { at: 0, key: '', extra: null };
 }
 
 function laneNet(lane) {
@@ -188,50 +194,106 @@ function cdpJwt(method, urlPath) {
   return signingInput + '.' + b64url(sig);
 }
 
-function b402Credentials() {
-  const clientId = process.env.B402_CLIENT_ID || process.env.B402_API_KEY || '';
-  const accessToken = process.env.B402_ACCESS_TOKEN || process.env.B402_API_SECRET || '';
-  const rsa = process.env.B402_RSA_PRIVATE_KEY || '';
-  return { clientId, accessToken, rsa };
+/** Peel Binance BAPI envelope `{ code, data }` when present. */
+export function unwrapFacilitatorData(data) {
+  if (!data || typeof data !== 'object') return data;
+  if (data.data && typeof data.data === 'object') {
+    if (data.code != null ||
+        Object.prototype.hasOwnProperty.call(data.data, 'isValid') ||
+        Object.prototype.hasOwnProperty.call(data.data, 'success') ||
+        Object.prototype.hasOwnProperty.call(data.data, 'kinds') ||
+        Object.prototype.hasOwnProperty.call(data.data, 'transaction')) {
+      return data.data;
+    }
+  }
+  return data;
 }
 
-function b402Headers(bodyString) {
-  const crypto = require('crypto');
-  const { clientId, accessToken, rsa } = b402Credentials();
-  if (!clientId || !accessToken || !rsa) {
-    throw new Error('B402 credentials missing (B402_CLIENT_ID/B402_API_KEY, B402_ACCESS_TOKEN/B402_API_SECRET, B402_RSA_PRIVATE_KEY)');
-  }
-  const timestamp = Date.now().toString();
-  const toSign = bodyString + timestamp;
-  let privateKey;
-  if (rsa.includes('BEGIN')) {
-    privateKey = crypto.createPrivateKey(rsa);
-  } else {
-    privateKey = crypto.createPrivateKey({
-      key: Buffer.from(rsa.trim(), 'base64'),
-      format: 'der',
-      type: 'pkcs8'
-    });
-  }
-  const signature = crypto.createSign('SHA256').update(toSign, 'utf8').sign(privateKey, 'base64');
+function envBscExtraFallback() {
+  const asset = bscAssetConfig();
+  const signer = process.env.B402_SIGNER_ADDRESS || '';
+  const spender = process.env.B402_SPENDER_ADDRESS || '';
+  if (!signer || !spender) return null;
   return {
-    'content-type': 'application/json',
-    'X-Tesla-ClientId': clientId,
-    'X-Tesla-SignAccessToken': accessToken,
-    'X-Tesla-Timestamp': timestamp,
-    'X-Tesla-Signature': signature
+    name: process.env.X402_ASSET_BSC_NAME || asset.name,
+    version: process.env.X402_ASSET_BSC_VERSION || asset.version,
+    assetTransferMethod: process.env.X402_BSC_TRANSFER_METHOD || 'permit2-exact',
+    signerAddress: signer,
+    spenderAddress: spender
   };
 }
 
-function unwrapFacilitatorData(data) {
-  if (!data || typeof data !== 'object') return data;
-  // Binance BAPI envelope: { code, message, data: { isValid|success|... } }
-  if (data.data && typeof data.data === 'object' &&
-      (Object.prototype.hasOwnProperty.call(data.data, 'isValid') ||
-       Object.prototype.hasOwnProperty.call(data.data, 'success'))) {
-    return data.data;
+function pickSupportedExtra(data, network, assetAddr, method) {
+  const kinds = (data && (data.kinds || data.accepted)) || [];
+  if (!Array.isArray(kinds)) return null;
+  const wantAsset = normAddr(assetAddr);
+  const wantMethod = method || 'permit2-exact';
+  for (const k of kinds) {
+    if (!k || !k.extra) continue;
+    const asset = normAddr(k.asset);
+    const xfer = k.extra.assetTransferMethod || '';
+    const netOk = !k.network || k.network === network;
+    const methodOk = !xfer || xfer === wantMethod;
+    if (netOk && asset === wantAsset && methodOk && k.extra.signerAddress && k.extra.spenderAddress) {
+      return k.extra;
+    }
   }
-  return data;
+  for (const k of kinds) {
+    if (k && k.extra && normAddr(k.asset) === wantAsset && k.extra.signerAddress && k.extra.spenderAddress) {
+      return k.extra;
+    }
+  }
+  return null;
+}
+
+/**
+ * Resolve BSC `extra` from relay POST /supported (cached), else env signer/spender.
+ * Returns null when neither is available — caller must omit the BSC accept.
+ */
+export async function resolveBscExtra(lane) {
+  const env = laneEnv(lane);
+  const method = process.env.X402_BSC_TRANSFER_METHOD || 'permit2-exact';
+  const cacheKey = [env.network, env.usdc, method, lane.facilitator].join('|');
+  const now = Date.now();
+  if (bscExtraCache.extra && bscExtraCache.key === cacheKey && now - bscExtraCache.at < BSC_EXTRA_TTL_MS) {
+    return bscExtraCache.extra;
+  }
+  try {
+    const raw = await callFacilitator(lane, '/supported', {});
+    const picked = pickSupportedExtra(raw, env.network, env.usdc, method);
+    if (picked) {
+      bscExtraCache = { at: now, key: cacheKey, extra: picked };
+      return picked;
+    }
+  } catch (e) {
+    console.error('b402 supported fetch failed', e && e.message);
+  }
+  const fallback = envBscExtraFallback();
+  if (fallback) {
+    bscExtraCache = { at: now, key: cacheKey, extra: fallback };
+    return fallback;
+  }
+  return null;
+}
+
+/**
+ * Build offer rows; drop BSC when extra cannot be resolved (never guess).
+ * @returns {Promise<Array<{ lane: object, requirements: object }>>}
+ */
+export async function buildOfferRows(lanes, priceSix) {
+  const rows = [];
+  for (const lane of lanes) {
+    if (lane.name === 'bsc') {
+      const extra = await resolveBscExtra(lane);
+      if (!extra || !extra.signerAddress || !extra.spenderAddress) continue;
+      const requirements = laneRequirements(lane, priceSix);
+      requirements.extra = extra;
+      rows.push({ lane, requirements });
+    } else {
+      rows.push({ lane, requirements: laneRequirements(lane, priceSix) });
+    }
+  }
+  return rows;
 }
 
 async function callFacilitator(lane, path, body) {
@@ -240,8 +302,9 @@ async function callFacilitator(lane, path, body) {
   const bodyString = JSON.stringify(body);
   const headers = { 'content-type': 'application/json' };
 
-  if (lane.auth === 'b402') {
-    Object.assign(headers, b402Headers(bodyString));
+  if (lane.auth === 'relay') {
+    const key = process.env.X402_INTERNAL_KEY || '';
+    if (key) headers['x-guardian-key'] = key;
   } else if (base.includes('api.cdp.coinbase.com') && CDP_KEY_ID && CDP_KEY_SECRET) {
     // Preserve prior Base behavior: JWT only when talking to CDP facilitator URL.
     const urlPath = new URL(base + path).pathname;
@@ -261,11 +324,39 @@ async function callFacilitator(lane, path, body) {
     data = null;
   }
   data = unwrapFacilitatorData(data);
-  if (data && (Object.prototype.hasOwnProperty.call(data, 'isValid') || Object.prototype.hasOwnProperty.call(data, 'success'))) {
+  if (data && (Object.prototype.hasOwnProperty.call(data, 'isValid') ||
+      Object.prototype.hasOwnProperty.call(data, 'success') ||
+      Object.prototype.hasOwnProperty.call(data, 'kinds'))) {
     return data;
   }
   if (!r.ok) throw new Error('facilitator ' + path + ' ' + r.status + ' ' + text.slice(0, 300));
   return data || {};
+}
+
+/**
+ * Settle with B402 async poll: success:false + non-empty transaction → retry ≤ ~10s.
+ */
+export async function settleWithPoll(lane, paymentPayload, requirements) {
+  const body = {
+    x402Version: 2,
+    paymentPayload,
+    paymentRequirements: requirements
+  };
+  if (lane.auth !== 'relay') {
+    return callFacilitator(lane, lane.settlePath || '/settle', body);
+  }
+  const deadline = Date.now() + SETTLE_POLL_MS;
+  let last = null;
+  while (Date.now() <= deadline) {
+    last = await callFacilitator(lane, lane.settlePath || '/settle', body);
+    if (last && last.success === true) return last;
+    if (last && last.success === false && last.transaction) {
+      await new Promise((r) => setTimeout(r, SETTLE_POLL_INTERVAL_MS));
+      continue;
+    }
+    return last;
+  }
+  return last;
 }
 
 /** cyre.dev (www) only — address-profile free path */
@@ -352,10 +443,16 @@ export function createX402Gate(opts) {
       return null;
     }
 
+    const rows = await buildOfferRows(lanes, price);
+    if (!rows.length) {
+      console.error('x402: X402_ENABLED but no offerable lanes — serving free');
+      return null;
+    }
+    const accepts = rows.map((r) => r.requirements);
+
     const proto = req.headers['x-forwarded-proto'] || 'https';
     const host = req.headers['x-forwarded-host'] || req.headers.host || 'cyre.dev';
     const resourceUrl = proto + '://' + host + resourcePath;
-    const accepts = lanes.map((l) => laneRequirements(l, price));
 
     const header = req.headers['payment-signature'] || req.headers['x-payment'];
     if (!header) {
@@ -370,18 +467,16 @@ export function createX402Gate(opts) {
     }
 
     const paidNetwork = payment && ((payment.accepted && payment.accepted.network) || payment.network);
-    const idx = lanes.findIndex((l) => laneEnv(l).network === paidNetwork);
+    const idx = rows.findIndex((r) => r.requirements.network === paidNetwork);
     if (idx === -1) {
       return { status: 402, body: paymentRequired(resourceUrl, accepts, 'Unsupported payment network') };
     }
-    const lane = lanes[idx];
-    const expected = accepts[idx];
+    const { lane, requirements: expected } = rows[idx];
     const accepted = payment && payment.accepted;
     if (!accepted) {
       return { status: 402, body: paymentRequired(resourceUrl, accepts, 'Malformed payment payload') };
     }
     if (!offerMatches(accepted, expected)) {
-      // Distinguish amount vs other pin failures for clearer 402 errors (existing Base/Solana behavior).
       try {
         if (BigInt(accepted.amount || '0') < BigInt(expected.amount || '0')) {
           return { status: 402, body: paymentRequired(resourceUrl, accepts, 'amount_too_low') };
@@ -408,11 +503,7 @@ export function createX402Gate(opts) {
         const reason = (v && (v.invalidMessage || v.invalidReason)) || 'Payment invalid';
         return { status: 402, body: paymentRequired(resourceUrl, accepts, reason) };
       }
-      const s = await callFacilitator(lane, lane.settlePath || '/settle', {
-        x402Version: 2,
-        paymentPayload,
-        paymentRequirements: requirements
-      });
+      const s = await settleWithPoll(lane, paymentPayload, requirements);
       if (!s || s.success !== true) {
         const reason = (s && (s.errorMessage || s.errorReason)) || 'Settlement failed';
         return { status: 402, body: paymentRequired(resourceUrl, accepts, reason) };

@@ -201,8 +201,9 @@ Permit2 contract (mainnet + testnet): `0x000000000022D473030F116dDEE9F6B43aC78BA
 
 ## Implications for dormant Guardian lane
 
-- Lane stays **off** until `X402_PAY_TO_BSC` (+ B402 credentials / base URL) are set.  
-- Do not hardcode production `{BASE_URL}` — env `X402_FACILITATOR_BSC`.  
+- Lane stays **off** until `X402_PAY_TO_BSC` is set.  
+- **Do not call Binance from Vercel** — no fixed egress IP. Route verify/settle/supported through the Render relay (`cyre-fraud-prediction` `/internal/b402/*`). See companion PR + `docs/B402-RELAY.md` in that repo.  
+- Vercel never holds `B402_*` secrets; only `X402_INTERNAL_KEY` to the relay.  
 - Convert USD list prices to **18-decimal** atomic amounts on mainnet USDT/USDC.  
-- Must attach full B402 `extra` (not just EIP-3009 name/version).  
-- Owner action required before the lane can settle live: form → RSA → IPs → credentials → treasury 0x on BSC.
+- `extra` comes from relay `/supported` (cached) or explicit signer/spender env fallbacks — never guess.  
+- Owner action: form → RSA → Render static IPs → credentials on Render → treasury `0x` on BSC in Vercel.
