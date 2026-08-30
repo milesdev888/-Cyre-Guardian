@@ -67,6 +67,7 @@
     { "source": "/apps", "destination": "/app", "permanent": true }
   ],
   "rewrites": [
-    { "source": "/api/passport/verify", "destination": "/api/passport-verify" }
+    { "source": "/api/passport/verify", "destination": "/api/passport-verify" },
+    { "source": "/api/receipt/verify", "destination": "/api/receipt-verify" }
   ]
 }
