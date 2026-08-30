@@ -68,6 +68,10 @@
   ],
   "rewrites": [
     { "source": "/api/passport/verify", "destination": "/api/passport-verify" },
-    { "source": "/api/receipt/verify", "destination": "/api/receipt-verify" }
+    { "source": "/api/receipt/verify", "destination": "/api/receipt-verify" },
+    { "source": "/api/policy/verify", "destination": "/api/policy-verify" },
+    { "source": "/api/policy/check", "destination": "/api/policy-check" },
+    { "source": "/api/intent/verify", "destination": "/api/intent-verify" },
+    { "source": "/api/cron-receipt/verify", "destination": "/api/cron-receipt-verify" }
   ]
 }

@@ -17,8 +17,14 @@ export const ISSUER = 'cyre.dev';
 export const ALG = 'Ed25519';
 export const PASSPORT_KIND = 'cyre-passport-attestation';
 export const RECEIPT_KIND = 'cyre-decision-receipt';
+export const POLICY_KIND = 'cyre-spend-policy';
+export const INTENT_KIND = 'cyre-intent-seal';
+export const CRON_KIND = 'cyre-cron-attestation';
 const TTL = Math.max(60, Number(process.env.PASSPORT_TTL_SECONDS) || 86400);
 const RECEIPT_TTL = Math.max(60, Number(process.env.RECEIPT_TTL_SECONDS) || 2592000);
+const POLICY_TTL = Math.max(60, Number(process.env.POLICY_TTL_SECONDS) || 604800); // 7d
+const INTENT_TTL = Math.max(60, Number(process.env.INTENT_TTL_SECONDS) || 86400); // 24h
+const CRON_TTL = Math.max(60, Number(process.env.CRON_TTL_SECONDS) || 86400);
 
 // PKCS#8 DER prefix for an Ed25519 private key (RFC 8410) — lets us load a raw 32-byte seed.
 const PKCS8_PREFIX = Buffer.from('302e020100300506032b657004220420', 'hex');
@@ -131,6 +137,88 @@ export function attestReceipt(input) {
     counterparties,
     note: input.note ? String(input.note).slice(0, 160) : null,
     measuredAt: input.measuredAt || null,
+    issuedAt,
+    expiresAt
+  };
+  return signClaims(claims);
+}
+
+/**
+ * Sign a spend-policy token — agent constitution other middleware can check.
+ */
+export function attestPolicy(input) {
+  const issuedAt = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + POLICY_TTL * 1000).toISOString();
+  const allowHosts = Array.isArray(input.allowHosts)
+    ? [...new Set(input.allowHosts.map((h) => String(h || '').trim().toLowerCase()).filter(Boolean))].slice(0, 20)
+    : [];
+  const denyHosts = Array.isArray(input.denyHosts)
+    ? [...new Set(input.denyHosts.map((h) => String(h || '').trim().toLowerCase()).filter(Boolean))].slice(0, 20)
+    : [];
+  const claims = {
+    kind: POLICY_KIND,
+    v: 1,
+    iss: ISSUER,
+    id: b64url(randomBytes(12)),
+    actor: String(input.actor || ''),
+    maxSpendAtomic: input.maxSpendAtomic != null ? String(input.maxSpendAtomic) : null,
+    allowHosts,
+    denyHosts,
+    requireTicket: !!input.requireTicket,
+    denyFreshEoa: !!input.denyFreshEoa,
+    maxRisk: input.maxRisk ? String(input.maxRisk).toUpperCase() : null,
+    networks: Array.isArray(input.networks)
+      ? [...new Set(input.networks.map((n) => String(n || '').trim()).filter(Boolean))].slice(0, 10)
+      : [],
+    note: input.note ? String(input.note).slice(0, 160) : null,
+    issuedAt,
+    expiresAt
+  };
+  return signClaims(claims);
+}
+
+/**
+ * Seal an intent hash before pay/sign — later Receipt must match.
+ */
+export function attestIntent(input) {
+  const issuedAt = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + INTENT_TTL * 1000).toISOString();
+  const claims = {
+    kind: INTENT_KIND,
+    v: 1,
+    iss: ISSUER,
+    id: b64url(randomBytes(12)),
+    actor: String(input.actor || ''),
+    intentHash: String(input.intentHash || ''),
+    action: String(input.action || 'other').slice(0, 32),
+    resourceUrl: input.resourceUrl ? String(input.resourceUrl).slice(0, 300) : null,
+    payTo: input.payTo ? String(input.payTo).slice(0, 128) : null,
+    amountAtomic: input.amountAtomic != null ? String(input.amountAtomic) : null,
+    note: input.note ? String(input.note).slice(0, 160) : null,
+    issuedAt,
+    expiresAt
+  };
+  return signClaims(claims);
+}
+
+/**
+ * Attest that a watcher/cron run happened (patterns measured, not a verdict).
+ */
+export function attestCron(input) {
+  const issuedAt = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + CRON_TTL * 1000).toISOString();
+  const claims = {
+    kind: CRON_KIND,
+    v: 1,
+    iss: ISSUER,
+    id: b64url(randomBytes(12)),
+    job: String(input.job || 'watcher').slice(0, 64),
+    ranAt: String(input.ranAt || issuedAt),
+    walletCount: typeof input.walletCount === 'number' ? input.walletCount : null,
+    hitCount: typeof input.hitCount === 'number' ? input.hitCount : null,
+    window: input.window ? String(input.window).slice(0, 64) : null,
+    digest: input.digest ? String(input.digest).slice(0, 128) : null,
+    note: input.note ? String(input.note).slice(0, 160) : null,
     issuedAt,
     expiresAt
   };

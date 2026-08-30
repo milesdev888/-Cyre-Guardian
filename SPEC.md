@@ -93,7 +93,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/chat.js` | Guardian chat (Anthropic). HARDENED: origin-locked to cyre.dev, role-sanitized, haiku model, daily cap. Keep all guardrails. |
 | `api/address.js` | GET /api/address — 1,000-sig window, 6 explainable signals, LOW/MED/HIGH. Env `SOLANA_RPC`. (Live file; SPEC formerly said `.mjs`.) |
 | `api/watch.js` | GET /api/watch — `?address=` and optional `?list=` (≤10). Reuses address signals; fresh-window alerts; counters from this measured run only; `Cache-Control: no-store` (no CDN reuse). Marks noisy if last24h ≥ 200. No LLM. Env `SOLANA_RPC`. |
-| `api/_attest.js` | Ed25519 passport + decision-receipt attestation (`PASSPORT_SIGNING_KEY`). `attest` / `attestReceipt` / `verifyToken({ kinds, allowExpired })`. |
+| `api/_attest.js` | Ed25519 attestation (`PASSPORT_SIGNING_KEY`). Kinds: passport, decision-receipt, spend-policy, intent-seal, cron-attestation. `attest` / `attestReceipt` / `attestPolicy` / `attestIntent` / `attestCron` / `verifyToken({ kinds, allowExpired })`. |
 | `api/passport.js` | GET /api/passport — `?address=`. Stable Passport JSON + Ed25519 attestation. Same 1k-sig window as `/api/address`; seed-mint `mintAffinity`; x402; `Cache-Control: no-store`. No LLM. |
 | `api/_grade.js` | Shared Solana graders — `gradeAddress`, `mintAuthorityFacts`, `programNovelty`, seed `mintAffinity`. Used by handshake/preflight/delta/batch/program/alerts. |
 | `api/handshake.js` | GET/POST `/api/handshake` — bilateral Passport Handshake. Preferred `tokenA`+`tokenB` (verify before settle); fallback `addressA`+`addressB` (measure both). Returns `kind:'cyre-handshake'`, `delta`, `brief`. x402 default $0.01 (`X402_PRICE_HANDSHAKE`). `Cache-Control: no-store`. No LLM. |
@@ -109,7 +109,22 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/lookalike.js` | GET/POST `/api/lookalike` — destination vs known `contacts` (≤20): truncation traps, near-edits, confusables. Pure compare via `_lookalike.js`. x402 default **$0.002**. No LLM. |
 | `api/_lookalike.js` | Pure lookalike helpers (`comparePair`, `scanLookalikes`, Levenshtein). |
 | `api/ticket.js` | GET/POST `/api/ticket` — **Session Ticket**. Verify Passport/Receipt + freshness SLA (`maxAgeSeconds`) + optional address/risk pins → `admitted`. x402 default **$0.002**. Free verifiers remain at passport/receipt verify. No LLM. |
-| `api/hint.js` | Free GET `/api/hint?q=` — discovery tip pointing agents at Gate/Route/Lookalike/Ticket ladder. No x402. |
+| `api/hint.js` | Free GET `/api/hint?q=` — discovery tip pointing agents at Gate/Route/Pack/Policy/Offer ladder. No x402. |
+| `api/_offerparse.js` | Pure 402 PAYMENT-REQUIRED / accepts[] decode + forensics (`decodePaymentRequired`, `analyzeOffer`). |
+| `api/_policycheck.js` | Pure spend-policy evaluate (`evaluatePolicy`) vs proposed pay. |
+| `api/policy.js` | GET/POST `/api/policy` — seal spend constitution (maxSpend, allow/deny hosts, networks, maxRisk, requireTicket, denyFreshEoa). x402 default **$0.002**. No LLM. |
+| `api/policy-verify.js` | Free verify — `/api/policy/verify` rewrite. |
+| `api/policy-check.js` | GET/POST `/api/policy/check` — enforce sealed policy vs proposal. x402 default **$0.001**. No LLM. |
+| `api/intent.js` | GET/POST `/api/intent` — seal intentHash before pay/sign. x402 default **$0.002**. No LLM. |
+| `api/intent-verify.js` | Free verify (+ optional hash match) — `/api/intent/verify` rewrite. |
+| `api/offer.js` | GET/POST `/api/offer` — 402 offer forensics on PAYMENT-REQUIRED / accepts[]. x402 default **$0.002**. No LLM. |
+| `api/pack.js` | GET/POST `/api/pack` — one-pay bundle: offer + lookalike + policy (+ ticket/intent). x402 default **$0.005**. No LLM. |
+| `api/mintalike.js` | GET/POST `/api/mintalike` — mint address + ticker lookalike vs known contacts/symbols. x402 default **$0.002**. No LLM. |
+| `api/host.js` | GET/POST `/api/host` — resource URL / host hygiene (+ optional origin HEAD). x402 default **$0.002**. No LLM. |
+| `api/escrow.js` | GET/POST `/api/escrow` — bilateral treasury brief (not custody). x402 default **$0.005**. No LLM. |
+| `api/pulse.js` | GET/POST `/api/pulse` — quiet counterparty pulse (≤10; hits vs prior fingerprints). x402 default **$0.005**. No LLM. |
+| `api/cron-receipt.js` | POST `/api/cron-receipt` — watcher/cron attestation (job, counts, digest). x402 default **$0.002**. No LLM. |
+| `api/cron-receipt-verify.js` | Free verify — `/api/cron-receipt/verify` rewrite. |
 | `api/forensics.js` | GET /api/forensics — `?address=` (single). Measured patterns: dormant→active, burst, failure spike, mint-affinity hold/touch vs SPEC seed mints. Same 1k-sig window + one token-accounts call as Passport; collateral-loop + transfer-hook/eligibility friction named but `evaluated:false` in v1; `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
 | `api/signals.js` | GET /api/signals — optional `?address=` / `?list=` (≤10). Empty default → empty feed + message (quiet holders not yet filtered from SPEC seed mints; same Watch policy). Per address: Watch patterns (dormant→active, burst, failure spike) + mintAffinity via **per-mint** `getTokenAccountsByOwner` only (never programId dump). Response `{ ok, kind:'cyre-signals', version:1, disclaimer, window, items, counters }`; brief sleep between wallets; soft-fail RPC; `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
 | `api/oracle.js` | GET `/api/oracle` — Oracle Pulse v1. NestUSD **Pyth Lazer** seeds (fetch only with `PYTH_LAZER_API_KEY`); equity Hermes peers optional when primary measured. Response `{ ok, kind:'cyre-oracle', version:1, disclaimer, fetchedAt, feeds, patterns }`; patterns stale/spike/divergence cite measured numbers only; USDY/OUSG/syrupUSDC deferred (no verified public feed); x402 for agents (`X402_PRICE_ORACLE`, default $0.01), site origin free; `Cache-Control: no-store`. No LLM. |
@@ -117,7 +132,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `cyre-token-256/512.png` | C7 full lockup (Guardian + HUD + C7). 512 = mint metadata image URI. |
 | `cyre-token-icon-128/256/32.png` | Face-forward circular crop — favicon, FAB, small UI. |
 | `cyre-token-ticker-128.png` | C7 letter crop — DEX lists / wallet tickers where detail must read at 32px. |
-| `vercel.json` | `{cleanUrls:true, trailingSlash:false}` — pages served extensionless. |
+| `vercel.json` | `{cleanUrls:true, trailingSlash:false}` + rewrites: passport/receipt/policy/intent/cron-receipt verify (+ policy/check). |
 
 
 
