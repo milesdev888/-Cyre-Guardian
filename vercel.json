@@ -72,6 +72,8 @@
     { "source": "/api/policy/verify", "destination": "/api/policy-verify" },
     { "source": "/api/policy/check", "destination": "/api/policy-check" },
     { "source": "/api/intent/verify", "destination": "/api/intent-verify" },
-    { "source": "/api/cron-receipt/verify", "destination": "/api/cron-receipt-verify" }
+    { "source": "/api/cron-receipt/verify", "destination": "/api/cron-receipt-verify" },
+    { "source": "/api/lockbox/verify", "destination": "/api/lockbox-verify" },
+    { "source": "/api/lockbox/match", "destination": "/api/lockbox-match" }
   ]
 }

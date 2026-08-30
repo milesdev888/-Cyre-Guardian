@@ -93,7 +93,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/chat.js` | Guardian chat (Anthropic). HARDENED: origin-locked to cyre.dev, role-sanitized, haiku model, daily cap. Keep all guardrails. |
 | `api/address.js` | GET /api/address — 1,000-sig window, 6 explainable signals, LOW/MED/HIGH. Env `SOLANA_RPC`. (Live file; SPEC formerly said `.mjs`.) |
 | `api/watch.js` | GET /api/watch — `?address=` and optional `?list=` (≤10). Reuses address signals; fresh-window alerts; counters from this measured run only; `Cache-Control: no-store` (no CDN reuse). Marks noisy if last24h ≥ 200. No LLM. Env `SOLANA_RPC`. |
-| `api/_attest.js` | Ed25519 attestation (`PASSPORT_SIGNING_KEY`). Kinds: passport, decision-receipt, spend-policy, intent-seal, cron-attestation. `attest` / `attestReceipt` / `attestPolicy` / `attestIntent` / `attestCron` / `verifyToken({ kinds, allowExpired })`. |
+| `api/_attest.js` | Ed25519 attestation (`PASSPORT_SIGNING_KEY`). Kinds: passport, decision-receipt, spend-policy, intent-seal, intent-lockbox, cron-attestation. `attest` / `attestReceipt` / `attestPolicy` / `attestIntent` / `attestLockbox` / `attestCron` / `verifyToken({ kinds, allowExpired })`. |
 | `api/passport.js` | GET /api/passport — `?address=`. Stable Passport JSON + Ed25519 attestation. Same 1k-sig window as `/api/address`; seed-mint `mintAffinity`; x402; `Cache-Control: no-store`. No LLM. |
 | `api/_grade.js` | Shared Solana graders — `gradeAddress`, `mintAuthorityFacts`, `programNovelty`, seed `mintAffinity`. Used by handshake/preflight/delta/batch/program/alerts. |
 | `api/handshake.js` | GET/POST `/api/handshake` — bilateral Passport Handshake. Preferred `tokenA`+`tokenB` (verify before settle); fallback `addressA`+`addressB` (measure both). Returns `kind:'cyre-handshake'`, `delta`, `brief`. x402 default $0.01 (`X402_PRICE_HANDSHAKE`). `Cache-Control: no-store`. No LLM. |
@@ -109,7 +109,13 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/lookalike.js` | GET/POST `/api/lookalike` — destination vs known `contacts` (≤20): truncation traps, near-edits, confusables. Pure compare via `_lookalike.js`. x402 default **$0.002**. No LLM. |
 | `api/_lookalike.js` | Pure lookalike helpers (`comparePair`, `scanLookalikes`, Levenshtein). |
 | `api/ticket.js` | GET/POST `/api/ticket` — **Session Ticket**. Verify Passport/Receipt + freshness SLA (`maxAgeSeconds`) + optional address/risk pins → `admitted`. x402 default **$0.002**. Free verifiers remain at passport/receipt verify. No LLM. |
-| `api/hint.js` | Free GET `/api/hint?q=` — discovery tip pointing agents at Gate/Route/Pack/Policy/Offer ladder. No x402. |
+| `api/hint.js` | Free GET `/api/hint?q=` — discovery tip (bazaar/caution/lockbox + Gate/Route/Pack ladder). No x402. |
+| `api/_paybrief.js` | Shared payTo grade + URL/amount signals + `cautionBandFromScore` for bazaar/caution. |
+| `api/bazaar.js` | GET/POST `/api/bazaar` — **Bazaar Scan**. Probe resourceUrl for 402, offer forensics, payTo grade. x402 default **$0.003**. No LLM. |
+| `api/caution.js` | GET/POST `/api/caution` — **Settlement Caution**. Pattern brief + withhold band. Not insurance. x402 default **$0.002**. No LLM. |
+| `api/lockbox.js` | GET/POST `/api/lockbox` — seal intentHash lockbox (bearer token). x402 default **$0.002**. No LLM. |
+| `api/lockbox-verify.js` | Free verify — `/api/lockbox/verify` rewrite (also accepts intent seals). |
+| `api/lockbox-match.js` | GET/POST `/api/lockbox/match` — compare seal vs proposal. x402 default **$0.001**. No LLM. |
 | `api/_offerparse.js` | Pure 402 PAYMENT-REQUIRED / accepts[] decode + forensics (`decodePaymentRequired`, `analyzeOffer`). |
 | `api/_policycheck.js` | Pure spend-policy evaluate (`evaluatePolicy`) vs proposed pay. |
 | `api/policy.js` | GET/POST `/api/policy` — seal spend constitution (maxSpend, allow/deny hosts, networks, maxRisk, requireTicket, denyFreshEoa). x402 default **$0.002**. No LLM. |
@@ -132,7 +138,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `cyre-token-256/512.png` | C7 full lockup (Guardian + HUD + C7). 512 = mint metadata image URI. |
 | `cyre-token-icon-128/256/32.png` | Face-forward circular crop — favicon, FAB, small UI. |
 | `cyre-token-ticker-128.png` | C7 letter crop — DEX lists / wallet tickers where detail must read at 32px. |
-| `vercel.json` | `{cleanUrls:true, trailingSlash:false}` + rewrites: passport/receipt/policy/intent/cron-receipt verify (+ policy/check). |
+| `vercel.json` | `{cleanUrls:true, trailingSlash:false}` + rewrites: passport/receipt/policy/intent/cron-receipt/lockbox verify (+ policy/check, lockbox/match). |
 
 
 

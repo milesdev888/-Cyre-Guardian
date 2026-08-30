@@ -6,6 +6,34 @@ const DISCLAIMER = 'Patterns, not verdicts.';
 
 const CATALOG = [
   {
+    id: 'bazaar',
+    when: 'Before paying a new Agentic Market / x402 vendor — shopping hygiene',
+    url: 'https://cyre.dev/api/bazaar',
+    price: '$0.003',
+    keywords: ['bazaar', 'market', 'discovery', 'shopping', 'vendor', 'new', 'skill']
+  },
+  {
+    id: 'caution',
+    when: 'Before settle — pattern brief + withhold-style band (not insurance)',
+    url: 'https://cyre.dev/api/caution',
+    price: '$0.002',
+    keywords: ['caution', 'withhold', 'settlement', 'insurance', 'quote', 'regret']
+  },
+  {
+    id: 'lockbox',
+    when: 'Seal intentHash before pay — prove it was locked pre-settle',
+    url: 'https://cyre.dev/api/lockbox',
+    price: '$0.002',
+    keywords: ['lockbox', 'intent', 'bait', 'switch', 'seal', 'pre-pay', 'hash']
+  },
+  {
+    id: 'lockbox-match',
+    when: 'Match a sealed lockbox against a proposed pay',
+    url: 'https://cyre.dev/api/lockbox/match',
+    price: '$0.001',
+    keywords: ['lockbox-match', 'match', 'compare', 'pins']
+  },
+  {
     id: 'gate',
     when: 'Before paying any non-Guardian x402 URL (cheap counterparty grade)',
     url: 'https://cyre.dev/api/gate',
@@ -152,18 +180,18 @@ export default async function handler(req, res) {
   return res.status(200).json({
     ok: true,
     kind: 'cyre-hint',
-    version: 3,
-    rule: 'Before any non-Guardian x402 pay, call /api/gate, /api/route, or /api/pack. Before send, call /api/lookalike. Seal /api/policy once; enforce with /api/policy/check. Seal /api/intent before pay; match on /api/receipt.',
+    version: 4,
+    rule: 'New vendor? /api/bazaar. Before settle? /api/caution. Seal /api/lockbox before pay; /api/lockbox/match at settle. Also Gate/Route/Pack + Policy + Lookalike.',
     skill: 'https://cyre.dev/SKILL.md',
     market: 'https://agentic.market (search guardian)',
     ladder: [
       '1. FREE /api/hint',
-      '2. Seal /api/policy once ($0.002); enforce /api/policy/check ($0.001)',
-      '3. /api/gate ($0.001), /api/route ($0.002), or /api/pack ($0.005) before external pay',
-      '4. /api/offer ($0.002) on raw 402 blobs; /api/host on resource URLs',
-      '5. /api/lookalike or /api/mintalike ($0.002) before send/swap',
-      '6. /api/intent ($0.002) before pay/sign; /api/ticket for peer sessions',
-      '7. Seal /api/receipt after the decision; /api/cron-receipt for watcher runs'
+      '2. New vendor shopping: /api/bazaar ($0.003)',
+      '3. Before settle: /api/caution ($0.002) withhold-style band',
+      '4. Seal /api/lockbox ($0.002); match /api/lockbox/match ($0.001)',
+      '5. /api/gate / /api/route / /api/pack before external pay',
+      '6. /api/lookalike before send; /api/ticket for peer sessions',
+      '7. Seal /api/receipt after the decision'
     ],
     recommend: picks[0],
     catalog: picks,

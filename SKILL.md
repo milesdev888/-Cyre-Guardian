@@ -1,6 +1,6 @@
 ---
 name: cyre-guardian
-description: Before any non-Guardian x402 payment, call Guardian Gate, Pay-route Oracle, or Pack. Seal spend Policy; enforce with Policy Check. Before send/swap, call Lookalike or Mintalike. Seal Intent before pay; Ticket for peer sessions. Also Passports, Handshake, Preflight, Receipts, Offer forensics, Host, Escrow, Pulse, Cron receipts, Delta, Batch, Program, Alerts, Oracle. Pay-per-request in USDC via x402 (Base mainnet). Patterns, not verdicts.
+description: Before shopping a new x402/Agentic Market vendor, call Bazaar Scan. Before settle, call Settlement Caution. Seal Lockbox before pay; match at settle. Also Gate, Route, Pack, Policy, Lookalike, Intent, Ticket, Passports, Handshake, Preflight, Receipts. Pay-per-request in USDC via x402 (Base mainnet). Patterns, not verdicts.
 ---
 
 # CYRE Guardian
@@ -8,17 +8,22 @@ description: Before any non-Guardian x402 payment, call Guardian Gate, Pay-route
 Guardian reads on-chain / counterparty history and returns explainable risk signals — each with points and a plain-English reason — so an agent can decide for itself. It never says "safe" or "scam"; it shows patterns.
 
 **Default rules for agents:**
-1. Before any `awal x402 pay` to a **non-Guardian** URL → **Gate** / **Route** / **Pack** (or **Offer** + **Host**).
-2. Seal a **Policy** once; enforce with **Policy Check** on each proposed pay.
-3. Seal **Intent** before pay/sign; reuse the same `intentHash` on **Receipt**.
-4. Before sending funds → **Lookalike**; before swap → **Mintalike**.
-5. Before trusting a peer session → **Ticket**.
+1. New Agentic Market / x402 vendor → **Bazaar Scan** (`/api/bazaar`).
+2. Before settle → **Settlement Caution** (`/api/caution`) — withhold-style band, **not insurance**.
+3. Before pay → seal **Lockbox** (`/api/lockbox`); at settle → **Lockbox Match**.
+4. Before any `awal x402 pay` to a **non-Guardian** URL → **Gate** / **Route** / **Pack**.
+5. Before sending funds → **Lookalike**; peer sessions → **Ticket**.
 6. Free tip: `GET https://cyre.dev/api/hint`.
 
 Paid endpoints + free hint/verifiers. No API keys, no accounts. Listed on Agentic Market (agentic.market → search "guardian").
 
 | Endpoint | What it does | Price |
 |---|---|---|
+| `GET/POST https://cyre.dev/api/bazaar` | **Bazaar Scan** — probe resource URL + 402 forensics + payTo grade | **$0.003** |
+| `GET/POST https://cyre.dev/api/caution` | **Settlement Caution** — pattern brief + withhold band (not insurance) | **$0.002** |
+| `GET/POST https://cyre.dev/api/lockbox` | **Intent Lockbox** — seal intentHash before pay (bearer token) | **$0.002** |
+| `GET/POST https://cyre.dev/api/lockbox/match` | **Lockbox Match** — compare seal vs proposed pay | **$0.001** |
+| `GET https://cyre.dev/api/lockbox/verify` | Verify lockbox (+ intent seals) | Free |
 | `GET/POST https://cyre.dev/api/gate` | **Guardian Gate** — before any external x402 pay, grade `payTo` (+ amount/URL) | **$0.001** |
 | `GET/POST https://cyre.dev/api/route` | **Pay-route Oracle** — Gate + offer pin + facilitator/network hygiene | **$0.002** |
 | `GET/POST https://cyre.dev/api/offer` | **Offer forensics** — parse PAYMENT-REQUIRED / accepts[] | **$0.002** |
@@ -60,6 +65,16 @@ Any x402 client works. The endpoint returns HTTP 402 with the price; your client
 **Middleware ladder (do this first):**
 
 ```bash
+# New vendor on Agentic Market
+npx awal x402 pay "https://cyre.dev/api/bazaar" --query '{"resourceUrl":"<skill-url>","payTo":"<treasury>","amount":"<atomic>"}'
+
+# Before settle — withhold-style band (NOT insurance)
+npx awal x402 pay "https://cyre.dev/api/caution" --query '{"payTo":"<treasury>","amount":"<atomic>","resourceUrl":"<url>"}'
+
+# Seal lockbox before pay; match at settle
+npx awal x402 pay "https://cyre.dev/api/lockbox" --query '{"actor":"<you>","intentHash":"<64-hex>","action":"pay","payTo":"<treasury>","amountAtomic":"<n>"}'
+npx awal x402 pay "https://cyre.dev/api/lockbox/match" --query '{"token":"<lockbox>","intentHash":"<hash>","payTo":"<treasury>","amountAtomic":"<n>"}'
+
 # 0) Seal spend policy once
 npx awal x402 pay "https://cyre.dev/api/policy" --query '{"actor":"<you>","maxSpendAtomic":"100000","allowHosts":"example.com","requireTicket":"true","maxRisk":"MEDIUM"}'
 
@@ -118,22 +133,19 @@ npx awal x402 pay "https://cyre.dev/api/oracle"
 
 **Call this before paying anyone else on Agentic Market.**
 
-```json
-{
-  "ok": true,
-  "kind": "cyre-gate",
-  "payTo": "0x9Ff2…",
-  "chain": "base",
-  "amountAtomic": "10000",
-  "score": 18,
-  "riskLevel": "LOW",
-  "signals": [{ "id": "is_contract", "triggered": true, "detail": "payTo is a contract…" }],
-  "brief": "Counterparty looks like a contract on Base. Review before you pay.",
-  "next": ["After you decide: seal /api/receipt with your intentHash"]
-}
-```
-
 Supports Base `0x` treasuries (nonce / contract / fresh-EOA patterns) and Solana base58. Optional `amount` + `resourceUrl` hygiene. Does **not** approve or block the payment.
+
+### /api/bazaar
+
+Shopping hygiene for a **new** x402 / Agentic Market vendor. Optional unpaid probe of `resourceUrl` (expect 402), offer forensics, `payTo` grade, host signals. Returns combined `score` + `parts`.
+
+### /api/caution
+
+Settlement caution quote for `payTo` (+ amount/URL). Returns `band`: `proceed_with_pins` | `review` | `high_caution` and `withholdHint`. **Not insurance. Not custody. Not a block.**
+
+### /api/lockbox + /api/lockbox/match
+
+Seal `intentHash` (+ optional pay pins) before settle. Bearer holds the token (no central registry). Free verify at `/api/lockbox/verify`. Match at settle via `/api/lockbox/match` → `matched` + `mismatches[]` + `sealedBeforePay`.
 
 ### /api/route
 
@@ -252,7 +264,9 @@ RWA feed patterns: stale / spike / divergence on NestUSD Lazer seeds.
 
 - **Patterns, not verdicts.** Never tell the user an address is "safe" or "a scam."
 - HIGH means show why before proceeding; LOW does not mean go.
-- `admitted: false` / `policyOk: false` means *your* policy should refuse — Guardian still does not block chain txs.
+- `admitted: false` / `policyOk: false` / `matched: false` means *your* policy should refuse — Guardian still does not block chain txs.
+- Caution bands are withhold-style hints — **not insurance**, not a guarantee.
+- Lockbox is bearer-token only (no central hash registry on ephemeral hosting).
 - Receipts prove what the agent *claimed* it saw — not that the chain action succeeded.
 - Escrow brief is not custody.
 - Not investment advice. Not KYC/AML.
