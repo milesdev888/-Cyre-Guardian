@@ -94,6 +94,9 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/address.js` | GET /api/address — 1,000-sig window, 6 explainable signals, LOW/MED/HIGH. Env `SOLANA_RPC`. (Live file; SPEC formerly said `.mjs`.) |
 | `api/watch.js` | GET /api/watch — `?address=` and optional `?list=` (≤10). Reuses address signals; fresh-window alerts; counters from this measured run only; `Cache-Control: no-store` (no CDN reuse). Marks noisy if last24h ≥ 200. No LLM. Env `SOLANA_RPC`. |
 | `api/_attest.js` | Ed25519 passport + decision-receipt attestation (`PASSPORT_SIGNING_KEY`). `attest` / `attestReceipt` / `verifyToken({ kinds, allowExpired })`. |
+| `api/_x402.js` | Shared x402 v2 gate (Solana + Base + dormant BNB Chain/B402). BSC lane arms only when `X402_PAY_TO_BSC` is set; see `docs/B402-RESEARCH.md` / `docs/B402-ENV.md`. Pricing, site-origin bypass, validate-before-settle unchanged. |
+| `docs/B402-RESEARCH.md` | Part 1 research: Binance B402 onboarding, Tesla RSA auth, wire shape, BSC assets/decimals, sandbox. |
+| `docs/B402-ENV.md` | Vercel env checklist for dormant B402/BSC lane (no secrets). |
 | `api/passport.js` | GET /api/passport — `?address=`. Stable Passport JSON + Ed25519 attestation. Same 1k-sig window as `/api/address`; seed-mint `mintAffinity`; x402; `Cache-Control: no-store`. No LLM. |
 | `api/_grade.js` | Shared Solana graders — `gradeAddress`, `mintAuthorityFacts`, `programNovelty`, seed `mintAffinity`. Used by handshake/preflight/delta/batch/program/alerts. |
 | `api/handshake.js` | GET/POST `/api/handshake` — bilateral Passport Handshake. Preferred `tokenA`+`tokenB` (verify before settle); fallback `addressA`+`addressB` (measure both). Returns `kind:'cyre-handshake'`, `delta`, `brief`. x402 default $0.01 (`X402_PRICE_HANDSHAKE`). `Cache-Control: no-store`. No LLM. |
