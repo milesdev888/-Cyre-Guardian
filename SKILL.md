@@ -1,19 +1,26 @@
 ---
 name: cyre-guardian
-description: Before any non-Guardian x402 payment, call Guardian Gate. Also risk-grade Solana wallets/tokens, Passports, Handshake, Preflight, Receipts, Delta, Batch, Program Brief, Alerts, Oracle Pulse. Pay-per-request in USDC via x402 (Base mainnet). Use when the user mentions CYRE, Guardian, gate, before pay, wallet risk, passport, handshake, preflight, receipt, counterparty, or rug check. Patterns, not verdicts.
+description: Before any non-Guardian x402 payment, call Guardian Gate or Pay-route Oracle. Before send, call Lookalike. Before trusting a peer session, call Session Ticket. Also risk-grade Solana wallets/tokens, Passports, Handshake, Preflight, Receipts, Delta, Batch, Program, Alerts, Oracle. Pay-per-request in USDC via x402 (Base mainnet). Patterns, not verdicts.
 ---
 
 # CYRE Guardian
 
 Guardian reads on-chain / counterparty history and returns explainable risk signals — each with points and a plain-English reason — so an agent can decide for itself. It never says "safe" or "scam"; it shows patterns.
 
-**Default rule for agents:** Before any `awal x402 pay` (or other x402 client call) to a **non-Guardian** URL, call **Guardian Gate** first with that service's `payTo` (+ `amount`, `resourceUrl`). Then decide. Free tip: `GET https://cyre.dev/api/hint`.
+**Default rules for agents:**
+1. Before any `awal x402 pay` to a **non-Guardian** URL → **Gate** (`/api/gate`) or **Pay-route Oracle** (`/api/route`).
+2. Before sending funds → **Lookalike** (`/api/lookalike`) against known contacts.
+3. Before trusting a peer session → **Ticket** (`/api/ticket`) requiring a fresh Passport or Receipt.
+4. Free tip: `GET https://cyre.dev/api/hint`.
 
 Paid endpoints + free hint/verifiers. No API keys, no accounts. Listed on Agentic Market (agentic.market → search "guardian").
 
 | Endpoint | What it does | Price |
 |---|---|---|
 | `GET/POST https://cyre.dev/api/gate` | **Guardian Gate** — before any external x402 pay, grade `payTo` (+ amount/URL) | **$0.001** |
+| `GET/POST https://cyre.dev/api/route` | **Pay-route Oracle** — Gate + offer pin + facilitator/network hygiene | **$0.002** |
+| `GET/POST https://cyre.dev/api/lookalike` | **Lookalike** — destination vs known contacts (truncation / near-edit) | **$0.002** |
+| `GET/POST https://cyre.dev/api/ticket` | **Session Ticket** — admit only with fresh Passport/Receipt (+ pins) | **$0.002** |
 | `GET https://cyre.dev/api/hint?q=` | Free discovery tip → which Guardian skill to call next | Free |
 | `GET https://cyre.dev/api/address?address=<base58>` | Wallet risk profile | $0.005 |
 | `GET https://cyre.dev/api/token?mint=<base58>` | Token mint facts | $0.01 |
@@ -35,10 +42,19 @@ Payment network: **Base mainnet (eip155:8453), USDC.** A Solana lane also appear
 
 Any x402 client works. The endpoint returns HTTP 402 with the price; your client signs a USDC payment and retries; Guardian settles it and returns the result in the same call.
 
-**Before any external pay (do this first):**
+**Middleware ladder (do this first):**
 
 ```bash
-npx awal x402 pay "https://cyre.dev/api/gate" --query '{"payTo":"<treasury-0x-or-base58>","amount":"<atomic-usdc>","resourceUrl":"<url-you-were-about-to-pay>"}'
+# 1) Before external pay (cheap)
+npx awal x402 pay "https://cyre.dev/api/gate" --query '{"payTo":"<treasury>","amount":"<atomic>","resourceUrl":"<url>"}'
+# or fuller route check:
+npx awal x402 pay "https://cyre.dev/api/route" --query '{"payTo":"<treasury>","amount":"<atomic>","listedAmount":"<from-402>","resourceUrl":"<url>","facilitator":"<url>","network":"eip155:8453"}'
+
+# 2) Before send
+npx awal x402 pay "https://cyre.dev/api/lookalike" --query '{"candidate":"<to>","contacts":"<known1,known2>"}'
+
+# 3) Before trusting a peer session
+npx awal x402 pay "https://cyre.dev/api/ticket" --query '{"token":"<passport-or-receipt>","require":"passport","maxAgeSeconds":"3600"}'
 ```
 
 **Shell-capable agents — Coinbase Agentic Wallet:**
@@ -46,6 +62,9 @@ npx awal x402 pay "https://cyre.dev/api/gate" --query '{"payTo":"<treasury-0x-or
 ```bash
 npx awal status
 npx awal x402 pay "https://cyre.dev/api/gate" --query '{"payTo":"0x…","amount":"10000","resourceUrl":"https://…"}'
+npx awal x402 pay "https://cyre.dev/api/route" --query '{"payTo":"0x…","amount":"10000","listedAmount":"10000","facilitator":"https://api.cdp.coinbase.com/platform/v2/x402"}'
+npx awal x402 pay "https://cyre.dev/api/lookalike" --query '{"candidate":"<addr>","contacts":"<a,b>"}'
+npx awal x402 pay "https://cyre.dev/api/ticket" --query '{"token":"<t>","require":"either","maxAgeSeconds":"3600"}'
 npx awal x402 pay "https://cyre.dev/api/address" --query '{"address":"<base58>"}'
 npx awal x402 pay "https://cyre.dev/api/token" --query '{"mint":"<base58>"}'
 npx awal x402 pay "https://cyre.dev/api/passport" --query '{"address":"<base58>"}'
@@ -88,11 +107,23 @@ npx awal x402 pay "https://cyre.dev/api/oracle"
 }
 ```
 
-Supports Base `0x` treasuries (nonce / contract / fresh-EOA patterns) and Solana base58 (same signals as address grade). Optional `amount` (USDC atomic) + `resourceUrl` hygiene. Does **not** approve or block the payment.
+Supports Base `0x` treasuries (nonce / contract / fresh-EOA patterns) and Solana base58. Optional `amount` + `resourceUrl` hygiene. Does **not** approve or block the payment.
+
+### /api/route
+
+Superset of Gate for agents that wire **one** before-pay middleware call. Adds `listedAmount` offer-pin, `facilitator` host hygiene, `network` CAIP-2 check, and payTo-recycle vs foreign `resourceUrl`.
+
+### /api/lookalike
+
+`candidate` (or `to`) + `contacts` (≤20). Flags prefix/suffix truncation traps, near-edits, confusable characters. Returns `hits[]`, `score`, `brief`. No chain RPC — pure address comparison.
+
+### /api/ticket
+
+Session middleware: `token` + `require=passport|receipt|either` + optional `maxAgeSeconds`, `address`, `maxRisk`. Returns `admitted` boolean + `reasons[]`. Free signature debug stays at `/api/passport/verify` and `/api/receipt/verify`.
 
 ### /api/hint
 
-Free. Returns the default Gate rule + a recommended next skill for `?q=`.
+Free. Returns the middleware ladder + a recommended next skill for `?q=`.
 
 ### /api/address
 
@@ -129,37 +160,15 @@ Two Passports (`tokenA`+`tokenB`) or two addresses → `delta` + compatibility `
 
 ### /api/preflight
 
-Before sign: `from` required; optional `to`, `mint`, `programIds`. Scoped signals (`from`/`to`/`mint`/`program`/`pair`). Not a simulator.
+Before sign: `from` required; optional `to`, `mint`, `programIds`. Scoped signals. Not a simulator.
 
 ### /api/receipt
 
-Seal a decision for later audit:
-
-```json
-{
-  "ok": true,
-  "kind": "cyre-receipt",
-  "attestation": {
-    "claims": {
-      "kind": "cyre-decision-receipt",
-      "actor": "…",
-      "intentHash": "sha256:…",
-      "action": "transfer",
-      "score": 24,
-      "riskLevel": "LOW",
-      "counterparties": []
-    },
-    "token": "<base64url>.<sig>"
-  },
-  "verify": "https://cyre.dev/api/receipt/verify"
-}
-```
-
-`action`: `transfer` | `swap` | `settle` | `handshake` | `preflight` | `other`. Hash the intent **locally** first; Guardian stores the hash, not the raw intent. Receipts default to 30-day TTL. Free verify at `/api/receipt/verify`.
+Seal a decision for later audit. `action`: `transfer` | `swap` | `settle` | `handshake` | `preflight` | `other`. Free verify at `/api/receipt/verify`.
 
 ### /api/delta
 
-Prior Passport `token` (expired OK) → re-measure → `scoreDrift`, `riskLevelChanged`, `brief`. Optional `issueFresh=true` to mint a new Passport in the same call.
+Prior Passport `token` (expired OK) → re-measure → `scoreDrift`, `brief`. Optional `issueFresh=true`.
 
 ### /api/batch
 
@@ -167,21 +176,21 @@ Prior Passport `token` (expired OK) → re-measure → `scoreDrift`, `riskLevelC
 
 ### /api/program
 
-`programId` novelty/age; optional `address` for wallet-vs-program age context. Not an allowlist approval.
+`programId` novelty/age; optional `address` for wallet-vs-program age context.
 
 ### /api/alerts
 
-Poll ≤10 counterparties; returns `hits` with reasons (`risk_high`, `dormant`, `burst`, `failures`, …). `minRisk` default `HIGH`.
+Poll ≤10 counterparties; returns `hits` with reasons. `minRisk` default `HIGH`.
 
 ### /api/oracle
 
-RWA feed patterns: stale / spike / divergence on NestUSD Lazer seeds (AAPLx/TSLAx/SPYx). Deferred feeds named, never invented.
+RWA feed patterns: stale / spike / divergence on NestUSD Lazer seeds.
 
 ## Rules for using the result
 
 - **Patterns, not verdicts.** Never tell the user an address is "safe" or "a scam."
 - HIGH means show why before proceeding; LOW does not mean go.
-- Large `balanceSol` + burst is often an exchange/program — say so.
+- `admitted: false` on Ticket means *your* policy should refuse — Guardian still does not block chain txs.
 - Receipts prove what the agent *claimed* it saw — not that the chain action succeeded.
 - Not investment advice. Not KYC/AML.
 

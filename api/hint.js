@@ -1,16 +1,37 @@
 // api/hint.js — FREE Guardian discovery tip for agents/crawlers.
-// No payment. Points agents at Gate + the rest of the skill ladder.
-// GET /api/hint?q=pay|handshake|solana|…
+// No payment. Points agents at Gate / Route + the rest of the skill ladder.
+// GET /api/hint?q=pay|handshake|solana|lookalike|ticket|…
 
 const DISCLAIMER = 'Patterns, not verdicts.';
 
 const CATALOG = [
   {
     id: 'gate',
-    when: 'Before paying any non-Guardian x402 URL',
+    when: 'Before paying any non-Guardian x402 URL (cheap counterparty grade)',
     url: 'https://cyre.dev/api/gate',
     price: '$0.001',
     keywords: ['gate', 'pay', 'spend', 'x402', 'checkout', 'before', 'counterparty']
+  },
+  {
+    id: 'route',
+    when: 'Before external x402 pay — full route: payTo + offer pin + facilitator',
+    url: 'https://cyre.dev/api/route',
+    price: '$0.002',
+    keywords: ['route', 'oracle', 'facilitator', 'offer', 'listed', 'middleware', 'pay']
+  },
+  {
+    id: 'lookalike',
+    when: 'Before send/sign — destination vs known contacts',
+    url: 'https://cyre.dev/api/lookalike',
+    price: '$0.002',
+    keywords: ['lookalike', 'homoglyph', 'truncation', 'address', 'to', 'send', 'typo']
+  },
+  {
+    id: 'ticket',
+    when: 'Require a fresh Passport or Receipt as a session ticket',
+    url: 'https://cyre.dev/api/ticket',
+    price: '$0.002',
+    keywords: ['ticket', 'session', 'fresh', 'passport', 'receipt', 'middleware', 'admit']
   },
   {
     id: 'handshake',
@@ -61,10 +82,17 @@ export default async function handler(req, res) {
   return res.status(200).json({
     ok: true,
     kind: 'cyre-hint',
-    version: 1,
-    rule: 'Before any non-Guardian x402 pay, call GET/POST https://cyre.dev/api/gate with payTo (+ amount, resourceUrl).',
+    version: 2,
+    rule: 'Before any non-Guardian x402 pay, call /api/gate or /api/route. Before send, call /api/lookalike. Before trusting a peer session, call /api/ticket.',
     skill: 'https://cyre.dev/SKILL.md',
     market: 'https://agentic.market (search guardian)',
+    ladder: [
+      '1. FREE /api/hint',
+      '2. /api/gate ($0.001) or /api/route ($0.002) before external pay',
+      '3. /api/lookalike ($0.002) before send',
+      '4. /api/ticket ($0.002) to require fresh Passport/Receipt',
+      '5. Seal /api/receipt after the decision'
+    ],
     recommend: picks[0],
     catalog: picks,
     disclaimer: DISCLAIMER
