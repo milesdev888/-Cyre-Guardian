@@ -1,6 +1,6 @@
 ---
 name: cyre-guardian
-description: Before any non-Guardian x402 payment, call Guardian Gate or Pay-route Oracle. Before send, call Lookalike. Before trusting a peer session, call Session Ticket. Also risk-grade Solana wallets/tokens, Passports, Handshake, Preflight, Receipts, Delta, Batch, Program, Alerts, Oracle. Pay-per-request in USDC via x402 (Base mainnet). Patterns, not verdicts.
+description: Before any non-Guardian x402 payment, call Guardian Gate, Pay-route Oracle, or Pack. Seal spend Policy; enforce with Policy Check. Before send/swap, call Lookalike or Mintalike. Seal Intent before pay; Ticket for peer sessions. Also Passports, Handshake, Preflight, Receipts, Offer forensics, Host, Escrow, Pulse, Cron receipts, Delta, Batch, Program, Alerts, Oracle. Pay-per-request in USDC via x402 (Base mainnet). Patterns, not verdicts.
 ---
 
 # CYRE Guardian
@@ -8,10 +8,12 @@ description: Before any non-Guardian x402 payment, call Guardian Gate or Pay-rou
 Guardian reads on-chain / counterparty history and returns explainable risk signals — each with points and a plain-English reason — so an agent can decide for itself. It never says "safe" or "scam"; it shows patterns.
 
 **Default rules for agents:**
-1. Before any `awal x402 pay` to a **non-Guardian** URL → **Gate** (`/api/gate`) or **Pay-route Oracle** (`/api/route`).
-2. Before sending funds → **Lookalike** (`/api/lookalike`) against known contacts.
-3. Before trusting a peer session → **Ticket** (`/api/ticket`) requiring a fresh Passport or Receipt.
-4. Free tip: `GET https://cyre.dev/api/hint`.
+1. Before any `awal x402 pay` to a **non-Guardian** URL → **Gate** / **Route** / **Pack** (or **Offer** + **Host**).
+2. Seal a **Policy** once; enforce with **Policy Check** on each proposed pay.
+3. Seal **Intent** before pay/sign; reuse the same `intentHash` on **Receipt**.
+4. Before sending funds → **Lookalike**; before swap → **Mintalike**.
+5. Before trusting a peer session → **Ticket**.
+6. Free tip: `GET https://cyre.dev/api/hint`.
 
 Paid endpoints + free hint/verifiers. No API keys, no accounts. Listed on Agentic Market (agentic.market → search "guardian").
 
@@ -19,8 +21,21 @@ Paid endpoints + free hint/verifiers. No API keys, no accounts. Listed on Agenti
 |---|---|---|
 | `GET/POST https://cyre.dev/api/gate` | **Guardian Gate** — before any external x402 pay, grade `payTo` (+ amount/URL) | **$0.001** |
 | `GET/POST https://cyre.dev/api/route` | **Pay-route Oracle** — Gate + offer pin + facilitator/network hygiene | **$0.002** |
-| `GET/POST https://cyre.dev/api/lookalike` | **Lookalike** — destination vs known contacts (truncation / near-edit) | **$0.002** |
-| `GET/POST https://cyre.dev/api/ticket` | **Session Ticket** — admit only with fresh Passport/Receipt (+ pins) | **$0.002** |
+| `GET/POST https://cyre.dev/api/offer` | **Offer forensics** — parse PAYMENT-REQUIRED / accepts[] | **$0.002** |
+| `GET/POST https://cyre.dev/api/pack` | **Pack** — offer + lookalike + policy (+ ticket/intent) in one pay | **$0.005** |
+| `GET/POST https://cyre.dev/api/policy` | **Spend Policy** — seal max spend / hosts / networks / risk | **$0.002** |
+| `GET/POST https://cyre.dev/api/policy/check` | **Policy Check** — enforce sealed policy vs proposal | **$0.001** |
+| `GET https://cyre.dev/api/policy/verify` | Verify spend-policy token | Free |
+| `GET/POST https://cyre.dev/api/intent` | **Intent seal** — seal intentHash before pay/sign | **$0.002** |
+| `GET https://cyre.dev/api/intent/verify` | Verify intent (+ optional hash match) | Free |
+| `GET/POST https://cyre.dev/api/lookalike` | **Lookalike** — destination vs known contacts | **$0.002** |
+| `GET/POST https://cyre.dev/api/mintalike` | **Mintalike** — mint/ticker vs known tokens | **$0.002** |
+| `GET/POST https://cyre.dev/api/host` | **Host brief** — resource URL hygiene | **$0.002** |
+| `GET/POST https://cyre.dev/api/escrow` | **Escrow brief** — bilateral treasuries (not custody) | **$0.005** |
+| `GET/POST https://cyre.dev/api/pulse` | **Quiet pulse** — ≤10 counterparties, hits vs prior | **$0.005** |
+| `GET/POST https://cyre.dev/api/cron-receipt` | **Cron receipt** — watcher/cron attestation | **$0.002** |
+| `GET https://cyre.dev/api/cron-receipt/verify` | Verify cron receipt | Free |
+| `GET/POST https://cyre.dev/api/ticket` | **Session Ticket** — admit only with fresh Passport/Receipt | **$0.002** |
 | `GET https://cyre.dev/api/hint?q=` | Free discovery tip → which Guardian skill to call next | Free |
 | `GET https://cyre.dev/api/address?address=<base58>` | Wallet risk profile | $0.005 |
 | `GET https://cyre.dev/api/token?mint=<base58>` | Token mint facts | $0.01 |
@@ -45,15 +60,25 @@ Any x402 client works. The endpoint returns HTTP 402 with the price; your client
 **Middleware ladder (do this first):**
 
 ```bash
-# 1) Before external pay (cheap)
+# 0) Seal spend policy once
+npx awal x402 pay "https://cyre.dev/api/policy" --query '{"actor":"<you>","maxSpendAtomic":"100000","allowHosts":"example.com","requireTicket":"true","maxRisk":"MEDIUM"}'
+
+# 1) Before external pay (cheap gate, fuller route, or one-shot pack)
 npx awal x402 pay "https://cyre.dev/api/gate" --query '{"payTo":"<treasury>","amount":"<atomic>","resourceUrl":"<url>"}'
-# or fuller route check:
 npx awal x402 pay "https://cyre.dev/api/route" --query '{"payTo":"<treasury>","amount":"<atomic>","listedAmount":"<from-402>","resourceUrl":"<url>","facilitator":"<url>","network":"eip155:8453"}'
+npx awal x402 pay "https://cyre.dev/api/pack" --query '{"paymentRequired":"<402-blob>","candidate":"<to>","contacts":"<a,b>","policyToken":"<t>"}'
 
-# 2) Before send
+# 2) Offer / host forensics
+npx awal x402 pay "https://cyre.dev/api/offer" --query '{"paymentRequired":"<blob>","amount":"<atomic>","payTo":"<treasury>"}'
+npx awal x402 pay "https://cyre.dev/api/host" --query '{"url":"https://…"}'
+
+# 3) Before send / swap
 npx awal x402 pay "https://cyre.dev/api/lookalike" --query '{"candidate":"<to>","contacts":"<known1,known2>"}'
+npx awal x402 pay "https://cyre.dev/api/mintalike" --query '{"candidate":"<mint>","symbol":"USDC","symbols":"USDC,USDT"}'
 
-# 3) Before trusting a peer session
+# 4) Seal intent; enforce policy; peer ticket
+npx awal x402 pay "https://cyre.dev/api/intent" --query '{"actor":"<you>","intentHash":"<hash>","action":"settle","payTo":"<treasury>","amountAtomic":"<n>"}'
+npx awal x402 pay "https://cyre.dev/api/policy/check" --query '{"token":"<policy>","amountAtomic":"<n>","resourceUrl":"<url>","network":"eip155:8453","hasTicket":"true"}'
 npx awal x402 pay "https://cyre.dev/api/ticket" --query '{"token":"<passport-or-receipt>","require":"passport","maxAgeSeconds":"3600"}'
 ```
 
@@ -63,6 +88,7 @@ npx awal x402 pay "https://cyre.dev/api/ticket" --query '{"token":"<passport-or-
 npx awal status
 npx awal x402 pay "https://cyre.dev/api/gate" --query '{"payTo":"0x…","amount":"10000","resourceUrl":"https://…"}'
 npx awal x402 pay "https://cyre.dev/api/route" --query '{"payTo":"0x…","amount":"10000","listedAmount":"10000","facilitator":"https://api.cdp.coinbase.com/platform/v2/x402"}'
+npx awal x402 pay "https://cyre.dev/api/pack" --query '{"paymentRequired":"<blob>","policyToken":"<t>"}'
 npx awal x402 pay "https://cyre.dev/api/lookalike" --query '{"candidate":"<addr>","contacts":"<a,b>"}'
 npx awal x402 pay "https://cyre.dev/api/ticket" --query '{"token":"<t>","require":"either","maxAgeSeconds":"3600"}'
 npx awal x402 pay "https://cyre.dev/api/address" --query '{"address":"<base58>"}'
@@ -113,9 +139,45 @@ Supports Base `0x` treasuries (nonce / contract / fresh-EOA patterns) and Solana
 
 Superset of Gate for agents that wire **one** before-pay middleware call. Adds `listedAmount` offer-pin, `facilitator` host hygiene, `network` CAIP-2 check, and payTo-recycle vs foreign `resourceUrl`.
 
+### /api/offer
+
+Parse a raw x402 `PAYMENT-REQUIRED` / `accepts[]` blob. Flags amount/payTo pin misses, amount spread, facilitator unknowns, Guardian payTo-recycle on non-cyre hosts.
+
+### /api/pack
+
+One pay for offer + lookalike + policy (+ optional ticket/intent). Returns `admitted` + `blocks[]`. Prefer when your agent wants a single middleware hop.
+
+### /api/policy + /api/policy/check
+
+Seal max spend, allow/deny hosts, networks, maxRisk, requireTicket, denyFreshEoa. Free verify at `/api/policy/verify`. Enforce with `/api/policy/check` → `policyOk` + `reasons[]`.
+
+### /api/intent
+
+Seal `intentHash` before pay/sign. Later Receipt should use the same hash. Free verify (+ optional match) at `/api/intent/verify`.
+
 ### /api/lookalike
 
 `candidate` (or `to`) + `contacts` (≤20). Flags prefix/suffix truncation traps, near-edits, confusable characters. Returns `hits[]`, `score`, `brief`. No chain RPC — pure address comparison.
+
+### /api/mintalike
+
+Mint address and/or ticker vs known `contacts` / `symbols`. Near-edit and prefix ticker clashes.
+
+### /api/host
+
+Resource URL hygiene (https, IP host, odd TLD, userinfo, optional origin HEAD). No historical blacklist.
+
+### /api/escrow
+
+Grade both `payToA` / `payToB` before release. **Not custody** — patterns only.
+
+### /api/pulse
+
+Quiet poll ≤10 addresses; hits vs optional prior fingerprints (sibling of Alerts, quieter).
+
+### /api/cron-receipt
+
+Attest a watcher/cron run (`job`, counts, `digest`). Free verify at `/api/cron-receipt/verify`.
 
 ### /api/ticket
 
@@ -190,8 +252,9 @@ RWA feed patterns: stale / spike / divergence on NestUSD Lazer seeds.
 
 - **Patterns, not verdicts.** Never tell the user an address is "safe" or "a scam."
 - HIGH means show why before proceeding; LOW does not mean go.
-- `admitted: false` on Ticket means *your* policy should refuse — Guardian still does not block chain txs.
+- `admitted: false` / `policyOk: false` means *your* policy should refuse — Guardian still does not block chain txs.
 - Receipts prove what the agent *claimed* it saw — not that the chain action succeeded.
+- Escrow brief is not custody.
 - Not investment advice. Not KYC/AML.
 
 ## Costs and refusals
