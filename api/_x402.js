@@ -1,5 +1,6 @@
 // api/_x402.js — shared x402 v2 payment gate (zero-dep).
-// Used by api/address.js and api/token.js. Site visitors stay free.
+// Used by api/address.js, api/token.js, api/passport.js, api/handshake.js, api/preflight.js.
+// Site visitors stay free.
 //
 // Env (optional until X402_ENABLED=true):
 //   X402_ENABLED, X402_NETWORK, X402_NETWORK_BASE, X402_PRICE (per-route override via createX402Gate)

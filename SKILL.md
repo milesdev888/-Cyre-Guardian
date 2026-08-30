@@ -1,19 +1,21 @@
 ---
 name: cyre-guardian
-description: Risk-grade a Solana wallet, scan a token mint, or get a signed Guardian Passport before an agent transacts. Pay-per-request in USDC via x402 (Base mainnet). Use when the user mentions CYRE, Guardian, wallet risk, address check, token scan, rug check, counterparty check, passport, or wants to know if a Solana address or mint looks risky before sending funds, swapping, or trusting a counterparty. Patterns, not verdicts.
+description: Risk-grade a Solana wallet, scan a token mint, get a signed Guardian Passport, run a bilateral Passport Handshake with a counterparty, or Intent-Preflight a Solana transfer before signing. Pay-per-request in USDC via x402 (Base mainnet). Use when the user mentions CYRE, Guardian, wallet risk, address check, token scan, rug check, counterparty check, passport, handshake, preflight, or wants to know if a Solana address, mint, or upcoming transfer looks risky before sending funds, swapping, or trusting a counterparty. Patterns, not verdicts.
 ---
 
 # CYRE Guardian
 
 Guardian reads on-chain history and returns explainable risk signals — each with points and a plain-English reason — so an agent can decide for itself. It never says "safe" or "scam"; it shows patterns.
 
-Three paid endpoints, one free verifier. No API keys, no accounts. Listed on Agentic Market (agentic.market → search "guardian").
+Five paid endpoints, one free verifier. No API keys, no accounts. Listed on Agentic Market (agentic.market → search "guardian").
 
 | Endpoint | What it does | Price |
 |---|---|---|
 | `GET https://cyre.dev/api/address?address=<base58>` | Wallet risk profile: score 0–100, LOW/MEDIUM/HIGH, six signals, activity profile | $0.005 USDC |
 | `GET https://cyre.dev/api/token?mint=<base58>` | Token mint facts: mint/freeze authority, supply, holder concentration | $0.01 USDC |
 | `GET https://cyre.dev/api/passport?address=<base58>` | Signed, 24-hour Guardian Passport attestation of a wallet's measured risk — present it to a counterparty | $0.005 USDC |
+| `GET https://cyre.dev/api/handshake?tokenA=<t>&tokenB=<t>` | Bilateral Passport Handshake — verify both sides, return score delta + compatibility brief (or `addressA`+`addressB`) | $0.01 USDC |
+| `GET https://cyre.dev/api/preflight?from=<base58>&to=<base58>` | Intent Preflight — grade from/to (+ optional `mint`, `programIds`) before you sign | $0.01 USDC |
 | `GET https://cyre.dev/api/passport/verify?token=<token>` | Verify any passport (signature, issuer, expiry) | Free |
 
 Payment network: **Base mainnet (eip155:8453), USDC.** A Solana lane also appears in the 402 offer but is currently devnet — pay on Base.
@@ -29,6 +31,8 @@ npx awal status                     # signed in + funded on Base? if not: npx aw
 npx awal x402 pay "https://cyre.dev/api/address" --query '{"address":"<base58>"}'
 npx awal x402 pay "https://cyre.dev/api/token"   --query '{"mint":"<base58>"}'
 npx awal x402 pay "https://cyre.dev/api/passport" --query '{"address":"<base58>"}'
+npx awal x402 pay "https://cyre.dev/api/handshake" --query '{"tokenA":"<passport>","tokenB":"<passport>"}'
+npx awal x402 pay "https://cyre.dev/api/preflight" --query '{"from":"<base58>","to":"<base58>","mint":"<base58>"}'
 ```
 
 **MCP hosts (Claude Desktop etc.) with the Coinbase payments tools:** use `check-payment-requirements` on the URL, tell the user the cost ($0.005 or $0.01), then `make-x402-request`.
@@ -96,16 +100,66 @@ Everything in `/api/address` plus `mintAffinity` (exposure to major RWA/stable m
 
 Also returned in the `X-Guardian-Passport` header. To verify offline: Ed25519 over canonical JSON of `claims` (keys sorted at every level) with the issuer public key, then check `expiresAt > now` and `iss === "cyre.dev"`. Passports expire after 24 hours — re-issue for a fresh one.
 
+### /api/handshake
+
+Two agents. Two Passports. One call. Preferred input is `tokenA` + `tokenB` from `/api/passport`. Fallback: `addressA` + `addressB` (measures both wallets). Also accepts POST JSON.
+
+```json
+{
+  "ok": true,
+  "kind": "cyre-handshake",
+  "mode": "passport",
+  "sides": {
+    "a": { "address": "9WzD…", "valid": true, "score": 12, "riskLevel": "LOW", "expiresInSeconds": 80000 },
+    "b": { "address": "5tzF…", "valid": true, "score": 44, "riskLevel": "MEDIUM", "expiresInSeconds": 70000 }
+  },
+  "delta": {
+    "scoreGap": 32,
+    "riskLevelMatch": false,
+    "higherRisk": "b",
+    "sharedTriggeredIds": [],
+    "uniqueToA": [],
+    "uniqueToB": []
+  },
+  "brief": "Side B scores 32 points higher (MEDIUM vs LOW). Risk levels do not match — review triggered patterns before you settle. Patterns, not verdicts — Guardian does not say safe or scam.",
+  "disclaimer": "Patterns, not verdicts."
+}
+```
+
+Invalid or expired passports are refused **before** payment settles (400). Address mode may include `signals` + `mintAffinity` on each side when measured.
+
+### /api/preflight
+
+Call this **before signing** a Solana transfer or swap. Required: `from`. Optional: `to`, `mint`, `programIds` (comma-separated or JSON array). POST JSON also works.
+
+```json
+{
+  "ok": true,
+  "kind": "cyre-preflight",
+  "intent": { "from": "9WzD…", "to": "5tzF…", "mint": "EPjF…", "programIds": [] },
+  "actors": { "from": { "score": 12, "riskLevel": "LOW" }, "to": { "score": 44, "riskLevel": "MEDIUM" } },
+  "mint": { "mintAuthorityRevoked": true, "freezeAuthorityRevoked": true, "isToken2022": false },
+  "score": 44,
+  "riskLevel": "MEDIUM",
+  "signals": [{ "id": "lookalike", "scope": "pair", "triggered": false, "detail": "…" }],
+  "brief": "Destination scores higher than source (MEDIUM vs LOW). Review destination patterns before you sign. Patterns, not verdicts — Guardian does not approve or block the transaction.",
+  "disclaimer": "Patterns, not verdicts."
+}
+```
+
+Signals may be scoped `from` / `to` / `mint` / `program` / `pair`. Lookalike prefix+suffix shapes on from/to are flagged when present. This is **not** a transaction simulator — it grades the actors and mint/program patterns in the intent.
+
 ## Rules for using the result
 
 - **Patterns, not verdicts.** Report the score, the level, and the triggered signals with their `detail` text. Do not tell the user an address is "safe" or "a scam."
 - HIGH does not mean stop; it means show the user why before they proceed. LOW does not mean go.
 - Large `balanceSol` with a burst is often an exchange or program, not a person — say so.
+- Handshake `brief` and Preflight `brief` are summaries — still surface `delta` / `signals` to the user.
 - Not investment advice. Not a KYC/AML determination.
 
 ## Costs and refusals
 
-- You are only charged on a successful result. A bad address (400), a mint that doesn't exist (404), or "not a token mint" (400) are refused **before** any payment settles.
+- You are only charged on a successful result. A bad address (400), a mint that doesn't exist (404), "not a token mint" (400), or an invalid/expired handshake passport (400) are refused **before** any payment settles.
 - Repeated 402 = your wallet lacks USDC on Base. Check `npx awal balance` or the wallet UI.
 - 502 "RPC busy" = Solana RPC hiccup; retry. Nothing was settled.
 
