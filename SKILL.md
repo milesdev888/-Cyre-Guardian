@@ -56,7 +56,7 @@ Paid endpoints + free hint/verifiers. No API keys, no accounts. Listed on Agenti
 | `GET https://cyre.dev/api/passport/verify?token=` | Verify Passport | Free |
 | `GET https://cyre.dev/api/receipt/verify?token=` | Verify Decision Receipt | Free |
 
-Payment network: **Base mainnet (eip155:8453), USDC.** A Solana lane also appears in the 402 offer but is currently devnet — pay on Base.
+Payment network: **Base mainnet (eip155:8453), USDC.** A Solana lane also appears in the 402 offer but is currently devnet — pay on Base. A BNB Chain (B402) lane may appear when the merchant has armed it; prefer Base unless the 402 `accepts[]` lists `eip155:56` and your client supports permit2-exact.
 
 ## How to pay
 
