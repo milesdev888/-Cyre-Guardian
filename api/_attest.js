@@ -1,11 +1,12 @@
-// api/_attest.js — Guardian passport attestation (Ed25519, zero-dep).
-// Issues a signed, expiring receipt over a passport's measured claims so any
-// agent can prove "Guardian graded this address" to a third party.
+// api/_attest.js — Guardian passport + decision-receipt attestation (Ed25519, zero-dep).
+// Issues a signed, expiring receipt over measured claims so any agent can prove
+// "Guardian graded this" or "this agent sealed a decision" to a third party.
 //
 // Env:
 //   PASSPORT_SIGNING_KEY  base64 Ed25519 private seed (32 bytes) or seed+pub (64 bytes).
 //                         When missing the passport still serves — just unsigned (fail-safe).
-//   PASSPORT_TTL_SECONDS  attestation lifetime (default 86400 = 24h)
+//   PASSPORT_TTL_SECONDS  passport lifetime (default 86400 = 24h)
+//   RECEIPT_TTL_SECONDS   decision-receipt lifetime (default 2592000 = 30d)
 //
 // Token format (portable, header-safe):  base64url(claimsJSON) + "." + base64url(signature)
 // Claims are canonicalised (sorted keys) before signing; verifiers must do the same.
@@ -14,7 +15,10 @@ import { createPrivateKey, createPublicKey, sign, verify, randomBytes } from 'cr
 
 export const ISSUER = 'cyre.dev';
 export const ALG = 'Ed25519';
+export const PASSPORT_KIND = 'cyre-passport-attestation';
+export const RECEIPT_KIND = 'cyre-decision-receipt';
 const TTL = Math.max(60, Number(process.env.PASSPORT_TTL_SECONDS) || 86400);
+const RECEIPT_TTL = Math.max(60, Number(process.env.RECEIPT_TTL_SECONDS) || 2592000);
 
 // PKCS#8 DER prefix for an Ed25519 private key (RFC 8410) — lets us load a raw 32-byte seed.
 const PKCS8_PREFIX = Buffer.from('302e020100300506032b657004220420', 'hex');
@@ -61,12 +65,24 @@ export function canonical(obj) {
   return JSON.stringify(obj);
 }
 
+function signClaims(claims) {
+  const k = keys();
+  if (!k) return { attestation: null, token: null, unsigned: 'signing key not configured' };
+  const msg = Buffer.from(canonical(claims));
+  const sig = sign(null, msg, k.priv);
+  const token = b64url(msg) + '.' + b64url(sig);
+  return {
+    attestation: { alg: ALG, issuer: ISSUER, publicKey: k.pubB64, claims, signature: b64url(sig), token },
+    token
+  };
+}
+
 /** Pull the attestable claims out of a measured passport. */
 export function claimsFor(passport) {
   const issuedAt = new Date().toISOString();
   const expiresAt = new Date(Date.now() + TTL * 1000).toISOString();
   return {
-    kind: 'cyre-passport-attestation',
+    kind: PASSPORT_KIND,
     v: 1,
     iss: ISSUER,
     id: b64url(randomBytes(12)),
@@ -86,23 +102,53 @@ export function claimsFor(passport) {
  * Sign a passport. Returns { attestation, token } or { attestation: null, token: null, unsigned: reason }.
  */
 export function attest(passport) {
-  const k = keys();
-  if (!k) return { attestation: null, token: null, unsigned: 'signing key not configured' };
-  const claims = claimsFor(passport);
-  const msg = Buffer.from(canonical(claims));
-  const sig = sign(null, msg, k.priv);
-  const token = b64url(msg) + '.' + b64url(sig);
-  return {
-    attestation: { alg: ALG, issuer: ISSUER, publicKey: k.pubB64, claims, signature: b64url(sig), token },
-    token
+  return signClaims(claimsFor(passport));
+}
+
+/**
+ * Sign a decision receipt — intent hash + signals the agent saw + action taken.
+ * Returns { attestation, token } or unsigned reason.
+ */
+export function attestReceipt(input) {
+  const issuedAt = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + RECEIPT_TTL * 1000).toISOString();
+  const counterparties = Array.isArray(input.counterparties)
+    ? [...new Set(input.counterparties.map((x) => String(x || '').trim()).filter(Boolean))].slice(0, 10)
+    : [];
+  const claims = {
+    kind: RECEIPT_KIND,
+    v: 1,
+    iss: ISSUER,
+    id: b64url(randomBytes(12)),
+    chain: 'solana',
+    actor: String(input.actor || ''),
+    intentHash: String(input.intentHash || ''),
+    action: String(input.action || 'other').slice(0, 32),
+    score: typeof input.score === 'number' ? input.score : null,
+    riskLevel: input.riskLevel || null,
+    signalsTriggered: typeof input.signalsTriggered === 'number' ? input.signalsTriggered : null,
+    signalsEvaluated: typeof input.signalsEvaluated === 'number' ? input.signalsEvaluated : null,
+    counterparties,
+    note: input.note ? String(input.note).slice(0, 160) : null,
+    measuredAt: input.measuredAt || null,
+    issuedAt,
+    expiresAt
   };
+  return signClaims(claims);
 }
 
 /**
  * Verify a token (or an attestation object). Pure — works without the private key,
  * using either the embedded publicKey pinned to the issuer key when configured.
+ *
+ * @param {string|object} input
+ * @param {number} [now]
+ * @param {{ kinds?: string[], allowExpired?: boolean }} [opts]
  */
-export function verifyToken(input, now = Date.now()) {
+export function verifyToken(input, now = Date.now(), opts = {}) {
+  const allowed = Array.isArray(opts.kinds) && opts.kinds.length ? opts.kinds : [PASSPORT_KIND];
+  const allowExpired = !!opts.allowExpired;
+
   let token = null;
   let pubB64 = null;
   if (typeof input === 'string') token = input.trim();
@@ -120,7 +166,7 @@ export function verifyToken(input, now = Date.now()) {
   } catch (e) {
     return { valid: false, reason: 'claims not JSON' };
   }
-  if (!claims || claims.kind !== 'cyre-passport-attestation' || claims.iss !== ISSUER) {
+  if (!claims || claims.iss !== ISSUER || !allowed.includes(claims.kind)) {
     return { valid: false, reason: 'not a Guardian attestation', claims };
   }
 
@@ -144,7 +190,10 @@ export function verifyToken(input, now = Date.now()) {
 
   const exp = Date.parse(claims.expiresAt);
   if (!Number.isFinite(exp)) return { valid: false, reason: 'missing expiry', claims };
-  if (exp <= now) return { valid: false, reason: 'expired', expired: true, claims };
+  if (exp <= now) {
+    if (!allowExpired) return { valid: false, reason: 'expired', expired: true, claims };
+    return { valid: true, expired: true, claims, expiresInSeconds: 0 };
+  }
 
   return { valid: true, claims, expiresInSeconds: Math.floor((exp - now) / 1000) };
 }
