@@ -20,11 +20,13 @@ export const RECEIPT_KIND = 'cyre-decision-receipt';
 export const POLICY_KIND = 'cyre-spend-policy';
 export const INTENT_KIND = 'cyre-intent-seal';
 export const CRON_KIND = 'cyre-cron-attestation';
+export const LOCKBOX_KIND = 'cyre-intent-lockbox';
 const TTL = Math.max(60, Number(process.env.PASSPORT_TTL_SECONDS) || 86400);
 const RECEIPT_TTL = Math.max(60, Number(process.env.RECEIPT_TTL_SECONDS) || 2592000);
 const POLICY_TTL = Math.max(60, Number(process.env.POLICY_TTL_SECONDS) || 604800); // 7d
 const INTENT_TTL = Math.max(60, Number(process.env.INTENT_TTL_SECONDS) || 86400); // 24h
 const CRON_TTL = Math.max(60, Number(process.env.CRON_TTL_SECONDS) || 86400);
+const LOCKBOX_TTL = Math.max(60, Number(process.env.LOCKBOX_TTL_SECONDS) || 86400); // 24h
 
 // PKCS#8 DER prefix for an Ed25519 private key (RFC 8410) — lets us load a raw 32-byte seed.
 const PKCS8_PREFIX = Buffer.from('302e020100300506032b657004220420', 'hex');
@@ -194,6 +196,33 @@ export function attestIntent(input) {
     resourceUrl: input.resourceUrl ? String(input.resourceUrl).slice(0, 300) : null,
     payTo: input.payTo ? String(input.payTo).slice(0, 128) : null,
     amountAtomic: input.amountAtomic != null ? String(input.amountAtomic) : null,
+    note: input.note ? String(input.note).slice(0, 160) : null,
+    issuedAt,
+    expiresAt
+  };
+  return signClaims(claims);
+}
+
+/**
+ * Seal a pre-pay intent lockbox — bearer proves the hash was sealed before settle.
+ * Token-held (no central registry); verify/match with the token.
+ */
+export function attestLockbox(input) {
+  const issuedAt = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + LOCKBOX_TTL * 1000).toISOString();
+  const claims = {
+    kind: LOCKBOX_KIND,
+    v: 1,
+    iss: ISSUER,
+    id: b64url(randomBytes(12)),
+    purpose: 'pre-pay-lock',
+    actor: String(input.actor || ''),
+    intentHash: String(input.intentHash || ''),
+    action: String(input.action || 'pay').slice(0, 32),
+    resourceUrl: input.resourceUrl ? String(input.resourceUrl).slice(0, 300) : null,
+    payTo: input.payTo ? String(input.payTo).slice(0, 128) : null,
+    amountAtomic: input.amountAtomic != null ? String(input.amountAtomic) : null,
+    network: input.network ? String(input.network).slice(0, 64) : null,
     note: input.note ? String(input.note).slice(0, 160) : null,
     issuedAt,
     expiresAt

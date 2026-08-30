@@ -4,6 +4,8 @@
 import { comparePair, scanLookalikes, levenshtein, detectFamily } from './_lookalike.js';
 import { evaluatePolicy } from './_policycheck.js';
 import { decodePaymentRequired, analyzeOffer } from './_offerparse.js';
+import { cautionBandFromScore } from './_paybrief.js';
+import { matchLockbox } from './lockbox-match.js';
 
 function assert(cond, msg) {
   if (!cond) throw new Error(msg || 'assert failed');
@@ -112,11 +114,51 @@ function runOffer() {
   assert(bad.error, 'bad decode');
 }
 
+function runCaution() {
+  assert(cautionBandFromScore(0).band === 'proceed_with_pins', 'low band');
+  assert(cautionBandFromScore(19).band === 'proceed_with_pins', 'low edge');
+  assert(cautionBandFromScore(20).band === 'review', 'review');
+  assert(cautionBandFromScore(49).band === 'review', 'review edge');
+  assert(cautionBandFromScore(50).band === 'high_caution', 'high');
+  assert(typeof cautionBandFromScore(10).hint === 'string' && cautionBandFromScore(10).hint.length > 10, 'hint');
+}
+
+function runLockboxMatch() {
+  const claims = {
+    kind: 'cyre-intent-lockbox',
+    intentHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    payTo: '0x9Ff25C4acf1DcDDf15fD2702C127A285f1dFa712',
+    amountAtomic: '10000',
+    resourceUrl: 'https://example.com/api/paid',
+    network: 'eip155:8453'
+  };
+  const ok = matchLockbox(claims, {
+    intentHash: claims.intentHash,
+    payTo: claims.payTo,
+    amountAtomic: '10000',
+    resourceUrl: claims.resourceUrl,
+    network: 'eip155:8453'
+  });
+  assert(ok.matched && ok.mismatches.length === 0, 'lockbox match');
+
+  const bad = matchLockbox(claims, {
+    intentHash: claims.intentHash,
+    payTo: '0x0000000000000000000000000000000000000001',
+    amountAtomic: '999'
+  });
+  assert(!bad.matched && bad.mismatches.includes('payTo') && bad.mismatches.includes('amountAtomic'), 'mismatches');
+
+  const intentKind = matchLockbox({ ...claims, kind: 'cyre-intent-seal' }, { intentHash: claims.intentHash });
+  assert(intentKind.matched, 'intent kind accepted');
+}
+
 function run() {
   runLookalike();
   runPolicy();
   runOffer();
-  console.log('All middleware (lookalike + policy + offer) tests passed.');
+  runCaution();
+  runLockboxMatch();
+  console.log('All middleware (lookalike + policy + offer + caution + lockbox) tests passed.');
 }
 
 run();
