@@ -1,6 +1,8 @@
 // api/hint.js — FREE Guardian discovery tip for agents/crawlers.
 // No payment. Points agents at Gate / Route / Pack + the rest of the skill ladder.
-// GET /api/hint?q=pay|policy|offer|pack|mintalike|escrow|host|pulse|cron|…
+// GET /api/hint?q=pay|policy|offer|pack|mintalike|escrow|host|pulse|cron|xrpl|…
+
+import { detectNetwork, xrplPeerBlock } from '../lib/peers.js';
 
 const DISCLAIMER = 'Patterns, not verdicts.';
 
@@ -171,6 +173,21 @@ export default async function handler(req, res) {
   }
 
   const q = String((req.query && req.query.q) || '').trim().toLowerCase();
+
+  // XRPL / Ripple / RLUSD / classic r-address → peer handoff (free, no charge).
+  if (q && detectNetwork(q) === 'xrpl') {
+    return res.status(200).json({
+      ok: true,
+      kind: 'cyre-hint',
+      version: 4,
+      next: 'cloudpayX',
+      peer: xrplPeerBlock(),
+      pattern_note: 'Routing hint only. Guardian does not vouch for peer results.',
+      skill: 'https://cyre.dev/SKILL.md',
+      disclaimer: DISCLAIMER
+    });
+  }
+
   let picks = CATALOG;
   if (q) {
     const hit = CATALOG.filter((c) => c.keywords.some((k) => q.includes(k) || k.includes(q)));

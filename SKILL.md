@@ -58,6 +58,10 @@ Paid endpoints + free hint/verifiers. No API keys, no accounts. Listed on Agenti
 
 Payment network: **Base mainnet (eip155:8453), USDC.** A Solana lane also appears in the 402 offer but is currently devnet — pay on Base. A BNB Chain (B402) lane may appear when the merchant has armed it; prefer Base unless the 402 `accepts[]` lists `eip155:56` and your client supports permit2-exact.
 
+## Other networks (peers)
+
+XRPL → [cloudpayX](https://api.cloudpayxagent.xyz/.well-known/agent-card.json). Guardian routes XRPL queries to that peer and does not vouch for peer results. Free tip: `GET /api/hint?q=xrpl`.
+
 ## How to pay
 
 Any x402 client works. The endpoint returns HTTP 402 with the price; your client signs a USDC payment and retries; Guardian settles it and returns the result in the same call.
