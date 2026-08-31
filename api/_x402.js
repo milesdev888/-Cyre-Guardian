@@ -6,39 +6,140 @@
 //   X402_ENABLED, X402_NETWORK, X402_NETWORK_BASE, X402_PRICE (per-route override via createX402Gate)
 //   CDP_API_KEY_ID, CDP_API_KEY_SECRET
 //   X402_PAY_TO, X402_FACILITATOR, X402_PAY_TO_BASE, X402_FACILITATOR_BASE
-//   X402_INTERNAL_KEY — bypass via x-guardian-key header
+//   -- BNB Chain / B402 lane (dormant until X402_PAY_TO_BSC is set) --
+//   X402_PAY_TO_BSC, X402_NETWORK_BSC (mainnet|testnet), X402_ASSET_BSC
+//   X402_FACILITATOR_BSC — Render relay base (default …/internal/b402); Vercel never holds B402 secrets
+//   Optional extra fallbacks if relay /supported unavailable: B402_SIGNER_ADDRESS, B402_SPENDER_ADDRESS
+//   X402_INTERNAL_KEY — bypass via x-guardian-key; also auth to the B402 relay
+// See docs/B402-RESEARCH.md · docs/B402-ENV.md
 
 const DEFAULT_FACILITATOR = 'https://x402.org/facilitator';
 const CDP_FACILITATOR = 'https://api.cdp.coinbase.com/platform/v2/x402';
+const DEFAULT_B402_RELAY = 'https://cyre-fraud-prediction.onrender.com/internal/b402';
 const CDP_KEY_ID = process.env.CDP_API_KEY_ID || '';
 const CDP_KEY_SECRET = process.env.CDP_API_KEY_SECRET || '';
 const X402_ENABLED = process.env.X402_ENABLED === 'true';
 const NET = (process.env.X402_NETWORK || 'devnet').toLowerCase();
 const NET_BASE = (process.env.X402_NETWORK_BASE || 'mainnet').toLowerCase();
 
-const LANES = [
-  {
-    name: 'solana',
-    payTo: process.env.X402_PAY_TO || '',
-    facilitator: (process.env.X402_FACILITATOR || DEFAULT_FACILITATOR).replace(/\/$/, ''),
-    mainnet: { network: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp', usdc: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' },
-    devnet: { network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1', usdc: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU' }
+// BSC mainnet stables are 18 decimals; Base USDC price knobs stay 6-decimal atomic.
+const BSC_ASSETS = {
+  mainnet: {
+    USDT: { address: '0x55d398326f99059fF775485246999027B3197955', decimals: 18, name: 'Tether USD', version: '1' },
+    USDC: { address: '0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d', decimals: 18, name: 'USD Coin', version: '2' }
   },
-  {
-    name: 'base',
-    payTo: process.env.X402_PAY_TO_BASE || '0x9Ff25C4acf1DcDDf15fD2702C127A285f1dFa712',
-    facilitator: (process.env.X402_FACILITATOR_BASE || (CDP_KEY_ID && CDP_KEY_SECRET ? CDP_FACILITATOR : DEFAULT_FACILITATOR)).replace(/\/$/, ''),
-    mainnet: { network: 'eip155:8453', usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', extra: { name: 'USD Coin', version: '2' } },
-    devnet: { network: 'eip155:84532', usdc: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', extra: { name: 'USDC', version: '2' } }
+  testnet: {
+    USDT: { address: '0x337610d27c682E347C9cD60BD4b3b107C9d34dDd', decimals: 18, name: 'Tether USD', version: '1' },
+    USDC: { address: '0xEC1C60D64a06896Df296438c12edD14E974FDE47', decimals: 6, name: 'USD Coin', version: '2' }
   }
-];
+};
 
-function armedLanes() {
-  return LANES.filter((l) => l.payTo);
+const BSC_EXTRA_TTL_MS = 5 * 60 * 1000;
+const SETTLE_POLL_MS = 10000;
+const SETTLE_POLL_INTERVAL_MS = 400;
+
+/** @type {{ at: number, key: string, extra: object|null }} */
+let bscExtraCache = { at: 0, key: '', extra: null };
+
+function bscAssetConfig() {
+  const net = (process.env.X402_NETWORK_BSC || 'mainnet').toLowerCase();
+  const envKey = net === 'testnet' ? 'testnet' : 'mainnet';
+  const sym = String(process.env.X402_ASSET_BSC || 'USDT').trim().toUpperCase();
+  const table = BSC_ASSETS[envKey];
+  return table[sym] || table.USDT;
+}
+
+function buildBscLane() {
+  const payTo = process.env.X402_PAY_TO_BSC || '';
+  const asset = bscAssetConfig();
+  const net = (process.env.X402_NETWORK_BSC || 'mainnet').toLowerCase();
+  const network = net === 'testnet' ? 'eip155:97' : 'eip155:56';
+  return {
+    name: 'bsc',
+    payTo,
+    facilitator: String(process.env.X402_FACILITATOR_BSC || DEFAULT_B402_RELAY).replace(/\/$/, ''),
+    auth: 'relay',
+    verifyPath: '/verify',
+    settlePath: '/settle',
+    // extra filled at offer time from /supported (or env fallback) — never guess
+    mainnet: { network, usdc: asset.address, decimals: asset.decimals, extra: {}, scheme: 'exact' },
+    devnet: { network, usdc: asset.address, decimals: asset.decimals, extra: {}, scheme: 'exact' }
+  };
+}
+
+function buildLanes() {
+  return [
+    {
+      name: 'solana',
+      payTo: process.env.X402_PAY_TO || '',
+      facilitator: (process.env.X402_FACILITATOR || DEFAULT_FACILITATOR).replace(/\/$/, ''),
+      auth: 'default',
+      verifyPath: '/verify',
+      settlePath: '/settle',
+      mainnet: { network: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp', usdc: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', decimals: 6 },
+      devnet: { network: 'solana:EtWTRABZaYq6iMfeYKouRu166VU2xqa1', usdc: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU', decimals: 6 }
+    },
+    {
+      name: 'base',
+      payTo: process.env.X402_PAY_TO_BASE || '0x9Ff25C4acf1DcDDf15fD2702C127A285f1dFa712',
+      facilitator: (process.env.X402_FACILITATOR_BASE || (CDP_KEY_ID && CDP_KEY_SECRET ? CDP_FACILITATOR : DEFAULT_FACILITATOR)).replace(/\/$/, ''),
+      auth: 'cdp',
+      verifyPath: '/verify',
+      settlePath: '/settle',
+      mainnet: { network: 'eip155:8453', usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', decimals: 6, extra: { name: 'USD Coin', version: '2' } },
+      devnet: { network: 'eip155:84532', usdc: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', decimals: 6, extra: { name: 'USDC', version: '2' } }
+    },
+    buildBscLane()
+  ];
+}
+
+/** Convert 6-decimal USD atomic (Base USDC price knobs) → token atomic for a lane asset. */
+export function sixDecimalToLaneAtomic(priceSix, decimals) {
+  const p = BigInt(String(priceSix || '0'));
+  const d = Number(decimals);
+  if (!Number.isFinite(d) || d === 6) return p.toString();
+  if (d > 6) return (p * 10n ** BigInt(d - 6)).toString();
+  const div = 10n ** BigInt(6 - d);
+  return (p / div).toString();
+}
+
+export function armedLanes() {
+  return buildLanes().filter((l) => l.payTo);
+}
+
+export function listArmedLaneNames() {
+  return armedLanes().map((l) => l.name);
+}
+
+export function clearBscExtraCache() {
+  bscExtraCache = { at: 0, key: '', extra: null };
 }
 
 function laneNet(lane) {
-  return lane.name === 'base' ? NET_BASE : NET;
+  if (lane.name === 'base') return NET_BASE;
+  if (lane.name === 'bsc') {
+    return (process.env.X402_NETWORK_BSC || 'mainnet').toLowerCase() === 'testnet' ? 'devnet' : 'mainnet';
+  }
+  return NET;
+}
+
+function laneEnv(lane) {
+  return laneNet(lane) === 'mainnet' ? lane.mainnet : lane.devnet;
+}
+
+export function laneRequirements(lane, priceSix) {
+  const env = laneEnv(lane);
+  const amount = sixDecimalToLaneAtomic(priceSix, env.decimals != null ? env.decimals : 6);
+  const req = {
+    scheme: env.scheme || 'exact',
+    network: env.network,
+    amount,
+    asset: env.usdc,
+    payTo: lane.payTo,
+    maxTimeoutSeconds: 60,
+    extra: env.extra || {}
+  };
+  return req;
 }
 
 function normAddr(v) {
@@ -93,16 +194,127 @@ function cdpJwt(method, urlPath) {
   return signingInput + '.' + b64url(sig);
 }
 
-async function callFacilitator(base, path, body) {
+/** Peel Binance BAPI envelope `{ code, data }` when present. */
+export function unwrapFacilitatorData(data) {
+  if (!data || typeof data !== 'object') return data;
+  if (data.data && typeof data.data === 'object') {
+    if (data.code != null ||
+        Object.prototype.hasOwnProperty.call(data.data, 'isValid') ||
+        Object.prototype.hasOwnProperty.call(data.data, 'success') ||
+        Object.prototype.hasOwnProperty.call(data.data, 'kinds') ||
+        Object.prototype.hasOwnProperty.call(data.data, 'transaction')) {
+      return data.data;
+    }
+  }
+  return data;
+}
+
+function envBscExtraFallback() {
+  const asset = bscAssetConfig();
+  const signer = process.env.B402_SIGNER_ADDRESS || '';
+  const spender = process.env.B402_SPENDER_ADDRESS || '';
+  if (!signer || !spender) return null;
+  return {
+    name: process.env.X402_ASSET_BSC_NAME || asset.name,
+    version: process.env.X402_ASSET_BSC_VERSION || asset.version,
+    assetTransferMethod: process.env.X402_BSC_TRANSFER_METHOD || 'permit2-exact',
+    signerAddress: signer,
+    spenderAddress: spender
+  };
+}
+
+function pickSupportedExtra(data, network, assetAddr, method) {
+  const kinds = (data && (data.kinds || data.accepted)) || [];
+  if (!Array.isArray(kinds)) return null;
+  const wantAsset = normAddr(assetAddr);
+  const wantMethod = method || 'permit2-exact';
+  for (const k of kinds) {
+    if (!k || !k.extra) continue;
+    const asset = normAddr(k.asset);
+    const xfer = k.extra.assetTransferMethod || '';
+    const netOk = !k.network || k.network === network;
+    const methodOk = !xfer || xfer === wantMethod;
+    if (netOk && asset === wantAsset && methodOk && k.extra.signerAddress && k.extra.spenderAddress) {
+      return k.extra;
+    }
+  }
+  for (const k of kinds) {
+    if (k && k.extra && normAddr(k.asset) === wantAsset && k.extra.signerAddress && k.extra.spenderAddress) {
+      return k.extra;
+    }
+  }
+  return null;
+}
+
+/**
+ * Resolve BSC `extra` from relay POST /supported (cached), else env signer/spender.
+ * Returns null when neither is available — caller must omit the BSC accept.
+ */
+export async function resolveBscExtra(lane) {
+  const env = laneEnv(lane);
+  const method = process.env.X402_BSC_TRANSFER_METHOD || 'permit2-exact';
+  const cacheKey = [env.network, env.usdc, method, lane.facilitator].join('|');
+  const now = Date.now();
+  if (bscExtraCache.extra && bscExtraCache.key === cacheKey && now - bscExtraCache.at < BSC_EXTRA_TTL_MS) {
+    return bscExtraCache.extra;
+  }
+  try {
+    const raw = await callFacilitator(lane, '/supported', {});
+    const picked = pickSupportedExtra(raw, env.network, env.usdc, method);
+    if (picked) {
+      bscExtraCache = { at: now, key: cacheKey, extra: picked };
+      return picked;
+    }
+  } catch (e) {
+    console.error('b402 supported fetch failed', e && e.message);
+  }
+  const fallback = envBscExtraFallback();
+  if (fallback) {
+    bscExtraCache = { at: now, key: cacheKey, extra: fallback };
+    return fallback;
+  }
+  return null;
+}
+
+/**
+ * Build offer rows; drop BSC when extra cannot be resolved (never guess).
+ * @returns {Promise<Array<{ lane: object, requirements: object }>>}
+ */
+export async function buildOfferRows(lanes, priceSix) {
+  const rows = [];
+  for (const lane of lanes) {
+    if (lane.name === 'bsc') {
+      const extra = await resolveBscExtra(lane);
+      if (!extra || !extra.signerAddress || !extra.spenderAddress) continue;
+      const requirements = laneRequirements(lane, priceSix);
+      requirements.extra = extra;
+      rows.push({ lane, requirements });
+    } else {
+      rows.push({ lane, requirements: laneRequirements(lane, priceSix) });
+    }
+  }
+  return rows;
+}
+
+async function callFacilitator(lane, path, body) {
+  const base = lane.facilitator;
+  if (!base) throw new Error('facilitator URL not configured for lane ' + lane.name);
+  const bodyString = JSON.stringify(body);
   const headers = { 'content-type': 'application/json' };
-  if (base.includes('api.cdp.coinbase.com') && CDP_KEY_ID && CDP_KEY_SECRET) {
+
+  if (lane.auth === 'relay') {
+    const key = process.env.X402_INTERNAL_KEY || '';
+    if (key) headers['x-guardian-key'] = key;
+  } else if (base.includes('api.cdp.coinbase.com') && CDP_KEY_ID && CDP_KEY_SECRET) {
+    // Preserve prior Base behavior: JWT only when talking to CDP facilitator URL.
     const urlPath = new URL(base + path).pathname;
     headers.authorization = 'Bearer ' + cdpJwt('POST', urlPath);
   }
+
   const r = await fetch(base + path, {
     method: 'POST',
     headers,
-    body: JSON.stringify(body)
+    body: bodyString
   });
   const text = await r.text();
   let data;
@@ -111,11 +323,40 @@ async function callFacilitator(base, path, body) {
   } catch (e) {
     data = null;
   }
-  if (data && (Object.prototype.hasOwnProperty.call(data, 'isValid') || Object.prototype.hasOwnProperty.call(data, 'success'))) {
+  data = unwrapFacilitatorData(data);
+  if (data && (Object.prototype.hasOwnProperty.call(data, 'isValid') ||
+      Object.prototype.hasOwnProperty.call(data, 'success') ||
+      Object.prototype.hasOwnProperty.call(data, 'kinds'))) {
     return data;
   }
   if (!r.ok) throw new Error('facilitator ' + path + ' ' + r.status + ' ' + text.slice(0, 300));
   return data || {};
+}
+
+/**
+ * Settle with B402 async poll: success:false + non-empty transaction → retry ≤ ~10s.
+ */
+export async function settleWithPoll(lane, paymentPayload, requirements) {
+  const body = {
+    x402Version: 2,
+    paymentPayload,
+    paymentRequirements: requirements
+  };
+  if (lane.auth !== 'relay') {
+    return callFacilitator(lane, lane.settlePath || '/settle', body);
+  }
+  const deadline = Date.now() + SETTLE_POLL_MS;
+  let last = null;
+  while (Date.now() <= deadline) {
+    last = await callFacilitator(lane, lane.settlePath || '/settle', body);
+    if (last && last.success === true) return last;
+    if (last && last.success === false && last.transaction) {
+      await new Promise((r) => setTimeout(r, SETTLE_POLL_INTERVAL_MS));
+      continue;
+    }
+    return last;
+  }
+  return last;
 }
 
 /** cyre.dev (www) only — address-profile free path */
@@ -134,8 +375,25 @@ export function isCyreOrPreviewRequest(req) {
 }
 
 /**
+ * Local offer-pin check used before facilitator calls.
+ * Exported for unit tests.
+ */
+export function offerMatches(accepted, expected) {
+  if (!accepted || !expected) return false;
+  try {
+    if (BigInt(accepted.amount || '0') < BigInt(expected.amount || '0')) return false;
+  } catch (e) {
+    return false;
+  }
+  return accepted.scheme === expected.scheme &&
+    accepted.network === expected.network &&
+    normAddr(accepted.asset) === normAddr(expected.asset) &&
+    normAddr(accepted.payTo) === normAddr(expected.payTo);
+}
+
+/**
  * @param {object} opts
- * @param {string} opts.price — atomic USDC amount string
+ * @param {string} opts.price — atomic USDC amount string (6 decimals; BSC lane converts to asset decimals)
  * @param {string} opts.resourcePath — e.g. '/api/address'
  * @param {string} opts.description
  * @param {string} [opts.serviceName]
@@ -155,19 +413,6 @@ export function createX402Gate(opts) {
   const discovery = opts.discovery;
   const isFree = opts.isFree || isCyreSiteRequest;
   const baseOnly = !!opts.baseOnly;
-
-  function laneRequirements(lane) {
-    const env = laneNet(lane) === 'mainnet' ? lane.mainnet : lane.devnet;
-    return {
-      scheme: 'exact',
-      network: env.network,
-      amount: price,
-      asset: env.usdc,
-      payTo: lane.payTo,
-      maxTimeoutSeconds: 60,
-      extra: env.extra || {}
-    };
-  }
 
   function resourceInfo(resourceUrl) {
     return {
@@ -198,10 +443,16 @@ export function createX402Gate(opts) {
       return null;
     }
 
+    const rows = await buildOfferRows(lanes, price);
+    if (!rows.length) {
+      console.error('x402: X402_ENABLED but no offerable lanes — serving free');
+      return null;
+    }
+    const accepts = rows.map((r) => r.requirements);
+
     const proto = req.headers['x-forwarded-proto'] || 'https';
     const host = req.headers['x-forwarded-host'] || req.headers.host || 'cyre.dev';
     const resourceUrl = proto + '://' + host + resourcePath;
-    const accepts = lanes.map((l) => laneRequirements(l));
 
     const header = req.headers['payment-signature'] || req.headers['x-payment'];
     if (!header) {
@@ -216,41 +467,43 @@ export function createX402Gate(opts) {
     }
 
     const paidNetwork = payment && ((payment.accepted && payment.accepted.network) || payment.network);
-    const idx = lanes.findIndex((l) => {
-      const env = laneNet(l) === 'mainnet' ? l.mainnet : l.devnet;
-      return paidNetwork === env.network;
-    });
+    const idx = rows.findIndex((r) => r.requirements.network === paidNetwork);
     if (idx === -1) {
       return { status: 402, body: paymentRequired(resourceUrl, accepts, 'Unsupported payment network') };
     }
-    const lane = lanes[idx];
-    const expected = accepts[idx];
+    const { lane, requirements: expected } = rows[idx];
     const accepted = payment && payment.accepted;
     if (!accepted) {
       return { status: 402, body: paymentRequired(resourceUrl, accepts, 'Malformed payment payload') };
     }
-    try {
-      if (BigInt(accepted.amount || '0') < BigInt(expected.amount || '0')) {
+    if (!offerMatches(accepted, expected)) {
+      try {
+        if (BigInt(accepted.amount || '0') < BigInt(expected.amount || '0')) {
+          return { status: 402, body: paymentRequired(resourceUrl, accepts, 'amount_too_low') };
+        }
+      } catch (e) {
         return { status: 402, body: paymentRequired(resourceUrl, accepts, 'amount_too_low') };
       }
-    } catch (e) {
-      return { status: 402, body: paymentRequired(resourceUrl, accepts, 'amount_too_low') };
-    }
-    if (accepted.scheme !== expected.scheme ||
-        accepted.network !== expected.network ||
-        normAddr(accepted.asset) !== normAddr(expected.asset) ||
-        normAddr(accepted.payTo) !== normAddr(expected.payTo)) {
       return { status: 402, body: paymentRequired(resourceUrl, accepts, 'offer_mismatch') };
     }
     const requirements = accepted;
 
+    // Echo bazaar discovery on paymentPayload.extensions when settling (B402 Bazaar indexes from settle).
+    const paymentPayload = discovery
+      ? { ...payment, extensions: { ...(payment.extensions || {}), ...discovery } }
+      : payment;
+
     try {
-      const v = await callFacilitator(lane.facilitator, '/verify', { x402Version: 2, paymentPayload: payment, paymentRequirements: requirements });
+      const v = await callFacilitator(lane, lane.verifyPath || '/verify', {
+        x402Version: 2,
+        paymentPayload,
+        paymentRequirements: requirements
+      });
       if (!v || v.isValid !== true) {
         const reason = (v && (v.invalidMessage || v.invalidReason)) || 'Payment invalid';
         return { status: 402, body: paymentRequired(resourceUrl, accepts, reason) };
       }
-      const s = await callFacilitator(lane.facilitator, '/settle', { x402Version: 2, paymentPayload: payment, paymentRequirements: requirements });
+      const s = await settleWithPoll(lane, paymentPayload, requirements);
       if (!s || s.success !== true) {
         const reason = (s && (s.errorMessage || s.errorReason)) || 'Settlement failed';
         return { status: 402, body: paymentRequired(resourceUrl, accepts, reason) };
