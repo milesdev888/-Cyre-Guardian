@@ -71,6 +71,7 @@
   ],
   "redirects": [
     { "source": "/apps", "destination": "/app", "permanent": true },
+    { "source": "/community", "destination": "/airdrop", "permanent": true },
     {
       "source": "/.well-known/agent-card.json",
       "destination": "https://cyre-fraud-prediction.onrender.com/.well-known/agent-card.json",
