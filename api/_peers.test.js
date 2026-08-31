@@ -39,6 +39,11 @@ assert(requestedXrplNetwork({ network: 'xrpl:1' }) === 'xrpl:1', 'xrpl:1');
 const body = xrplHandoffBody({ address: XRPL_R });
 assert(body.status === 'unsupported_network', 'status key');
 assert(Array.isArray(body.supported_network) && body.supported_network.includes('eip155:8453'), 'supported');
+assert(
+  body.supported_network.includes('solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'),
+  'solana CAIP-2 must match x402 lane (32-char)'
+);
+assert(!body.supported_network.some((n) => n.includes('Kuc147dw2N9d')), 'no full Solana genesis hash');
 assert(body.requested_network === 'xrpl:0', 'requested');
 assert(body.recommended_provider.relationship === 'external_specialist', 'relationship');
 assert(body.recommended_provider.agent_card_url === peers.xrpl.agentCard, 'agent_card_url');
