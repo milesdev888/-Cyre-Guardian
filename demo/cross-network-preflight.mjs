@@ -169,14 +169,14 @@ function writeMarkdown({ artifact, intentHash, receipt, config }) {
   const lines = [];
   lines.push('# Cross-network Decision Receipt');
   lines.push('');
-  lines.push('_Patterns, not verdicts. Specialists report signals; they do not approve or call anything “safe.”_');
+  lines.push('_Patterns, not verdicts. Each specialist assessed only its own network; neither validated the other._');
   lines.push('');
-  lines.push('## Base leg — Guardian');
+  lines.push('## Base leg — assessed by CYRE Guardian');
   lines.push('');
   lines.push('| Field | Value |');
   lines.push('|---|---|');
   lines.push(`| Network | Base (eip155:8453) / USDC |`);
-  lines.push(`| Specialist | CYRE Guardian |`);
+  lines.push(`| Assessed by | CYRE Guardian |`);
   lines.push(`| Mode | ${base.mode || '—'} |`);
   lines.push(`| payTo | \`${config.base.payTo}\` |`);
   lines.push(`| amountAtomic | ${config.base.amountAtomic} |`);
@@ -190,12 +190,12 @@ function writeMarkdown({ artifact, intentHash, receipt, config }) {
     lines.push(`- **${s.name || s.id}** (${s.points ?? '?'} pts) — ${s.reason || '—'}`);
   }
   lines.push('');
-  lines.push('## XRPL leg — cloudpayX');
+  lines.push('## XRPL leg — assessed by cloudpayX (external specialist)');
   lines.push('');
   lines.push('| Field | Value |');
   lines.push('|---|---|');
   lines.push(`| Network | XRPL |`);
-  lines.push(`| Specialist | cloudpayX |`);
+  lines.push(`| Assessed by | cloudpayX (external specialist) |`);
   lines.push(`| Mode | ${xrpl.mode || '—'} |`);
   lines.push(`| Destination | \`${config.xrpl.destination}\` |`);
   lines.push(`| Amount / currency | ${config.xrpl.amount} ${config.xrpl.currency} |`);
@@ -205,7 +205,9 @@ function writeMarkdown({ artifact, intentHash, receipt, config }) {
     lines.push('Payment offer (verbatim summary): see `receipt.json` → `xrpl.offer`.');
     lines.push('');
   }
-  lines.push('## Combined receipt');
+  lines.push('## Coordinator receipt');
+  lines.push('');
+  lines.push('_Guardian sealed a Decision Receipt over the combined artifact hashes. This is not a cross-network verdict._');
   lines.push('');
   lines.push(`- **actor:** \`${config.actor}\``);
   lines.push(`- **action:** \`cross-network-pay\``);
@@ -226,18 +228,20 @@ async function main() {
   const config = loadConfig();
   mkdirSync(OUT_DIR, { recursive: true });
 
-  // 1. Discover peers
-  console.log('1. Discover peers.');
+  // 1. Discover referrals
+  console.log('1. Discover referrals.');
   const hint = await fetchJson(GUARDIAN + '/api/hint?q=xrpl');
   const card = await fetchJson(CLOUDPAYX_CARD);
-  const hintName = (hint.json && hint.json.next) || (hint.json && hint.json.peer && hint.json.peer.name) || 'Guardian hint';
+  const hintName = (hint.json && hint.json.next) || 'Guardian hint';
+  const provider =
+    (hint.json && hint.json.recommended_provider && hint.json.recommended_provider.name) || null;
   const cpayxName = (card.json && card.json.name) || 'cloudpayX';
   const skill = 'xrpl-stablecoin-route';
-  console.log(`   Guardian hint → next=${hintName}; peer skills=${JSON.stringify((hint.json && hint.json.peer && hint.json.peer.skills) || [])}`);
+  console.log(`   Guardian hint → next=${hintName}; recommended_provider=${provider || '(none yet)'}`);
   console.log(`   ${cpayxName} agent card OK; will call skill ${skill} via REST ${CLOUDPAYX_ROUTE}`);
 
-  // 2. Base leg → Guardian Gate
-  console.log('2. Base leg → Guardian /api/gate.');
+  // 2. Base leg → Guardian Gate (assessed by CYRE Guardian)
+  console.log('2. Base leg → Guardian /api/gate (assessed by CYRE Guardian).');
   const gate = await guardianGet(
     '/api/gate',
     {
@@ -262,8 +266,8 @@ async function main() {
     baseArtifact.signals = topSignals(gate.json);
   }
 
-  // 3. XRPL leg → cloudpayX (one call)
-  console.log('3. XRPL leg → cloudpayX stablecoin-route.');
+  // 3. XRPL leg → cloudpayX (one call; assessed by cloudpayX as external specialist)
+  console.log('3. XRPL leg → cloudpayX stablecoin-route (assessed by cloudpayX, external specialist).');
   const xrplResult = await cloudpayXStablecoinRoute(config.xrpl);
   const xrplArtifact = {
     network: 'xrpl',

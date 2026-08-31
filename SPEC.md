@@ -97,8 +97,8 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/_attest.js` | Ed25519 attestation (`PASSPORT_SIGNING_KEY`). Kinds: passport, decision-receipt, spend-policy, intent-seal, intent-lockbox, cron-attestation. `attest` / `attestReceipt` / `attestPolicy` / `attestIntent` / `attestLockbox` / `attestCron` / `verifyToken({ kinds, allowExpired })`. |
 =======
 | `api/_attest.js` | Ed25519 passport + decision-receipt attestation (`PASSPORT_SIGNING_KEY`). `attest` / `attestReceipt` / `verifyToken({ kinds, allowExpired })`. |
-| `api/_x402.js` | Shared x402 v2 gate (Solana + Base + dormant BNB Chain/B402). BSC lane arms only when `X402_PAY_TO_BSC` is set; see `docs/B402-RESEARCH.md` / `docs/B402-ENV.md`. XRPL inputs get a free `400` peer handoff to cloudpayX **before** any 402 (no charge). Pricing, site-origin bypass, validate-before-settle unchanged. |
-| `lib/peers.js` | Peer registry + `detectNetwork` (XRPL classic / X-address / network / XRP|RLUSD). Machine-readable routing only — Guardian does not vouch. |
+| `api/_x402.js` | Shared x402 v2 gate (Solana + Base + dormant BNB Chain/B402). BSC lane arms only when `X402_PAY_TO_BSC` is set; see `docs/B402-RESEARCH.md` / `docs/B402-ENV.md`. XRPL inputs get a free `400` **external referral** to cloudpayX (cloudpayX schema) **before** any 402 (no charge). Pricing, site-origin bypass, validate-before-settle unchanged. |
+| `lib/peers.js` | External network referrals + `detectNetwork` / `xrplHandoffBody` (cloudpayX schema: `status`, `supported_network`, `requested_network`, `recommended_provider`). Guardian refers, does not assess or vouch. |
 | `docs/B402-RESEARCH.md` | Part 1 research: Binance B402 onboarding, Tesla RSA auth, wire shape, BSC assets/decimals, sandbox. |
 | `docs/B402-ENV.md` | Vercel env checklist for dormant B402/BSC lane (no secrets). |
 >>>>>>> b604214 (Add dormant BNB Chain (B402) payment lane to x402 gate)
@@ -117,7 +117,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/lookalike.js` | GET/POST `/api/lookalike` — destination vs known `contacts` (≤20): truncation traps, near-edits, confusables. Pure compare via `_lookalike.js`. x402 default **$0.002**. No LLM. |
 | `api/_lookalike.js` | Pure lookalike helpers (`comparePair`, `scanLookalikes`, Levenshtein). |
 | `api/ticket.js` | GET/POST `/api/ticket` — **Session Ticket**. Verify Passport/Receipt + freshness SLA (`maxAgeSeconds`) + optional address/risk pins → `admitted`. x402 default **$0.002**. Free verifiers remain at passport/receipt verify. No LLM. |
-| `api/hint.js` | Free GET `/api/hint?q=` — discovery tip (bazaar/caution/lockbox + Gate/Route/Pack ladder). XRPL/Ripple/RLUSD/`r…` → `next: cloudpayX` peer block. No x402. |
+| `api/hint.js` | Free GET `/api/hint?q=` — discovery tip (bazaar/caution/lockbox + Gate/Route/Pack ladder). XRPL/Ripple/RLUSD/`r…` → `next: cloudpayX` + `recommended_provider`. No x402. |
 | `api/_paybrief.js` | Shared payTo grade + URL/amount signals + `cautionBandFromScore` for bazaar/caution. |
 | `api/bazaar.js` | GET/POST `/api/bazaar` — **Bazaar Scan**. Probe resourceUrl for 402, offer forensics, payTo grade. x402 default **$0.003**. No LLM. |
 | `api/caution.js` | GET/POST `/api/caution` — **Settlement Caution**. Pattern brief + withhold band. Not insurance. x402 default **$0.002**. No LLM. |
