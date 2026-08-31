@@ -403,6 +403,8 @@ export function offerMatches(accepted, expected) {
  * @param {(req: any) => boolean} [opts.isFree] — return true to skip payment
  * @param {boolean} [opts.baseOnly] — only arm Base lane
  */
+import { detectNetwork, xrplHandoffBody } from '../lib/peers.js';
+
 export function createX402Gate(opts) {
   const price = String(opts.price);
   const resourcePath = opts.resourcePath;
@@ -430,6 +432,11 @@ export function createX402Gate(opts) {
   }
 
   return async function x402Gate(req) {
+    // XRPL handoff BEFORE payment — agents must not pay to learn Guardian doesn't cover XRPL.
+    if (detectNetwork(req) === 'xrpl') {
+      return { status: 400, body: xrplHandoffBody() };
+    }
+
     if (!X402_ENABLED) return null;
     if (isFree(req)) return null;
 
