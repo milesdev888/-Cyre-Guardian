@@ -2,10 +2,9 @@
   /* ============================================================
    * $C7 — Meteora DBC DEVNET REHEARSAL config (schema-current)
    * Built against meteora-invent @ 6787734 (studio/config/dbc_config.jsonc).
-   * Tiny graduation so faucet SOL can finish the curve.
+   * Caps shrunk so ~1 SOL faucet funding can graduate the curve.
    * Replace <KEYPAIR_PATH> and <WALLET_PUBKEY> before running.
-   * DEVNET ONLY — rpcUrl must stay api.devnet.solana.com (or a
-   * Helius *devnet* endpoint). Never point this file at mainnet.
+   * DEVNET ONLY — never point this file at mainnet.
    * ============================================================ */
 
   "rpcUrl": "https://api.devnet.solana.com",
@@ -20,8 +19,8 @@
 
   "dbcConfig": {
     "buildCurveMode": 1,
-    "initialMarketCap": 0.2,
-    "migrationMarketCap": 1,
+    "initialMarketCap": 0.1,
+    "migrationMarketCap": 0.5,
 
     "token": {
       "totalTokenSupply": 100000000,
@@ -84,12 +83,13 @@
     "name": "CYRE",
     "symbol": "C7",
     "metadata": {
-      "uri": "https://raw.githubusercontent.com/milesdev888/-Cyre-Guardian/main/cyre-token-512.png"
+      /* Metaplex metadata JSON (image field inside points at cyre-token-512.png) */
+      "uri": "https://cyre.dev/token-metadata.json"
     }
   },
 
   "dbcSwap": {
-    "amountIn": 0.15,
+    "amountIn": 0.01,
     "slippageBps": 5000,
     "swapBaseForQuote": false,
     "referralTokenAccount": null

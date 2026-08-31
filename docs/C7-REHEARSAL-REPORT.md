@@ -1,120 +1,117 @@
 # $C7 Devnet Rehearsal Report
 
 **Date:** 2026-08-31  
-**Cluster:** Solana **devnet only** (`EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG`)  
+**Cluster:** Solana **devnet only** (genesis `EtWTRABZaYq6iMfeYKouRu166VU2xqa1wcaWoxPkrZBG`)  
 **Toolkit:** [MeteoraAg/meteora-invent](https://github.com/MeteoraAg/meteora-invent) `@ 6787734`  
-**Config prepared:** [`docs/c7_dbc_config.devnet.jsonc`](./c7_dbc_config.devnet.jsonc)  
-**Outcome:** **FAIL** at funding (step 0) — no on-chain create-config / create-pool / swap / migrate ran.
-
-A FAIL report is still a successful rehearsal output: the blocker is documented so tonight’s mainnet path is not surprised by faucet limits.
+**Config:** [`docs/c7_dbc_config.devnet.jsonc`](./c7_dbc_config.devnet.jsonc)  
+**Outcome:** **PASS** (end-to-end on public/Helius **devnet**)
 
 ---
 
-## Throwaway wallet (public only)
+## Keypairs generated this session
 
-| Field | Value |
-|---|---|
-| Pubkey | `HjNv2uk5ePX9FMHFQ2tyeYaphKU3WKCnPozuYcxYC76X` |
-| Keypair path (VM, not committed) | `/tmp/c7-rehearsal/keypair.json` |
-| Final balance | **0 SOL** |
+| # | Path (VM only, not committed) | Pubkey | Helius balance at inventory |
+|---|---|---|---|
+| 1 | `/tmp/c7-rehearsal/keypair.json` | `HjNv2uk5ePX9FMHFQ2tyeYaphKU3WKCnPozuYcxYC76X` | **0.999 SOL** after public-RPC airdrop retry (used as rehearsal wallet) |
+| 2 | `/tmp/c7-rehearsal/keypair2.json` | `GYx9TxsWz8wmKAJZgGJg8vSwgFThxg8UfYRv6mfE7nfJ` | 0 SOL (unused) |
 
-Private key / seed phrase: **not committed, not printed in this report.**
+No other session keypairs. Private keys / seed phrases: **not committed, not printed here.**
 
----
-
-## Steps attempted
-
-### 0. Fund throwaway wallet — **FAIL**
-
-Target: ≥ 2 SOL (reduced caps: `initialMarketCap` 0.2 → `migrationMarketCap` 1 SOL).
-
-| Source | Result |
-|---|---|
-| `solana airdrop` → `https://api.devnet.solana.com` | Rate-limit / faucet dry (repeated) |
-| `faucet.solana.com` UI / API | UI form automation blocked; API returned “Missing wallet address” / 404 for `/api/airdrop` |
-| Helius `requestAirdrop` / `solana airdrop -u https://devnet.helius-rpc.com/?api-key=<REDACTED>` | **HTTP -32403:** `Rate limit exceeded. The devnet faucet has a limit of 1 SOL per project per day.` |
-
-No alternate funding source was used (per hard rules). Balance remained **0 SOL**, so all later Meteora CLI steps were skipped.
-
-### 1–5. Config / pool / swap / migrate — **NOT RUN**
-
-Blocked by step 0. Prepared config uses reduced caps and current schema (see below). Intended command sequence once funded:
-
-```bash
-# DEVNET RPC only (public or Helius *devnet*)
-solana config set --url https://api.devnet.solana.com
-# copy docs/c7_dbc_config.devnet.jsonc → meteora-invent/studio/config/dbc_config.jsonc
-# replace <KEYPAIR_PATH> / <WALLET_PUBKEY>; dryRun false
-cd meteora-invent/studio
-pnpm dbc-create-config --config ./config/dbc_config.jsonc
-pnpm dbc-create-pool --config ./config/dbc_config.jsonc
-# record baseMint from create-pool output
-pnpm dbc-swap --config ./config/dbc_config.jsonc --baseMint <MINT>   # repeat / shrink until graduated
-pnpm dbc-migrate-to-damm-v2 --config ./config/dbc_config.jsonc --baseMint <MINT>
-# then SDK withdrawLeftover so leftoverReceiver balance can hit 65M (see prior local rehearsal)
-```
-
-### 6. On-chain verification checklist
-
-| Check | Result | Notes |
-|---|---|---|
-| a. Token mint; mint + freeze authority null | **FAIL** (not run) | No mint created |
-| b. Leftover receiver balance = 65,000,000 | **FAIL** (not run) | — |
-| c. Vesting escrow holds 10,000,000 + cliff params | **FAIL** (not run) | Config encodes 6‑mo cliff + 182 daily periods |
-| d. LP permanently locked (100% creator) | **FAIL** (not run) | Config: `creatorPermanentLockedLiquidityPercentage: 100` |
-| e. curve-sold + leftover + vesting ≈ 100,000,000 | **FAIL** (not run) | Expected: ~25M + 65M + 10M = 100M |
-
-### Transaction signatures
-
-None. Explorer links: n/a until funding succeeds and the sequence above is re-run.
+Funding path: public `api.devnet.solana.com` `solana airdrop 1` retry loop (~17 min) eventually credited wallet #1; Helius used as RPC for the rest of the rehearsal (devnet genesis verified). Caps shrunk to **initialMarketCap 0.1 / migrationMarketCap 0.5**.
 
 ---
 
-## Config used (intent)
+## Addresses
 
-File: `docs/c7_dbc_config.devnet.jsonc`
-
-| Parameter | Value |
+| Item | Value |
 |---|---|
-| Name / Symbol | CYRE / C7 |
-| Image / metadata URI | `https://raw.githubusercontent.com/milesdev888/-Cyre-Guardian/main/cyre-token-512.png` |
-| Supply | 100,000,000; `tokenAuthorityOption: 1` (Immutable) |
-| Quote | SOL (`So111…112`) |
-| Curve | `buildCurveMode: 1`; **initialMarketCap 0.2**; **migrationMarketCap 1** |
-| Leftover | 65,000,000 → leftoverReceiver = throwaway wallet |
-| Locked vesting | 10,000,000; cliff 15,552,000 s (~6 mo); linear 15,724,800 s / 182 periods (~182 days) |
-| LP on migration | 100% creator permanent lock; migration fee 0%; `migrationFeeOption: 2` (1% LP fee) |
-| `creatorTradingFeePercentage` | 100 (direct launch; same wallet as partner) |
-| Trading fee schedule | Flat 100 bps (anti-sniper decay disabled for tiny-cap rehearsal) |
+| Wallet / leftoverReceiver / creator / feeClaimer | `HjNv2uk5ePX9FMHFQ2tyeYaphKU3WKCnPozuYcxYC76X` |
+| DBC config | `9JWSSCZjNhwBzBLoWU9EndKSvdPDfXbNCUAKDCmancAA` |
+| Token mint (C7) | `BcJMFwHKgxckrbsjxiQGCH6FhKa2MK5k1jh3MUNtv7s8` |
+| DBC pool | `7JcsCLHF9p9GHuAZD88fSB4MNXCrtcM6BCbScYq5SZwC` |
+| Vesting escrow | `DnfbVH7J4DT8mVfcuAGyf4qyN39XVZvavUZVbnZ3F4pn` |
+| Escrow ATA (10M C7) | `2eWEdvZa1kV3oSSixFhvRaRammdKuP4vsHj9Qgn7aZxt` |
+| DAMM v2 pool | `CeCLPV1pcUhYwgzKkvuuRRygU7vTamR6FfvtbFNQzxe2` |
+| LP position (permanent lock) | `5cwYaNWkyr2XDWHR4GEBL9kPpeahadjEhj5tkB463pD5` |
+
+Explorer prefix: `https://explorer.solana.com/<SIG_OR_ADDR>?cluster=devnet`
+
+---
+
+## Transaction signatures
+
+| Step | Signature |
+|---|---|
+| Create config | [`2vAqTdF…hUeD`](https://explorer.solana.com/tx/2vAqTdFhrJvrBrg8oPERfY8R8Txi19NVk3PU1fNrzXmxHVMHKJQmmffoKpcp2WWun1N5tcS6tUn499Kc3Pw6hUeD?cluster=devnet) |
+| Create pool (mint) | [`41ZVojc…W8no`](https://explorer.solana.com/tx/41ZVojcQhWK9WYVJBEqf693M8GWr5xbNamihZF394JQCtZ7skzvugg9tUp29DhZq4k7btbu87UTsAfB9KRZbW8no?cluster=devnet) |
+| Swap (sample — first 0.01) | [`ZfZo4Gh…cXr`](https://explorer.solana.com/tx/ZfZo4Ghgy3wjEsKSszxkb4JLVwquE3S227R5UjxpTssu9XJ17cLYAtQ6pUMBtjcaVTZiVozj4J87aVAKi4HZcXr?cluster=devnet) |
+| Swap (crossing threshold, 8e-8 SOL) | [`3tsc36r…2Vxr`](https://explorer.solana.com/tx/3tsc36rAYPgayQv2jQw4bUiXJB74tL8DkhUdmUnjNYfV2aiTBmUECgyuRmhPguRUHerhZy9nLDgNT9swKv6G2Vxr?cluster=devnet) |
+| Create locker (team vest) | [`5GJTGZh…vFWs`](https://explorer.solana.com/tx/5GJTGZhjeVX6uo4vQppBEiE2nZLVj3kmAexGXRG6cwvx9b2f6PX3VNewaoAi9YW4HGaf1HZKSepVAnrK1zoZvFWs?cluster=devnet) |
+| Migrate → DAMM v2 (+ PermanentLockPosition) | [`2ogRX3i…8h5h`](https://explorer.solana.com/tx/2ogRX3ifUwVUCP8zBCXiGMAaqEsg7YzgXoWWNHwAjFmpkQ2tYmmMa4VWxnkSD6d8botJBzizBAJsVZrYZ6xT8h5h?cluster=devnet) |
+| withdrawLeftover | [`52ZxrEv…iKaS`](https://explorer.solana.com/tx/52ZxrEvqZg4guVa9236sQs4wBpoLW6toEZthWNDoGoUxqyWh3i3kyi781nHik2Z4zkCjsf2db9zgsGGEURWFiKaS?cluster=devnet) |
+
+Additional curve buys (shrinking sizes to avoid `Insufficient Liquidity` near the tip):  
+`4BfJUa4…`, `3iyG7De…`, `2VFEdRc…`, `qztCwtK…`, `2M6BYSw…`, `i88ddvS…`, `4qUJRx3…`, `R22sJTY…`, `611u6s8…`, `5nvuVPi…`, `63pJkH9…`, `GwNkihX…`, plus micro-finish swaps. Full list in agent logs under `/tmp/c7-rehearsal/`.
+
+Derived migration quote threshold for these caps: **38,627,124 lamports (~0.0386 SOL)** — market-cap mode ≠ 1:1 with `migrationMarketCap` SOL spent.
+
+---
+
+## Checklist (step 6)
+
+| # | Check | Result | Evidence |
+|---|---|---|---|
+| a | Mint; mint + freeze authority null | **PASS** | `spl-token display`: Supply `100000000` (6 decimals), Mint authority `(not set)`, Freeze authority `(not set)`. Mint [`BcJMF…`](https://explorer.solana.com/address/BcJMFwHKgxckrbsjxiQGCH6FhKa2MK5k1jh3MUNtv7s8?cluster=devnet) |
+| b | Leftover = 65,000,000 to receiver | **PASS** | `withdrawLeftover` ran; wallet `spl-token balance` **82,274,574.395579** = **65,000,000 leftover + 17,274,574.395579 curve buys** (same wallet bought the curve). Pre-withdraw balance was 17,274,572.596824; delta ≈ 65M. |
+| c | Vesting escrow 10,000,000 + cliff | **PASS** | Escrow [`DnfbVH…`](https://explorer.solana.com/address/DnfbVH7J4DT8mVfcuAGyf4qyN39XVZvavUZVbnZ3F4pn?cluster=devnet) ATA holds **10,000,000**. On-chain `lockedVestingConfig`: `cliffDurationFromMigrationTime=15552000` (6 mo), `frequency=86400` (daily), `numberOfPeriod=182`. |
+| d | LP permanently locked | **PASS** | Config `creatorPermanentLockedLiquidityPercentage=100`. Migrate tx logs `Instruction: PermanentLockPosition`. Position `5cwYaN…`: `isPermanentLockedPosition=true`, `permanentLockedLiquidity>0`, `unlockedLiquidity=0`. |
+| e | curve-sold + leftover + vesting ≈ 100M | **PASS** | See arithmetic below. |
+
+### Arithmetic (UI amounts, 6 decimals)
+
+| Bucket | Amount |
+|---|---|
+| Leftover (treasury stand-in) | 65,000,000 |
+| Team vesting escrow | 10,000,000 |
+| Curve-sold (wallet buys + DAMM migration base + dust) | ≈ 25,000,000 |
+| **Total** | **100,000,000** |
+
+Largest holders observed:
+
+- Wallet ATA: **82,274,574.395579** (= leftover 65M + wallet curve buys ≈ 17.27M)
+- Vesting escrow ATA: **10,000,000**
+- DAMM pool token vault: **7,709,974.802813**
+- Dust ATA: **15,450.801608**
+- Sum: **100,000,000.000000**
 
 ---
 
 ## Schema differences
 
-Compared prompt / older `cyre_dbc_config.devnet.jsonc` names against **today’s** `meteora-invent/studio/config/dbc_config.jsonc` (`6787734`):
+Vs prompt wording / older `cyre_dbc_config.devnet.jsonc`, against today’s `studio/config/dbc_config.jsonc`:
 
-| Prompt / older wording | Current schema field | Notes |
+| Prompt / older | Current field | Notes |
 |---|---|---|
-| “authority option: Immutable” | `dbcConfig.token.tokenAuthorityOption: 1` | Enum: 0 CreatorUpdate…, **1 Immutable**, … |
-| “Decimals: default” | `tokenBaseDecimal: 6`, `tokenQuoteDecimal: 9` | Explicit in template; 6 is SPL default for this toolkit |
-| Curve caps | `initialMarketCap` / `migrationMarketCap` under `dbcConfig` when `buildCurveMode: 1` | Mode 0 uses `percentageSupplyOnMigration` + `migrationQuoteThreshold` instead — must not mix |
-| “migration fee 0%” | `migration.migrationFee.feePercentage: 0` | Separate from `migrationFeeOption` (LP fee tier on DAMM) |
-| “migrationFeeOption 2 (1% LP fee)” | `migration.migrationFeeOption: 2` | Unchanged meaning in current comments |
-| “LP 100% creator permanently locked” | `liquidityDistribution.creatorPermanentLockedLiquidityPercentage: 100` (+ others 0) | Must total 100%; DAMM v2 needs ≥10% permanent/vesting locked ≥1 day |
-| “creatorTradingFeePercentage 100” | `fee.creatorTradingFeePercentage: 100` | Unchanged |
-| Team vest cliff / daily linear | `lockedVesting.{totalLockedVestingAmount,numberOfVestingPeriod,cliffUnlockAmount,totalVestingDuration,cliffDurationFromMigrationTime}` | Durations are **seconds**; periods are count of unlock steps |
-| Metadata image | Prefer `dbcPool.metadata.uri` **or** `image`+Irys upload fields | Template also supports `description` / `website` / `twitter` / `telegram` when uploading |
-| New vs older repo config | `fee.poolCreationFee`, `fee.enableFirstSwapWithMinFee` | Present in current template; set `0` / `false` |
-| New vs older | Optional `migratedPoolFee` / LP vesting info / transfer-hook / `buildCurveMode` 2–5 | Not used in this rehearsal |
-| RPC for this attempt | Helius **devnet** used for airdrop + balance checks | Committed config keeps public `https://api.devnet.solana.com` (no API key in repo) |
+| Immutable authority | `token.tokenAuthorityOption: 1` | Enum value **1 = Immutable** |
+| Decimals default | `tokenBaseDecimal: 6`, `tokenQuoteDecimal: 9` | Explicit in template |
+| Curve caps | `initialMarketCap` / `migrationMarketCap` with `buildCurveMode: 1` | Mode 0 uses different fields — do not mix |
+| Cap values this run | **0.1 / 0.5** (was 0.5/2 then 0.2/1) | Shrunk for ~1 SOL faucet; allocation math unchanged |
+| Migration fee 0% | `migration.migrationFee.feePercentage: 0` | Separate from `migrationFeeOption` |
+| migrationFeeOption 2 | `migration.migrationFeeOption: 2` | 1% LP fee on DAMM |
+| 100% creator LP lock | `creatorPermanentLockedLiquidityPercentage: 100` (+ others 0) | Must total 100% |
+| creatorTradingFeePercentage 100 | `fee.creatorTradingFeePercentage: 100` | Direct launch |
+| Team vest schedule | `lockedVesting.*` durations in **seconds**; periods = unlock steps | On-chain also stores `frequency=86400` |
+| Image URI (PNG) | Used Metaplex **`metadata.uri` → `https://cyre.dev/token-metadata.json`** | PNG alone is not a metadata JSON; JSON’s `image` points at `cyre-token-512.png` |
+| New template fields | `poolCreationFee`, `enableFirstSwapWithMinFee` | Set `0` / `false` |
+| Post-migration leftover | **No studio CLI** — BUILD `client.migration.withdrawLeftover` | Required for 65M to land |
+| Near tip | Large last buys → `Insufficient Liquidity` | Finish with micro buys (down to ~8e-8 SOL here) |
 
 ---
 
-## How to finish this rehearsal (operator)
+## Lessons for mainnet
 
-1. Fund `HjNv2uk5ePX9FMHFQ2tyeYaphKU3WKCnPozuYcxYC76X` to **≥ 2 SOL** on **devnet** (wait for Helius project daily faucet reset, or `faucet.solana.com` with GitHub unlock).  
-2. Point studio config at the funded keypair; keep `rpcUrl` on **devnet**.  
-3. Run create-config → create-pool → swap-to-graduate → migrate-to-damm-v2 → **withdrawLeftover**.  
-4. Fill section 6 above with PASS/FAIL + explorer links (`?cluster=devnet`).
-
-Until then, treat allocation math as **unverified on public devnet** (prior **localnet** PASS exists in `REHEARSAL_RESULTS.md` but is not a substitute for this run).
+1. Faucets are flaky; keep caps tiny for rehearsal only — **mainnet caps are independent of this 0.1/0.5 dry run**.
+2. Always **`withdrawLeftover`** after migrate before treating treasury balance as final.
+3. Same wallet buying the curve inflates `spl-token balance` above 65M — subtract curve buys or use a dedicated leftover receiver for a clean 65M read.
+4. Flat 100 bps fee schedule avoids anti-sniper fee eating the tiny tip; mainnet may still want a decaying scheduler.
+5. Plan shrinking buys for the last ~1% of graduation.
