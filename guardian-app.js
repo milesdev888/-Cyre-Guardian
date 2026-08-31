@@ -16,7 +16,7 @@
     signals: { title: 'Signals', subtitle: 'Public pattern feed', frame: '/signals?embed=1' },
     tokenomics: { title: 'Tokenomics', subtitle: '$C7 supply & locks', frame: '/tokenomics?embed=1' },
     roadmap: { title: 'Roadmap', subtitle: 'Shipped · now · next', frame: '/roadmap?embed=1' },
-    airdrop: { title: 'Airdrop', subtitle: '3M $C7 community', frame: '/airdrop?embed=1' },
+    airdrop: { title: 'Community', subtitle: '5M $C7 growth pool', frame: '/airdrop?embed=1' },
     guardian: { title: 'Talk to Guardian', subtitle: 'Patterns, not verdicts', frame: null, panel: 'guardian' },
   };
 
@@ -34,7 +34,7 @@
   var MORE_ITEMS = [
     { id: 'tokenomics', label: 'Tokenomics', hint: '$C7' },
     { id: 'roadmap', label: 'Roadmap', hint: 'Plan' },
-    { id: 'airdrop', label: 'Airdrop', hint: '3M' },
+    { id: 'airdrop', label: 'Community', hint: '5M' },
     { id: 'guardian', label: 'Guardian Chat', hint: 'Ask' },
   ];
 
