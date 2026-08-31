@@ -1,0 +1,97 @@
+{
+  /* ============================================================
+   * $C7 — Meteora DBC DEVNET REHEARSAL config (schema-current)
+   * Built against meteora-invent @ 6787734 (studio/config/dbc_config.jsonc).
+   * Tiny graduation so faucet SOL can finish the curve.
+   * Replace <KEYPAIR_PATH> and <WALLET_PUBKEY> before running.
+   * DEVNET ONLY — rpcUrl must stay api.devnet.solana.com (or a
+   * Helius *devnet* endpoint). Never point this file at mainnet.
+   * ============================================================ */
+
+  "rpcUrl": "https://api.devnet.solana.com",
+
+  "dryRun": false,
+
+  "keypairFilePath": "<KEYPAIR_PATH>",
+
+  "computeUnitPriceMicroLamports": 100000,
+
+  "quoteMint": "So11111111111111111111111111111111111111112",
+
+  "dbcConfig": {
+    "buildCurveMode": 1,
+    "initialMarketCap": 0.2,
+    "migrationMarketCap": 1,
+
+    "token": {
+      "totalTokenSupply": 100000000,
+      "tokenBaseDecimal": 6,
+      "tokenQuoteDecimal": 9,
+      "tokenType": 0,
+      "tokenAuthorityOption": 1,
+      "leftover": 65000000
+    },
+
+    "fee": {
+      "baseFeeParams": {
+        "baseFeeMode": 0,
+        "feeSchedulerParam": {
+          "startingFeeBps": 100,
+          "endingFeeBps": 100,
+          "numberOfPeriod": 0,
+          "totalDuration": 0
+        }
+      },
+      "dynamicFeeEnabled": true,
+      "collectFeeMode": 0,
+      "creatorTradingFeePercentage": 100,
+      "poolCreationFee": 0,
+      "enableFirstSwapWithMinFee": false
+    },
+
+    "migration": {
+      "migrationOption": 1,
+      "migrationFeeOption": 2,
+      "migrationFee": {
+        "feePercentage": 0,
+        "creatorFeePercentage": 0
+      }
+    },
+
+    "liquidityDistribution": {
+      "partnerLiquidityPercentage": 0,
+      "creatorLiquidityPercentage": 0,
+      "partnerPermanentLockedLiquidityPercentage": 0,
+      "creatorPermanentLockedLiquidityPercentage": 100
+    },
+
+    "lockedVesting": {
+      "totalLockedVestingAmount": 10000000,
+      "numberOfVestingPeriod": 182,
+      "cliffUnlockAmount": 0,
+      "totalVestingDuration": 15724800,
+      "cliffDurationFromMigrationTime": 15552000
+    },
+
+    "activationType": 1,
+
+    "leftoverReceiver": "<WALLET_PUBKEY>",
+    "feeClaimer": "<WALLET_PUBKEY>"
+  },
+
+  "dbcPool": {
+    "creator": "<WALLET_PUBKEY>",
+    "name": "CYRE",
+    "symbol": "C7",
+    "metadata": {
+      "uri": "https://raw.githubusercontent.com/milesdev888/-Cyre-Guardian/main/cyre-token-512.png"
+    }
+  },
+
+  "dbcSwap": {
+    "amountIn": 0.15,
+    "slippageBps": 5000,
+    "swapBaseForQuote": false,
+    "referralTokenAccount": null
+  }
+}
