@@ -21,12 +21,18 @@ export const POLICY_KIND = 'cyre-spend-policy';
 export const INTENT_KIND = 'cyre-intent-seal';
 export const CRON_KIND = 'cyre-cron-attestation';
 export const LOCKBOX_KIND = 'cyre-intent-lockbox';
+export const STREAM_KIND = 'cyre-stream-subscription';
+export const EXCHANGE_KIND = 'cyre-exchange-intent';
+export const CIRCUIT_KIND = 'cyre-circuit-breaker';
 const TTL = Math.max(60, Number(process.env.PASSPORT_TTL_SECONDS) || 86400);
 const RECEIPT_TTL = Math.max(60, Number(process.env.RECEIPT_TTL_SECONDS) || 2592000);
 const POLICY_TTL = Math.max(60, Number(process.env.POLICY_TTL_SECONDS) || 604800); // 7d
 const INTENT_TTL = Math.max(60, Number(process.env.INTENT_TTL_SECONDS) || 86400); // 24h
 const CRON_TTL = Math.max(60, Number(process.env.CRON_TTL_SECONDS) || 86400);
 const LOCKBOX_TTL = Math.max(60, Number(process.env.LOCKBOX_TTL_SECONDS) || 86400); // 24h
+const STREAM_TTL = Math.max(60, Number(process.env.STREAM_TTL_SECONDS) || 86400); // 24h
+const EXCHANGE_TTL = Math.max(60, Number(process.env.EXCHANGE_TTL_SECONDS) || 43200); // 12h
+const CIRCUIT_TTL = Math.max(60, Number(process.env.CIRCUIT_TTL_SECONDS) || 604800); // 7d
 
 // PKCS#8 DER prefix for an Ed25519 private key (RFC 8410) — lets us load a raw 32-byte seed.
 const PKCS8_PREFIX = Buffer.from('302e020100300506032b657004220420', 'hex');
@@ -223,6 +229,105 @@ export function attestLockbox(input) {
     payTo: input.payTo ? String(input.payTo).slice(0, 128) : null,
     amountAtomic: input.amountAtomic != null ? String(input.amountAtomic) : null,
     network: input.network ? String(input.network).slice(0, 64) : null,
+    note: input.note ? String(input.note).slice(0, 160) : null,
+    issuedAt,
+    expiresAt
+  };
+  return signClaims(claims);
+}
+
+/**
+ * Seal a push-stream subscription — watches + fingerprint cursor travel in the token.
+ */
+export function attestStreamSubscription(input) {
+  const issuedAt = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + STREAM_TTL * 1000).toISOString();
+  const watches = Array.isArray(input.watches)
+    ? input.watches
+        .map((w) => ({
+          type: String((w && w.type) || 'address').slice(0, 24),
+          target: String((w && w.target) || '').trim()
+        }))
+        .filter((w) => w.target)
+        .slice(0, 10)
+    : [];
+  const claims = {
+    kind: STREAM_KIND,
+    v: 1,
+    iss: ISSUER,
+    id: b64url(randomBytes(12)),
+    actor: String(input.actor || ''),
+    minRisk: input.minRisk ? String(input.minRisk).toUpperCase() : 'HIGH',
+    watches,
+    fingerprints: input.fingerprints && typeof input.fingerprints === 'object' ? input.fingerprints : {},
+    seq: typeof input.seq === 'number' ? input.seq : 0,
+    webhookUrl: input.webhookUrl ? String(input.webhookUrl).slice(0, 300) : null,
+    issuedAt,
+    expiresAt
+  };
+  return signClaims(claims);
+}
+
+/**
+ * Seal an exchange intent — gossip the token; matchers call /api/exchange/match.
+ */
+export function attestExchangeIntent(input) {
+  const issuedAt = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + EXCHANGE_TTL * 1000).toISOString();
+  const deadlineAt = input.deadlineAt ? String(input.deadlineAt) : new Date(Date.now() + 3600_000).toISOString();
+  const tags = Array.isArray(input.tags)
+    ? [...new Set(input.tags.map((t) => String(t || '').trim().toLowerCase()).filter(Boolean))].slice(0, 12)
+    : [];
+  const claims = {
+    kind: EXCHANGE_KIND,
+    v: 1,
+    iss: ISSUER,
+    id: b64url(randomBytes(12)),
+    actor: String(input.actor || ''),
+    need: String(input.need || '').slice(0, 240),
+    budgetAtomic: input.budgetAtomic != null ? String(input.budgetAtomic) : null,
+    network: input.network ? String(input.network).slice(0, 64) : 'eip155:8453',
+    deadlineAt,
+    tags,
+    status: input.status ? String(input.status).slice(0, 16) : 'open',
+    note: input.note ? String(input.note).slice(0, 160) : null,
+    issuedAt,
+    expiresAt
+  };
+  return signClaims(claims);
+}
+
+/**
+ * Seal an operator circuit breaker — heartbeat + spend freeze rail.
+ */
+export function attestCircuit(input) {
+  const issuedAt = new Date().toISOString();
+  const expiresAt = new Date(Date.now() + CIRCUIT_TTL * 1000).toISOString();
+  const allowHosts = Array.isArray(input.allowHosts)
+    ? [...new Set(input.allowHosts.map((h) => String(h || '').trim().toLowerCase()).filter(Boolean))].slice(0, 20)
+    : [];
+  const denyHosts = Array.isArray(input.denyHosts)
+    ? [...new Set(input.denyHosts.map((h) => String(h || '').trim().toLowerCase()).filter(Boolean))].slice(0, 20)
+    : [];
+  const claims = {
+    kind: CIRCUIT_KIND,
+    v: 1,
+    iss: ISSUER,
+    id: b64url(randomBytes(12)),
+    actor: String(input.actor || ''),
+    heartbeatIntervalSeconds: Math.max(60, Math.min(86400, Number(input.heartbeatIntervalSeconds) || 300)),
+    maxMissedBeats: Math.max(1, Math.min(10, Number(input.maxMissedBeats) || 2)),
+    lastBeatAt: String(input.lastBeatAt || issuedAt),
+    frozen: !!input.frozen,
+    frozenAt: input.frozenAt ? String(input.frozenAt) : null,
+    policyToken: input.policyToken ? String(input.policyToken).slice(0, 2048) : null,
+    maxSpendAtomic: input.maxSpendAtomic != null ? String(input.maxSpendAtomic) : null,
+    allowHosts,
+    denyHosts,
+    maxRisk: input.maxRisk ? String(input.maxRisk).toUpperCase() : null,
+    networks: Array.isArray(input.networks)
+      ? [...new Set(input.networks.map((n) => String(n || '').trim()).filter(Boolean))].slice(0, 10)
+      : [],
     note: input.note ? String(input.note).slice(0, 160) : null,
     issuedAt,
     expiresAt

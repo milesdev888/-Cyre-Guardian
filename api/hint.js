@@ -120,6 +120,27 @@ const CATALOG = [
     keywords: ['pulse', 'watch', 'quiet', 'poll', 'fingerprint', 'hits']
   },
   {
+    id: 'stream',
+    when: 'Push-shaped watch stream — seal subscription, pull graded events (token-held cursor)',
+    url: 'https://cyre.dev/api/stream/subscribe',
+    price: '$0.003 subscribe · $0.005/events',
+    keywords: ['stream', 'push', 'sse', 'events', 'subscription', 'nervous', 'realtime']
+  },
+  {
+    id: 'exchange',
+    when: 'Intent marketplace — post a budgeted need, gossip token, match vendor quotes',
+    url: 'https://cyre.dev/api/exchange/post',
+    price: '$0.003 post · $0.002 match',
+    keywords: ['exchange', 'marketplace', 'intent', 'job', 'bid', 'gossip', 'labor']
+  },
+  {
+    id: 'circuit',
+    when: 'Operator circuit breaker — heartbeat + spend freeze before autonomous pay',
+    url: 'https://cyre.dev/api/circuit/seal',
+    price: '$0.003 seal · $0.001 heartbeat/check',
+    keywords: ['circuit', 'heartbeat', 'freeze', 'kill', 'operator', 'safety', 'constitution']
+  },
+  {
     id: 'cron-receipt',
     when: 'Seal that a cron/watcher run happened (digest + counts)',
     url: 'https://cyre.dev/api/cron-receipt',
@@ -199,7 +220,7 @@ export default async function handler(req, res) {
     ok: true,
     kind: 'cyre-hint',
     version: 4,
-    rule: 'New vendor? /api/bazaar. Before settle? /api/caution. Seal /api/lockbox before pay; /api/lockbox/match at settle. Also Gate/Route/Pack + Policy + Lookalike.',
+    rule: 'Operator? /api/circuit/seal + heartbeat. Fleet watch? /api/stream/subscribe. Need work routed? /api/exchange/post. New vendor? /api/bazaar. Before settle? /api/caution.',
     skill: 'https://cyre.dev/SKILL.md',
     market: 'https://agentic.market (search guardian)',
     ladder: [
