@@ -9,12 +9,54 @@ import { buildStreamEvent, fingerprintFromGrade, reasonsForGrade } from './_stre
 const DESCRIPTION =
   'Guardian Pulse Stream events — evaluate sealed watches, emit only changes vs prior fingerprints, return rotated subscription token. Patterns, not verdicts.';
 
+const DISCOVERY = {
+  bazaar: {
+    info: {
+      input: {
+        type: 'http',
+        method: 'GET',
+        queryParams: {
+          token: '<stream-subscription-token>',
+          waitSeconds: '0'
+        }
+      },
+      output: {
+        type: 'json',
+        example: { ok: true, kind: 'cyre-stream-events', eventCount: 0, token: '…', disclaimer: DISCLAIMER }
+      }
+    },
+    schema: {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        input: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'http' },
+            method: { type: 'string', enum: ['GET', 'HEAD', 'DELETE'] },
+            queryParams: {
+              type: 'object',
+              properties: { token: { type: 'string' }, waitSeconds: { type: 'string' } },
+              required: ['token']
+            }
+          },
+          required: ['type', 'method'],
+          additionalProperties: false
+        },
+        output: { type: 'object', properties: { type: { type: 'string' } }, required: ['type'] }
+      },
+      required: ['input']
+    }
+  }
+};
+
 const x402Gate = createX402Gate({
   price: String(process.env.X402_PRICE_STREAM_EVENTS || '5000'),
   resourcePath: '/api/stream/events',
   description: DESCRIPTION,
   serviceName: 'CYRE Guardian',
   tags: ['stream', 'events', 'push', 'watch', 'agents'],
+  discovery: DISCOVERY,
   isFree: isCyreSiteRequest
 });
 

@@ -8,12 +8,59 @@ import { DISCLAIMER } from './_grade.js';
 const DESCRIPTION =
   'Guardian Intent Exchange — seal a budgeted agent need into a signed intent token. Gossip the token; matchers call /api/exchange/match. Patterns, not verdicts.';
 
+const SOL_EXAMPLE = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM';
+
+const DISCOVERY = {
+  bazaar: {
+    info: {
+      input: {
+        type: 'http',
+        method: 'GET',
+        queryParams: {
+          actor: SOL_EXAMPLE,
+          need: 'token scan + holder breakdown',
+          budgetAtomic: '20000',
+          network: 'eip155:8453',
+          tags: 'scan,token'
+        }
+      },
+      output: {
+        type: 'json',
+        example: { ok: true, kind: 'cyre-exchange-post', token: '…', disclaimer: DISCLAIMER }
+      }
+    },
+    schema: {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        input: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'http' },
+            method: { type: 'string', enum: ['GET', 'HEAD', 'DELETE'] },
+            queryParams: {
+              type: 'object',
+              properties: { need: { type: 'string' }, budgetAtomic: { type: 'string' } },
+              required: ['need']
+            }
+          },
+          required: ['type', 'method'],
+          additionalProperties: false
+        },
+        output: { type: 'object', properties: { type: { type: 'string' } }, required: ['type'] }
+      },
+      required: ['input']
+    }
+  }
+};
+
 const x402Gate = createX402Gate({
   price: String(process.env.X402_PRICE_EXCHANGE_POST || '3000'),
   resourcePath: '/api/exchange/post',
   description: DESCRIPTION,
   serviceName: 'CYRE Guardian',
   tags: ['exchange', 'marketplace', 'intent', 'agents', 'x402'],
+  discovery: DISCOVERY,
   isFree: isCyreSiteRequest
 });
 
