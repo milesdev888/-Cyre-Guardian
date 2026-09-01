@@ -5,7 +5,7 @@
 <script src="/app-redirect.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Guardian Token Scan — CYRE</title>
-<meta name="description" content="Scan any Solana token before you trade — mint authority, freeze authority, holder concentration. Then swap through Jupiter. Patterns, not verdicts.">
+<meta name="description" content="Before you trade: check the mint. Guardian shows mint and freeze authority status, supply, and holder concentration for any Solana token. Facts, not verdicts — you decide. Free.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -105,15 +105,15 @@ a{color:var(--ice)}
 <div class="wrap">
   <a class="back" href="/">← cyre.dev</a>
   <div class="kicker">GUARDIAN TOKEN SCAN</div>
-  <h1>Check the token <span>before</span> you buy it.</h1>
-  <p class="sub">Paste any Solana token address. Guardian reads the mint straight from the chain — can the creator print more supply, can they freeze your tokens, how concentrated are the holders. Scan first. Swap second. The decision stays yours.</p>
+  <h1>Before you trade: check the <span>mint</span>.</h1>
+  <p class="sub">Guardian shows mint and freeze authority status, supply, and holder concentration for any Solana token. Facts, not verdicts — you decide. Free scan; nothing to sign until you choose to swap.</p>
 
   <div class="scanbox">
     <input id="mint" placeholder="Token mint address…" autocomplete="off" spellcheck="false">
     <button id="go" onclick="scan()">Scan</button>
   </div>
   <div class="hint">Free scan · no wallet until you choose to swap · nothing to sign on scan</div>
-  <p class="token-note">$C7 is not available to swap here until mainnet launch — this tool scans any Solana mint. The contract address will appear only on <a href="/tokenomics">cyre.dev/tokenomics</a> and @Cyredev888.</p>
+  <p class="token-note">On-chain facts at the moment you scan — not a recommendation to buy. Swap unlocks only after you read the signals for this mint.</p>
   <div class="err" id="err"></div>
 
   <div class="swap-teaser" id="swap-teaser">
