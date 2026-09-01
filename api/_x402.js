@@ -404,6 +404,7 @@ export function offerMatches(accepted, expected) {
  * @param {boolean} [opts.baseOnly] — only arm Base lane
  */
 import { detectNetwork, xrplHandoffBody } from '../lib/peers.js';
+import { recordTrafficEventFire, classifySource } from './_traffic.js';
 
 export function createX402Gate(opts) {
   const price = String(opts.price);
@@ -463,6 +464,17 @@ export function createX402Gate(opts) {
 
     const header = req.headers['payment-signature'] || req.headers['x-payment'];
     if (!header) {
+      recordTrafficEventFire({
+        route: resourcePath,
+        ts: new Date().toISOString(),
+        lane: rows[0] && rows[0].lane && rows[0].lane.name,
+        amountAtomic: price,
+        asset: rows[0] && rows[0].requirements && rows[0].requirements.asset,
+        settled: false,
+        txHash: null,
+        source: classifySource(req, null, null),
+        ua: String(req.headers['user-agent'] || '').slice(0, 60)
+      });
       return { status: 402, body: paymentRequired(resourceUrl, accepts, 'Payment required') };
     }
 
@@ -515,6 +527,17 @@ export function createX402Gate(opts) {
         const reason = (s && (s.errorMessage || s.errorReason)) || 'Settlement failed';
         return { status: 402, body: paymentRequired(resourceUrl, accepts, reason) };
       }
+      recordTrafficEventFire({
+        route: resourcePath,
+        ts: new Date().toISOString(),
+        lane: lane.name,
+        amountAtomic: requirements.amount || price,
+        asset: requirements.asset,
+        settled: true,
+        txHash: s.transaction || s.txHash || null,
+        source: classifySource(req, s, payment),
+        ua: String(req.headers['user-agent'] || '').slice(0, 60)
+      });
       return { settled: s };
     } catch (e) {
       console.error('x402 facilitator error', e && e.message);

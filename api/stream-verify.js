@@ -1,6 +1,7 @@
 // api/stream-verify.js — FREE verify Pulse Stream subscription tokens
 
 import { verifyToken, issuerPublicKey, ISSUER, ALG, STREAM_KIND } from './_attest.js';
+import { recordVerifyHit } from './_traffic.js';
 
 const DISCLAIMER = 'Patterns, not verdicts.';
 
@@ -18,6 +19,7 @@ function readBody(req) {
 }
 
 export default async function handler(req, res) {
+  recordVerifyHit('/api/stream/verify', req);
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');

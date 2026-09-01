@@ -2,10 +2,12 @@
 
 import { verifyToken, issuerPublicKey, ISSUER, ALG, EXCHANGE_KIND } from './_attest.js';
 import { summarizeIntent } from './_exchange.js';
+import { recordVerifyHit } from './_traffic.js';
 
 const DISCLAIMER = 'Patterns, not verdicts.';
 
 export default async function handler(req, res) {
+  recordVerifyHit('/api/exchange/verify', req);
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
