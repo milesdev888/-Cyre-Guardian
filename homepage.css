@@ -303,10 +303,10 @@ main{padding:28px 0 64px}
   width:9px;
   height:9px;
   border-radius:50%;
-  background:linear-gradient(135deg, #0052FF, #0FAE6E);
+  background:linear-gradient(135deg, #0052FF, #2667ff);
   box-shadow:
     0 0 4px rgba(0,82,255,.5),
-    0 0 10px rgba(20,241,149,.25);
+    0 0 10px rgba(38,103,255,.35);
 }
 h1{
   margin:0;
@@ -408,7 +408,7 @@ h1{
   width:10px;height:10px;
   border-radius:50%;
   transform:translateX(-50%);
-  background:#3DDC84;
+  background:#2667ff;
   border:none;
   box-shadow:none;
   filter:none;
@@ -479,7 +479,7 @@ h1{
 .agent-node .node-meta .dot{
   width:5px;height:5px;border-radius:50%;display:inline-block;
 }
-.agent-node .node-meta .dot.live{background:#3DDC84}
+.agent-node .node-meta .dot.live{background:#2667ff}
 .agent-node .node-meta .dot.risk{background:#FF4D5E}
 @media (max-width:720px){
   .orb-stage{width:min(92vw, 340px)}
@@ -587,7 +587,7 @@ h1{
 .status-chip:nth-child(1){transform:translateX(0)}
 .status-chip:nth-child(2){transform:translateX(-10px)}
 .status-chip:nth-child(3){transform:translateX(-4px)}
-.status-chip.live .label{color:var(--green)}
+.status-chip.live .label{color:var(--cyan)}
 .status-chip.risk .label{color:var(--cyan)}
 .status-chip.watch .label{color:var(--cyan)}
 .label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan);font-weight:600}

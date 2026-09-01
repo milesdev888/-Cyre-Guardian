@@ -80,7 +80,7 @@ body::after{
   display:none !important;
 }
 .orbit-ring.r1::after{
-  background:#0FAE6E !important;
+  background:#2667ff !important;
   box-shadow:none !important;
   border:none !important;
   border-radius:50% !important;
@@ -134,7 +134,7 @@ h1,h2,.section h2,.trust-band h2,.access-band h2,.footer-brand{
   background:linear-gradient(165deg, rgba(24,28,38,.86), rgba(12,14,20,.9));
 }
 
-/* Living blink — nav orb; Solana kicker keeps green/purple brand cue */
+/* Living blink — nav orb and kicker dot */
 @keyframes blink-glow {
   0%, 100% {
     opacity: 1;
@@ -151,21 +151,21 @@ h1,h2,.section h2,.trust-band h2,.access-band h2,.footer-brand{
   0%, 100% {
     opacity: 1;
     filter: brightness(1.08);
-    box-shadow: 0 0 0 2px rgba(20,241,149,.35), 0 0 8px rgba(20,241,149,.55);
+    box-shadow: 0 0 0 2px rgba(0,82,255,.35), 0 0 8px rgba(0,82,255,.55);
   }
   50% {
     opacity: .72;
     filter: brightness(1.18);
-    box-shadow: 0 0 0 2px rgba(20,241,149,.25), 0 0 6px rgba(20,241,149,.4);
+    box-shadow: 0 0 0 2px rgba(0,82,255,.25), 0 0 6px rgba(0,82,255,.4);
   }
 }
 .brand-orb{
   animation: blink-glow 1.8s ease-in-out infinite;
 }
 .kicker::before{
-  background: linear-gradient(135deg, #0052FF, #0FAE6E) !important;
+  background: linear-gradient(135deg, #0052FF, #2667ff) !important;
   box-shadow: 0 0 0 2px rgba(0,82,255,.35), 0 0 8px rgba(0,82,255,.45) !important;
-  animation: blink-glow-solana 1.8s ease-in-out infinite;
+  animation: blink-glow 1.8s ease-in-out infinite;
 }
 .hero-blink{
   display: inline;
