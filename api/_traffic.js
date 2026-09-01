@@ -1,12 +1,9 @@
 // api/_traffic.js — x402 + verify event persistence for /api/monitor/feed
 // Redis (REDIS_URL https Upstash REST, or UPSTASH/KV REST pair) when set; else file store.
 
-import { createRequire } from 'module';
+import fs from 'node:fs';
+import path from 'node:path';
 import { ROUTE_CATALOG } from './_route-catalog.js';
-
-const require = createRequire(import.meta.url);
-const fs = require('fs');
-const path = require('path');
 
 const EVENT_CAP = 500;
 const FILE_STORE = process.env.TRAFFIC_STORE || '/tmp/guardian-traffic.json';

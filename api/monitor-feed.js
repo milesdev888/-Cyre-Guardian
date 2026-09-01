@@ -1,6 +1,6 @@
 // GET /api/monitor/feed — public x402 traffic window (free, no gate, CORS open)
 
-import { listArmedLaneNames } from './_x402.js';
+import { listArmedLaneNames } from './_lanes.js';
 import { buildMonitorFeed } from './_traffic.js';
 
 export default async function handler(req, res) {
