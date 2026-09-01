@@ -2,6 +2,7 @@
 // Served at /api/receipt/verify (vercel.json rewrite) and /api/receipt-verify.
 
 import { verifyToken, issuerPublicKey, ISSUER, ALG, RECEIPT_KIND } from './_attest.js';
+import { recordVerifyHit } from './_traffic.js';
 
 const DISCLAIMER = 'Patterns, not verdicts.';
 
@@ -19,6 +20,7 @@ function readBody(req) {
 }
 
 export default async function handler(req, res) {
+  recordVerifyHit('/api/receipt/verify', req);
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');

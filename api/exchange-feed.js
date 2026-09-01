@@ -4,10 +4,12 @@
 import { verifyToken, issuerPublicKey, ISSUER, EXCHANGE_KIND } from './_attest.js';
 import { summarizeIntent } from './_exchange.js';
 import { DISCLAIMER } from './_grade.js';
+import { recordVerifyHit } from './_traffic.js';
 
 const TOKEN_CAP = 20;
 
 export default async function handler(req, res) {
+  recordVerifyHit('/api/exchange/feed', req);
   res.setHeader('Cache-Control', 'public, max-age=30');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');

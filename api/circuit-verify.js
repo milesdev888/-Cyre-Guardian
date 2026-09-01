@@ -2,10 +2,12 @@
 
 import { verifyToken, issuerPublicKey, ISSUER, ALG, CIRCUIT_KIND } from './_attest.js';
 import { heartbeatStale } from './_circuit.js';
+import { recordVerifyHit } from './_traffic.js';
 
 const DISCLAIMER = 'Patterns, not verdicts.';
 
 export default async function handler(req, res) {
+  recordVerifyHit('/api/circuit/verify', req);
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
