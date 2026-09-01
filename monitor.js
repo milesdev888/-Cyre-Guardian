@@ -72,6 +72,14 @@
     return 'dormant';
   }
 
+  function cellAbbrev(path) {
+    var s = shortPath(path);
+    if (s.length <= 8) return s;
+    var parts = s.split(' · ');
+    if (parts.length > 1) return parts[parts.length - 1].slice(0, 7);
+    return s.slice(0, 7);
+  }
+
   function buildGrid(feed) {
     if (!els.families) return;
     els.families.innerHTML = '';
@@ -100,7 +108,7 @@
       if (!list || !list.length) return;
       var block = document.createElement('section');
       block.className = 'mon-family';
-      block.innerHTML = '<h2>' + labels[fam] + '</h2>';
+      block.innerHTML = '<h2>' + labels[fam] + ' <span class="mon-fam-count">' + list.length + '</span></h2>';
       var grid = document.createElement('div');
       grid.className = 'mon-grid';
 
@@ -111,7 +119,7 @@
         btn.setAttribute('data-path', r.path);
         btn.setAttribute('data-state', routeState(r));
         btn.setAttribute('aria-label', shortPath(r.path));
-        btn.innerHTML = '<span class="mon-cell-in" aria-hidden="true"></span>';
+        btn.innerHTML = '<span class="mon-cell-in" aria-hidden="true"></span><span class="mon-cell-lbl">' + cellAbbrev(r.path) + '</span>';
         btn.addEventListener('mouseenter', function (e) { showTip(e, r); });
         btn.addEventListener('focus', function (e) { showTip(e, r); });
         btn.addEventListener('mouseleave', hideTip);
@@ -166,8 +174,10 @@
       els.truth.innerHTML = '<strong>' + settles + '</strong> settlement' + (settles === 1 ? '' : 's') +
         ', all internal verification. No external agent has paid yet.';
     } else {
+      var armed = (feed.totals && feed.totals.paidRoutes) || 0;
       els.truth.className = 'mon-truth';
-      els.truth.innerHTML = 'No settlements recorded yet. Probes and settles appear here as agents hit the x402 surface.';
+      els.truth.innerHTML = '<strong>' + armed + ' paid routes</strong> armed on the board below. ' +
+        'No settlements recorded yet — cells light up as agents probe and pay.';
     }
     if (els.durable) {
       els.durable.textContent = feed.durable
