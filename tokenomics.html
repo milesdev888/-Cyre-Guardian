@@ -46,6 +46,10 @@ h1 span{color:var(--gold)}
 .ca h2{font-family:Sora,sans-serif;font-size:17px;margin-bottom:8px}
 .ca p{font-size:14px;color:var(--dim);line-height:1.65}
 .ca code{font-family:'JetBrains Mono',monospace;color:var(--gold);font-size:14px}
+.ca-mint{display:block;width:100%;margin:10px 0 12px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gold);word-break:break-all;cursor:pointer;text-align:left;line-height:1.5}
+.ca-mint:hover{border-color:rgba(0,82,255,.55)}
+.ca-links{display:flex;flex-wrap:wrap;gap:14px;margin:0 0 12px;font-size:13.5px}
+.ca-status{font-size:13.5px;color:var(--live);line-height:1.55;margin-top:8px}
 footer{border-top:1px solid var(--line);padding:22px 0 44px;color:#6c7891;font-size:12.5px;line-height:1.65;margin-top:44px}
 </style>
 </head>
@@ -103,8 +107,27 @@ footer{border-top:1px solid var(--line);padding:22px 0 44px;color:#6c7891;font-s
 
 <div class="ca">
   <h2>Contract address</h2>
-  <p><code>To be announced.</code> The official $C7 address will be published here and on <a href="https://x.com/Cyredev888">@Cyredev888</a> — nowhere else, and never in replies or DMs. Any other address claiming to be $C7 is fake.</p>
+  <button type="button" class="ca-mint" id="c7-mint" title="Tap to copy" aria-label="Copy $C7 mint address">979sitxCjWFPdAsrF2ybKNENwFcpiHDwaAasC5Xa5qww</button>
+  <div class="ca-links">
+    <a href="https://explorer.solana.com/address/979sitxCjWFPdAsrF2ybKNENwFcpiHDwaAasC5Xa5qww" target="_blank" rel="noopener">Solana Explorer</a>
+    <a href="https://solscan.io/token/979sitxCjWFPdAsrF2ybKNENwFcpiHDwaAasC5Xa5qww" target="_blank" rel="noopener">Solscan</a>
+  </div>
+  <p>Published only here and on <a href="https://x.com/Cyredev888">@Cyredev888</a> — anywhere else is fake.</p>
+  <p class="ca-status">Live on Meteora Dynamic Bonding Curve · Mint authority revoked · Freeze authority revoked</p>
 </div>
+<script>
+(function(){
+  var el=document.getElementById('c7-mint');
+  if(!el)return;
+  var mint=el.textContent.trim();
+  el.addEventListener('click',function(){
+    var done=function(){el.setAttribute('title','Copied');setTimeout(function(){el.setAttribute('title','Tap to copy');},1200);};
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(mint).then(done).catch(function(){});
+    }
+  });
+})();
+</script>
 
 <footer>
   CYRE 7 · $C7 tokenomics. Figures describe the intended launch configuration; final on-chain parameters will be verifiable at the published contract address at launch. Nothing on this page is an offer to sell securities, investment advice, or a promise of profit or price performance. Digital assets are volatile — never commit funds you cannot afford to lose.
