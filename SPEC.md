@@ -80,13 +80,16 @@ cyre.dev/tokenomics and @Cyredev888.
 | `apps.html` | Redirects to `/app` (legacy hub URL). |
 | `app.html` | **Guardian Console** — single entry for all products → cyre.dev/app. |
 | `app-redirect.js` | Standalone product URLs redirect to `/app#view` (skipped when `?embed=1` for iframes). |
-| `guardian-app.js` | Console routing, quick lookup, iframe loader, session context for address/mint. |
+| `guardian-app.js` | Console routing, quick lookup, iframe loader, session context for address/mint. Includes **Neural Cortex** (`/app#cortex`). |
 | `guardian-app.css` | Console shell styles (sidebar, dashboard, bottom nav). |
 | `embed-mode.js` / `embed-mode.css` | Hides page chrome when tools run inside Guardian App iframes (`?embed=1`). |
 | `scan.html` | Guardian Token Scan + Protected Swap (phase 2) — paste mint → cyre.dev/scan. Scan via `/api/token`; swap via Jupiter Plugin after gate. See `SWAP-SPEC.md`. |
 | `scan-swap.js` | Scan-before-swap gate state machine (SWAP-SPEC §6). |
 | `swap-config.js` | Jupiter referral pubkey + 50 bps fee config (fill after referral.jup.ag setup). |
 | `SWAP-SPEC.md` | Guardian Protected Swap constitution + build order. |
+| `cortex.html` | **Guardian Neural Cortex** — agent-desk graph + operable dock (click desk → live product or paper ledger). HUD syncs to `/api/cortex`. No custody; execution paper-only. See `CORTEX-SPEC.md`. |
+| `CORTEX-SPEC.md` | Agent-fund / Neural Cortex constitution — desk map, how-to-run ops, build order. |
+| `api/cortex.js` | GET `/api/cortex` — light desk-status aggregator (chain slot + in-process oracle counters). Measured only; `Cache-Control: no-store`. No LLM. |
 | `api/token.js` | GET `/api/token?mint=` — mint/freeze authority + holder concentration + project `name`/`symbol` (RugCheck metadata + Jupiter search; client also falls back to DexScreener). Tries `getTokenLargestAccounts` on `SOLANA_RPC` (+ optional `SOLANA_RPC_FALLBACK`); if rate-limited, falls back to RugCheck measured `topHolders` pct only (never their risk score). Optional `&holders=1` light retry. Origin-locked to cyre.dev (+ this project's Vercel previews); 60/min throttle. |
 | `watcher.js` | Render cron `guardian-watcher` (*/15): full wallet scan + optional tweets. **Keep paused / DRY_RUN** when RPC credits matter; site pulse is separate. |
 | `mention-grader.js` | Render cron `guardian-mention-grader` (*/10): @mention + address → public grade reply via bridge. |
@@ -278,13 +281,13 @@ no leftover gold chrome in UI (`#d9b36c`/`#d4a84b` as button/nav accents), no wh
 ## 7. VERIFY BEFORE DECLARING DONE (curl checklist)
 
 `curl -s -o /dev/null -w "%{http_code}"` each: `/` `/tokenomics` `/roadmap` `/airdrop`
-`/watch` `/passport` `/forensics` `/signals` `/oracle` `/check` `/score` `/auto` `/theme-glass.css` `/launch-banner.js` `/vortex.js`
+`/watch` `/passport` `/forensics` `/signals` `/oracle` `/cortex` `/check` `/score` `/auto` `/theme-glass.css` `/launch-banner.js` `/vortex.js`
 `/guardian-voice.js` `/guardian-video.mp4` `/theme-ai-vibe.css` `/guardian-popout.js` `/nav-tools.js` `/ai-vibe-loader.js` `/ai-presence.js` `/homepage.css` `/guardian-head.js` `/cyre-token-256.png` `/cyre-token-512.png`
 — all 200. Then `/api/address?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
 → expect `score:24, riskLevel:LOW`. Then `/api/watch?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
 → expect `ok:true` with measured `counters` and a patterns-not-verdicts `disclaimer` (response must not be CDN-cached). Then `/api/passport?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
 → expect `ok:true`, `kind:"cyre-passport"`, measured `score`/`riskLevel`/`profile`, `disclaimer:"Patterns, not verdicts."`, and `Cache-Control: no-store`. Then `/api/forensics?address=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9`
-→ expect `ok:true`, `kind:"cyre-forensics"`, measured `patterns`/`counters`/`mintAffinity`, `disclaimer:"Patterns, not verdicts."`, and `Cache-Control: no-store`. Then `/api/signals` (empty) → expect `ok:true`, `kind:"cyre-signals"`, `version:1`, empty `items`, default-list-empty `message`, `disclaimer:"Patterns, not verdicts."`, and `Cache-Control: no-store`. Then `/api/oracle` → expect `ok:true`, `kind:"cyre-oracle"`, `version:1`, `disclaimer:"Patterns, not verdicts."`, `feeds`/`patterns` arrays, and `Cache-Control: no-store`. Check served index.html references each script
+→ expect `ok:true`, `kind:"cyre-forensics"`, measured `patterns`/`counters`/`mintAffinity`, `disclaimer:"Patterns, not verdicts."`, and `Cache-Control: no-store`. Then `/api/signals` (empty) → expect `ok:true`, `kind:"cyre-signals"`, `version:1`, empty `items`, default-list-empty `message`, `disclaimer:"Patterns, not verdicts."`, and `Cache-Control: no-store`. Then `/api/oracle` → expect `ok:true`, `kind:"cyre-oracle"`, `version:1`, `disclaimer:"Patterns, not verdicts."`, `feeds`/`patterns` arrays, and `Cache-Control: no-store`. Then `/api/cortex` → expect `ok:true`, `kind:"cyre-cortex"`, `version:1`, `status:"WATCHING"`, `execution:"paper-only"`, `killSwitch:"armed"`, agent-desk `disclaimer`, and `Cache-Control: no-store`. Check served index.html references each script
 exactly once. Verify against `cyre.dev/` (root path — `/index.html` redirects).
 Mobile-upload gotchas: iOS renames downloads ("file 2.ext"), GitHub web-editor paste
 truncates silently, uploads sometimes don't replace — always re-fetch the raw file
