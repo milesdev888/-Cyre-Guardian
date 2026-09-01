@@ -9,12 +9,56 @@ import { evaluateCircuit } from './_circuit.js';
 const DESCRIPTION =
   'Guardian Circuit Breaker check — heartbeat freshness + embedded spend policy before an agent pays. Returns admit/deny brief. Patterns, not verdicts.';
 
+const DISCOVERY = {
+  bazaar: {
+    info: {
+      input: {
+        type: 'http',
+        method: 'GET',
+        queryParams: {
+          token: '<circuit-token>',
+          amountAtomic: '5000',
+          resourceUrl: 'https://cyre.dev/api/gate',
+          network: 'eip155:8453'
+        }
+      },
+      output: {
+        type: 'json',
+        example: { ok: true, kind: 'cyre-circuit-check', admitted: true, disclaimer: DISCLAIMER }
+      }
+    },
+    schema: {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        input: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'http' },
+            method: { type: 'string', enum: ['GET', 'HEAD', 'DELETE'] },
+            queryParams: {
+              type: 'object',
+              properties: { token: { type: 'string' }, amountAtomic: { type: 'string' } },
+              required: ['token']
+            }
+          },
+          required: ['type', 'method'],
+          additionalProperties: false
+        },
+        output: { type: 'object', properties: { type: { type: 'string' } }, required: ['type'] }
+      },
+      required: ['input']
+    }
+  }
+};
+
 const x402Gate = createX402Gate({
   price: String(process.env.X402_PRICE_CIRCUIT_CHECK || '1000'),
   resourcePath: '/api/circuit/check',
   description: DESCRIPTION,
   serviceName: 'CYRE Guardian',
   tags: ['circuit', 'check', 'policy', 'heartbeat', 'agents'],
+  discovery: DISCOVERY,
   isFree: isCyreSiteRequest
 });
 

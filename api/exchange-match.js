@@ -9,12 +9,59 @@ import { matchIntentToVendor } from './_exchange.js';
 const DESCRIPTION =
   'Guardian Intent Exchange match — compare a sealed intent token to a vendor quote (URL, payTo, amount). Returns fit brief + next skills. Patterns, not verdicts.';
 
+const TREASURY = '0x9Ff25C4acf1DcDDf15fD2702C127A285f1dFa712';
+
+const DISCOVERY = {
+  bazaar: {
+    info: {
+      input: {
+        type: 'http',
+        method: 'GET',
+        queryParams: {
+          intentToken: '<exchange-intent-token>',
+          resourceUrl: 'https://cyre.dev/api/token',
+          payTo: TREASURY,
+          amountAtomic: '10000',
+          network: 'eip155:8453'
+        }
+      },
+      output: {
+        type: 'json',
+        example: { ok: true, kind: 'cyre-exchange-match', matched: true, disclaimer: DISCLAIMER }
+      }
+    },
+    schema: {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        input: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'http' },
+            method: { type: 'string', enum: ['GET', 'HEAD', 'DELETE'] },
+            queryParams: {
+              type: 'object',
+              properties: { intentToken: { type: 'string' } },
+              required: ['intentToken']
+            }
+          },
+          required: ['type', 'method'],
+          additionalProperties: false
+        },
+        output: { type: 'object', properties: { type: { type: 'string' } }, required: ['type'] }
+      },
+      required: ['input']
+    }
+  }
+};
+
 const x402Gate = createX402Gate({
   price: String(process.env.X402_PRICE_EXCHANGE_MATCH || '2000'),
   resourcePath: '/api/exchange/match',
   description: DESCRIPTION,
   serviceName: 'CYRE Guardian',
   tags: ['exchange', 'match', 'intent', 'agents', 'vendor'],
+  discovery: DISCOVERY,
   isFree: isCyreSiteRequest
 });
 

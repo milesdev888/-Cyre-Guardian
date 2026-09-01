@@ -9,12 +9,57 @@ import { parseWatches } from './_streamlib.js';
 const DESCRIPTION =
   'Guardian Pulse Stream — seal up to 10 counterparty watches into a signed subscription token. Pull events via /api/stream/events; fingerprints travel in the token (serverless-safe). Patterns, not verdicts.';
 
+const SOL_EXAMPLE = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM';
+
+const DISCOVERY = {
+  bazaar: {
+    info: {
+      input: {
+        type: 'http',
+        method: 'GET',
+        queryParams: {
+          actor: SOL_EXAMPLE,
+          list: SOL_EXAMPLE,
+          minRisk: 'HIGH'
+        }
+      },
+      output: {
+        type: 'json',
+        example: { ok: true, kind: 'cyre-stream-subscribe', token: '…', disclaimer: DISCLAIMER }
+      }
+    },
+    schema: {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        input: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'http' },
+            method: { type: 'string', enum: ['GET', 'HEAD', 'DELETE'] },
+            queryParams: {
+              type: 'object',
+              properties: { list: { type: 'string' } },
+              required: ['list']
+            }
+          },
+          required: ['type', 'method'],
+          additionalProperties: false
+        },
+        output: { type: 'object', properties: { type: { type: 'string' } }, required: ['type'] }
+      },
+      required: ['input']
+    }
+  }
+};
+
 const x402Gate = createX402Gate({
   price: String(process.env.X402_PRICE_STREAM_SUBSCRIBE || '3000'),
   resourcePath: '/api/stream/subscribe',
   description: DESCRIPTION,
   serviceName: 'CYRE Guardian',
   tags: ['stream', 'push', 'watch', 'subscription', 'agents', 'sse'],
+  discovery: DISCOVERY,
   isFree: isCyreSiteRequest
 });
 
