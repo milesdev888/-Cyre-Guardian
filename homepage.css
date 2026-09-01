@@ -457,8 +457,8 @@ h1{
   z-index:1;
 }
 .agent-node .node-core.gate{
-  background:#FF4D5E;
-  box-shadow:none;
+  background:#2667ff;
+  box-shadow:0 0 8px rgba(0,82,255,.55);
 }
 .agent-node .node-meta{
   position:absolute;
@@ -475,7 +475,7 @@ h1{
   color:rgba(230,240,255,.8);
   font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
 }
-.agent-node .node-meta.gate{color:rgba(255,180,188,.9)}
+.agent-node .node-meta.gate{color:rgba(214,228,255,.92)}
 .agent-node .node-meta .dot{
   width:5px;height:5px;border-radius:50%;display:inline-block;
 }
