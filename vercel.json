@@ -86,6 +86,17 @@
     { "source": "/api/intent/verify", "destination": "/api/intent-verify" },
     { "source": "/api/cron-receipt/verify", "destination": "/api/cron-receipt-verify" },
     { "source": "/api/lockbox/verify", "destination": "/api/lockbox-verify" },
-    { "source": "/api/lockbox/match", "destination": "/api/lockbox-match" }
+    { "source": "/api/lockbox/match", "destination": "/api/lockbox-match" },
+    { "source": "/api/stream/subscribe", "destination": "/api/stream-subscribe" },
+    { "source": "/api/stream/events", "destination": "/api/stream-events" },
+    { "source": "/api/stream/verify", "destination": "/api/stream-verify" },
+    { "source": "/api/exchange/post", "destination": "/api/exchange-post" },
+    { "source": "/api/exchange/match", "destination": "/api/exchange-match" },
+    { "source": "/api/exchange/feed", "destination": "/api/exchange-feed" },
+    { "source": "/api/exchange/verify", "destination": "/api/exchange-verify" },
+    { "source": "/api/circuit/seal", "destination": "/api/circuit-seal" },
+    { "source": "/api/circuit/heartbeat", "destination": "/api/circuit-heartbeat" },
+    { "source": "/api/circuit/check", "destination": "/api/circuit-check" },
+    { "source": "/api/circuit/verify", "destination": "/api/circuit-verify" }
   ]
 }

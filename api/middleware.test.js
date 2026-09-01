@@ -5,6 +5,9 @@ import { comparePair, scanLookalikes, levenshtein, detectFamily } from './_looka
 import { evaluatePolicy } from './_policycheck.js';
 import { decodePaymentRequired, analyzeOffer } from './_offerparse.js';
 import { cautionBandFromScore } from './_paybrief.js';
+import { matchIntentToVendor, summarizeIntent } from './_exchange.js';
+import { heartbeatStale, evaluateCircuit } from './_circuit.js';
+import { reasonsForGrade } from './_streamlib.js';
 import { matchLockbox } from './lockbox-match.js';
 
 function assert(cond, msg) {
@@ -152,13 +155,76 @@ function runLockboxMatch() {
   assert(intentKind.matched, 'intent kind accepted');
 }
 
+function runExchange() {
+  const intent = {
+    kind: 'cyre-exchange-intent',
+    id: 'x',
+    actor: 'agent-1',
+    need: 'token scan',
+    budgetAtomic: '20000',
+    network: 'eip155:8453',
+    deadlineAt: new Date(Date.now() + 3600_000).toISOString(),
+    status: 'open',
+    tags: ['scan']
+  };
+  const summary = summarizeIntent(intent);
+  assert(summary && !summary.expired, 'intent summary');
+
+  const fit = matchIntentToVendor(intent, {
+    resourceUrl: 'https://cyre.dev/api/token',
+    payTo: '0x9Ff25C4acf1DcDDf15fD2702C127A285f1dFa712',
+    amountAtomic: '10000',
+    network: 'eip155:8453'
+  });
+  assert(fit.ok, 'exchange match');
+
+  const over = matchIntentToVendor(intent, { amountAtomic: '50000', network: 'eip155:8453', payTo: '0x9Ff25C4acf1DcDDf15fD2702C127A285f1dFa712' });
+  assert(!over.ok && over.reasons.includes('over_budget'), 'over budget');
+}
+
+function runCircuit() {
+  const now = Date.now();
+  const claims = {
+    kind: 'cyre-circuit-breaker',
+    heartbeatIntervalSeconds: 300,
+    maxMissedBeats: 2,
+    lastBeatAt: new Date(now - 1000).toISOString(),
+    frozen: false,
+    maxSpendAtomic: '10000',
+    allowHosts: ['example.com']
+  };
+  const hb = heartbeatStale(claims, now);
+  assert(!hb.stale, 'fresh heartbeat');
+
+  const admit = evaluateCircuit(claims, {
+    amountAtomic: '5000',
+    resourceUrl: 'https://api.example.com/x',
+    network: 'eip155:8453'
+  });
+  assert(admit.ok, 'circuit admits');
+
+  const staleClaims = { ...claims, lastBeatAt: new Date(now - 900_000).toISOString() };
+  const frozen = evaluateCircuit(staleClaims, { amountAtomic: '1' });
+  assert(!frozen.ok && frozen.frozen, 'stale freezes');
+}
+
+function runStreamLib() {
+  const g = { score: 40, riskLevel: 'HIGH', signals: [{ id: 'burst', triggered: true }], signalsTriggered: 1 };
+  const reasons = reasonsForGrade(g, 'HIGH', null);
+  assert(reasons.includes('first_seen'), 'first seen');
+  assert(reasons.includes('risk_high'), 'risk high');
+}
+
 function run() {
   runLookalike();
   runPolicy();
   runOffer();
   runCaution();
   runLockboxMatch();
-  console.log('All middleware (lookalike + policy + offer + caution + lockbox) tests passed.');
+  runExchange();
+  runCircuit();
+  runStreamLib();
+  console.log('All middleware (lookalike + policy + offer + caution + lockbox + trinity) tests passed.');
 }
 
 run();

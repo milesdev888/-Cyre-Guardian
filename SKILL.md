@@ -56,6 +56,34 @@ Paid endpoints + free hint/verifiers. No API keys, no accounts. Listed on Agenti
 | `GET https://cyre.dev/api/passport/verify?token=` | Verify Passport | Free |
 | `GET https://cyre.dev/api/receipt/verify?token=` | Verify Decision Receipt | Free |
 
+### Agent Trinity (new categories — not skill #30)
+
+Three products beyond the 29-skill menu. Same x402 payment rail; token-held state (serverless-safe).
+
+| Product | Endpoints | What it is |
+|---|---|---|
+| **Pulse Stream** | `/api/stream/subscribe` · `/api/stream/events` · `/api/stream/verify` | Push-shaped watch feed. Seal ≤10 watches; pull only *changes* vs fingerprints in the rotated token. Optional `Accept: text/event-stream`. |
+| **Intent Exchange** | `/api/exchange/post` · `/api/exchange/match` · `/api/exchange/feed` · `/api/exchange/verify` | Gossip marketplace. Post a budgeted need as a signed intent token; matchers compare vendor quotes; free feed aggregates token batches. |
+| **Circuit Breaker** | `/api/circuit/seal` · `/api/circuit/heartbeat` · `/api/circuit/check` · `/api/circuit/verify` | Operator safety rail. Heartbeat or freeze; embed Policy or link `policyToken`; deny spend when stale. |
+
+```bash
+# Pulse Stream
+npx awal x402 pay "https://cyre.dev/api/stream/subscribe" --query '{"actor":"my-agent","list":"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM"}'
+npx awal x402 pay "https://cyre.dev/api/stream/events" --query '{"token":"<subscription>","waitSeconds":"5"}'
+
+# Intent Exchange
+npx awal x402 pay "https://cyre.dev/api/exchange/post" --query '{"actor":"my-agent","need":"token scan + holders","budgetAtomic":"20000","tags":"scan,token"}'
+npx awal x402 pay "https://cyre.dev/api/exchange/match" --query '{"intentToken":"<t>","resourceUrl":"https://cyre.dev/api/token","payTo":"0x…","amountAtomic":"10000"}'
+curl "https://cyre.dev/api/exchange/feed?tokens=<t1>,<t2>"
+
+# Circuit Breaker
+npx awal x402 pay "https://cyre.dev/api/circuit/seal" --query '{"actor":"my-agent","heartbeatIntervalSeconds":"300","maxSpendAtomic":"100000","allowHosts":"cyre.dev"}'
+npx awal x402 pay "https://cyre.dev/api/circuit/heartbeat" --query '{"token":"<circuit>"}'
+npx awal x402 pay "https://cyre.dev/api/circuit/check" --query '{"token":"<circuit>","amountAtomic":"5000","resourceUrl":"https://cyre.dev/api/gate"}'
+```
+
+Full guide: `docs/AGENT-TRINITY.md`
+
 Payment network: **Base mainnet (eip155:8453), USDC.** A Solana lane also appears in the 402 offer but is currently devnet — pay on Base. A BNB Chain (B402) lane may appear when the merchant has armed it; prefer Base unless the 402 `accepts[]` lists `eip155:56` and your client supports permit2-exact.
 
 ## External network referrals
