@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/monitor.css?v=mon2">
+  <link rel="stylesheet" href="/monitor.css?v=mon3">
 </head>
 <body>
   <div id="monitor-root">
@@ -22,7 +22,7 @@
         </div>
         <div class="mon-controls">
           <div class="mon-toggle" role="group" aria-label="Time range">
-            <button type="button" data-mode="live">Live</button>
+            <button type="button" data-mode="live"><span class="mon-live-dot" aria-hidden="true"></span>Live</button>
             <button type="button" data-mode="day">24 hours</button>
             <button type="button" data-mode="all" class="is-active">All time</button>
           </div>
@@ -49,6 +49,6 @@
     </div>
     <div class="mon-tip" id="mon-tip" role="tooltip"></div>
   </div>
-  <script defer src="/monitor.js?v=mon2"></script>
+  <script defer src="/monitor.js?v=mon3"></script>
 </body>
 </html>

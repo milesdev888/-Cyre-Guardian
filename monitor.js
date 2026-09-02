@@ -177,7 +177,7 @@
       var armed = (feed.totals && feed.totals.paidRoutes) || 0;
       els.truth.className = 'mon-truth';
       els.truth.innerHTML = '<strong>' + armed + ' paid routes</strong> armed on the board below. ' +
-        'No settlements recorded yet — cells light up as agents probe and pay.';
+        'No settlements recorded yet — cells burn green as settlements land.';
     }
     if (els.durable) {
       els.durable.textContent = feed.durable
