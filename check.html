@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <script src="/app-redirect.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Address Check — CYRE 7</title>
-<meta name="description" content="Paste a Solana address and see its risk profile, with the reason behind every signal.">
+<title>Address Check — Guardian · CYRE</title>
+<meta name="description" content="Check any Solana wallet before you send funds. Guardian reads on-chain history and shows wallet age, activity bursts, and failed-transaction rates — with a plain-English reason for each. Free, no signup.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -75,16 +75,16 @@ h1{font-family:var(--display);font-weight:800;font-size:clamp(26px,6vw,38px);lin
 
 <header class="head">
   <div class="wrap head-in">
-    <div class="brand">CY<em>R</em>E 7</div>
+    <div class="brand">Guardian <em>· CYRE</em></div>
     <a class="back" href="/">← cyre.dev</a>
   </div>
 </header>
 
 <main class="wrap">
   <section class="hero">
-    <div class="eyebrow">Address check</div>
-    <h1>Who are you about to send to?</h1>
-    <p class="lede">Paste a Solana address. Cyre reads its on-chain history and shows you what it finds — and the reason behind every signal. Free, no account.</p>
+    <div class="eyebrow">Free address check</div>
+    <h1>Check any Solana wallet before you send funds.</h1>
+    <p class="lede">Guardian reads on-chain history and shows you the patterns — wallet age, activity bursts, failed-transaction rates — with a plain-English reason for each. Free, no signup.</p>
 
     <div class="form">
       <label class="sr" for="a" style="position:absolute;width:1px;height:1px;overflow:hidden">Solana address</label>
@@ -99,7 +99,7 @@ h1{font-family:var(--display);font-weight:800;font-size:clamp(26px,6vw,38px);lin
 </main>
 
 <footer class="wrap foot">
-  Signals are computed from public chain data at the moment you check. This is information, not advice, and a clean result is not a guarantee of safety.
+  Signals are computed from public chain data at the moment you check. Patterns, not verdicts — this is information, not advice, and a clean result is not a guarantee of safety.
 </footer>
 
 <script>
@@ -153,7 +153,7 @@ function render(d){
     + rows
     + '<p class="note">' + d.signalsTriggered + ' of ' + d.signalsEvaluated + ' signals fired. '
     + 'Based on the ' + p.transactionsSeen + ' most recent transactions visible on chain. '
-    + 'Cyre does not label addresses good or bad — it shows you the pattern and lets you decide.</p>'
+    + 'Guardian does not label addresses good or bad — it shows you the pattern and lets you decide.</p>'
     + '</div>';
 }
 
@@ -187,6 +187,6 @@ input.addEventListener('keydown', function(e){ if (e.key === 'Enter') check(); }
 })();
 </script>
 <script defer src="/embed-mode.js"></script>
-<script src="/ai-vibe-loader.js" defer></script>
+<!-- No ai-vibe-loader on /check: keeps the ad landing free of RWA price strips / app chrome. -->
 </body>
 </html>

@@ -1,4 +1,9 @@
-/* app-redirect.js — send standalone product URLs to Guardian App (keeps ?embed=1 for iframes) */
+/* app-redirect.js — send standalone product URLs to Guardian App (keeps ?embed=1 for iframes).
+ *
+ * /check and /scan stay standalone on purpose: X/product ads land there and must not
+ * open the Guardian App chrome (Tokenomics / Airdrop / $C7). App iframes still use
+ * ?embed=1 on those pages.
+ */
 (function () {
   'use strict';
 
@@ -6,8 +11,6 @@
   if (window.self !== window.top) return;
 
   var PATH_TO_VIEW = {
-    '/scan': 'scan',
-    '/check': 'check',
     '/watch': 'watch',
     '/score': 'score',
     '/passport': 'passport',

@@ -63,10 +63,10 @@ cyre.dev/tokenomics and @Cyredev888.
 | `guardian2.jpg` | Guardian portrait (blue girlbot, 600²) — FAB / popout / secondary avatars; also shown in hero morph photo phase. `robot.jpg` = fallback if portrait fails + funnel core. |
 | `check-link.js` | Adds "Check an address" + "Grade your wallet" buttons to hero CTA row. |
 | `access-form.js` | Early-access modal → Formspree `xqpzddvy`. |
-| `rwa-widget.js` | Live RWA market strip under hero (pinned CoinGecko ids; keep "Data by CoinGecko"). Styled by AI-vibe theme. |
+| `rwa-widget.js` | Live RWA market strip under hero (pinned CoinGecko ids; keep "Data by CoinGecko"). Styled by AI-vibe theme. **Skips mount on `/check` and `/scan`** (ad landings). |
 | `watch.html` | Watch v1 — real-time wallet monitor + measured alerts board → cyre.dev/watch. Default list empty; quiet wallets only. No CDN cache on `/api/watch` (fresh measured run). |
 | `passport.html` | Passport v1 — portable RWA profile from measured address signals → cyre.dev/passport. Share/download PNG dossier + JSON. Visible disclaimer: Patterns, not verdicts. No CDN cache on `/api/passport`. |
-| `check.html` | Free Solana address checker → cyre.dev/check. |
+| `check.html` | Free Solana address checker → cyre.dev/check. **Ad-safe standalone landing** (no app redirect, no ai-vibe-loader / RWA price strip). |
 | `score.html` | Wallet Score Card — canvas dossier PNG + share loop → cyre.dev/score. |
 | `tokenomics.html` | Donut + locks + CA box ("TBA — only here and @Cyredev888"). |
 | `roadmap.html` | 4 phases: Shipped / Now / Next / Exploring (agent-economy items = research framing). |
@@ -79,7 +79,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/chain-pulse.js` | GET `/api/chain-pulse` — one cached `getSlot` / 30s (`CHAIN_PULSE_CACHE_SEC`). Light UI pulse; **not** the Render watcher cron. |
 | `apps.html` | Redirects to `/app` (legacy hub URL). |
 | `app.html` | **Guardian Console** — single entry for all products → cyre.dev/app. |
-| `app-redirect.js` | Standalone product URLs redirect to `/app#view` (skipped when `?embed=1` for iframes). |
+| `app-redirect.js` | Standalone product URLs redirect to `/app#view` (skipped when `?embed=1` for iframes). **`/check` and `/scan` do not redirect** — they stay standalone for ad landings (no $C7 app chrome). `/check` also skips `ai-vibe-loader.js`; `rwa-widget.js` no-ops on `/check` and `/scan` so live crypto prices never appear on those URLs. |
 | `guardian-app.js` | Console routing, quick lookup, iframe loader, session context for address/mint. |
 | `guardian-app.css` | Console shell styles (sidebar, dashboard, bottom nav). |
 | `embed-mode.js` / `embed-mode.css` | Hides page chrome when tools run inside Guardian App iframes (`?embed=1`). |
