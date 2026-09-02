@@ -129,6 +129,10 @@
   }
 
   function init() {
+    /* Ad landings must stay product-only — never inject live crypto prices onto /check or /scan. */
+    var path = (location.pathname || '').replace(/\.html$/i, '').replace(/\/$/, '') || '/';
+    if (path === '/check' || path === '/scan') return;
+
     var target = mountPoint();
     if (!target) return;
 
