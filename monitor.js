@@ -80,6 +80,14 @@
     return s.slice(0, 7);
   }
 
+  function cellLabel(r) {
+    var base = cellAbbrev(r.path);
+    var settles = Number(r.settles) || 0;
+    var verifies = Number(r.verifies) || 0;
+    var count = settles + (r.family === 'verify' ? verifies : 0);
+    return count > 0 ? base + ' ' + count : base;
+  }
+
   function buildGrid(feed) {
     if (!els.families) return;
     els.families.innerHTML = '';
@@ -119,7 +127,7 @@
         btn.setAttribute('data-path', r.path);
         btn.setAttribute('data-state', routeState(r));
         btn.setAttribute('aria-label', shortPath(r.path));
-        btn.innerHTML = '<span class="mon-cell-in" aria-hidden="true"></span><span class="mon-cell-lbl">' + cellAbbrev(r.path) + '</span>';
+        btn.innerHTML = '<span class="mon-cell-in" aria-hidden="true"></span><span class="mon-cell-lbl">' + cellLabel(r) + '</span>';
         btn.addEventListener('mouseenter', function (e) { showTip(e, r); });
         btn.addEventListener('focus', function (e) { showTip(e, r); });
         btn.addEventListener('mouseleave', hideTip);
@@ -229,6 +237,8 @@
       var cell = cells[path];
       if (!cell || !r) return;
       cell.setAttribute('data-state', routeState(r));
+      var lbl = cell.querySelector('.mon-cell-lbl');
+      if (lbl) lbl.textContent = cellLabel(r);
     });
   }
 

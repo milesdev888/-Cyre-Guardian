@@ -9,9 +9,31 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/am.css?v=am1">
+  <link rel="stylesheet" href="/homepage.css?v=cb10">
+  <link rel="stylesheet" href="/theme-purple-deep.css?v=cb4">
+  <link rel="stylesheet" href="/am.css?v=am2">
 </head>
 <body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <header class="masthead shell">
+    <div class="pill">
+      <a class="brand" href="/" aria-label="CYRE home">
+        <span class="brand-orb" aria-hidden="true"></span>
+        <span>CY<span class="brand-r">R</span>E</span>
+      </a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle menu">
+        <span class="nav-toggle-line" aria-hidden="true"></span>
+      </button>
+      <nav id="site-nav" class="nav nav-links" aria-label="Primary">
+        <a href="/app" class="nav-app">Guardian App</a>
+        <a href="/monitor" class="nav-monitor">Monitor</a>
+        <a href="/am" class="nav-am">Agentic Market</a>
+        <a href="/docs">Docs</a>
+        <a href="/app#tokenomics" class="nav-token"><img src="/cyre-token-ticker-128.png" alt="" width="18" height="18">$C7</a>
+        <a href="/#access" class="req">Request access</a>
+      </nav>
+    </div>
+  </header>
   <div id="am-root">
     <div class="am-shell">
       <header class="am-top">
@@ -58,6 +80,18 @@
       <p class="am-foot">Pending rows = settled on cyre.dev but not yet visible in Agentic Market search. <a href="/monitor">← patch bay</a> · <a href="/">cyre.dev</a></p>
     </div>
   </div>
-  <script defer src="/am.js?v=am1"></script>
+  <script defer src="/am.js?v=am2"></script>
+  <script>
+    (function () {
+      var navToggle = document.querySelector('.nav-toggle');
+      var nav = document.getElementById('site-nav');
+      if (!navToggle || !nav) return;
+      navToggle.addEventListener('click', function () {
+        var open = nav.classList.toggle('is-open');
+        navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        document.body.classList.toggle('menu-open', open);
+      });
+    })();
+  </script>
 </body>
 </html>
