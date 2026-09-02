@@ -173,6 +173,16 @@ img{max-width:100%;display:block}
     0 0 28px rgba(0,82,255,.75),
     0 0 56px rgba(0,82,255,.4);
 }
+.nav-links a.nav-monitor{
+  color:#5fd0ff;
+  text-shadow:0 0 10px rgba(95,208,255,.75),0 0 22px rgba(95,208,255,.4);
+}
+.nav-links a.nav-monitor:hover,
+.nav-links a.nav-monitor:focus-visible{
+  color:#dff8ff;
+  background:rgba(95,208,255,.08);
+  text-shadow:0 0 14px rgba(95,208,255,.95),0 0 28px rgba(95,208,255,.55);
+}
 .btn.b-app-glow{
   animation:app-cta-pulse 2.8s ease-in-out infinite;
   font-weight:700;

@@ -51,6 +51,24 @@
       ]
     },
     {
+      "source": "/check",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/check.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/app-redirect.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
       "source": "/guardian-app.(js|css)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
@@ -76,6 +94,24 @@
     },
     {
       "source": "/monitor.(css|js)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/am",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/am.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/am.(css|js)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
       ]
@@ -116,6 +152,7 @@
     { "source": "/api/circuit/heartbeat", "destination": "/api/circuit-heartbeat" },
     { "source": "/api/circuit/check", "destination": "/api/circuit-check" },
     { "source": "/api/circuit/verify", "destination": "/api/circuit-verify" },
-    { "source": "/api/monitor/feed", "destination": "/api/monitor-feed" }
+    { "source": "/api/monitor/feed", "destination": "/api/monitor-feed" },
+    { "source": "/api/am", "destination": "/api/am" }
   ]
 }
