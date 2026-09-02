@@ -81,6 +81,24 @@
       ]
     },
     {
+      "source": "/am",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/am.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/am.(css|js)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
       "source": "/(openapi.json|robots.txt)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=3600" }
@@ -116,6 +134,7 @@
     { "source": "/api/circuit/heartbeat", "destination": "/api/circuit-heartbeat" },
     { "source": "/api/circuit/check", "destination": "/api/circuit-check" },
     { "source": "/api/circuit/verify", "destination": "/api/circuit-verify" },
-    { "source": "/api/monitor/feed", "destination": "/api/monitor-feed" }
+    { "source": "/api/monitor/feed", "destination": "/api/monitor-feed" },
+    { "source": "/api/am", "destination": "/api/am" }
   ]
 }
