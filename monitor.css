@@ -55,6 +55,23 @@
   margin-bottom: 8px;
 }
 
+#monitor-root .mon-am-link {
+  font-family: var(--mono);
+  font-size: 12px;
+  margin: 6px 0 0;
+}
+
+#monitor-root .mon-am-link a {
+  color: #5fd0ff;
+  text-decoration: none;
+  text-shadow: 0 0 10px rgba(95, 208, 255, 0.45);
+}
+
+#monitor-root .mon-am-link a:hover {
+  color: #dff8ff;
+  text-decoration: underline;
+}
+
 #monitor-root h1 {
   font-family: var(--display);
   font-size: clamp(26px, 5vw, 36px);
