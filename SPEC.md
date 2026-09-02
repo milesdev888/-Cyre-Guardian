@@ -93,15 +93,60 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/chat.js` | Guardian chat (Anthropic). HARDENED: origin-locked to cyre.dev, role-sanitized, haiku model, daily cap. Keep all guardrails. |
 | `api/address.js` | GET /api/address — 1,000-sig window, 6 explainable signals, LOW/MED/HIGH. Env `SOLANA_RPC`. (Live file; SPEC formerly said `.mjs`.) |
 | `api/watch.js` | GET /api/watch — `?address=` and optional `?list=` (≤10). Reuses address signals; fresh-window alerts; counters from this measured run only; `Cache-Control: no-store` (no CDN reuse). Marks noisy if last24h ≥ 200. No LLM. Env `SOLANA_RPC`. |
-| `api/passport.js` | GET /api/passport — `?address=`. Stable Passport JSON (`version`/`kind`/`address`/`fetchedAt`/`score`/`riskLevel`/`profile`/`signals`/`mintAffinity`/`window`/`disclaimer`). Same measured 1k-sig window as `/api/address`; one `getTokenAccountsByOwner` for SPEC seed mints → `mintAffinity` hold/touch yes|no vs seed (no weights); `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
+<<<<<<< HEAD
+| `api/_attest.js` | Ed25519 attestation (`PASSPORT_SIGNING_KEY`). Kinds: passport, decision-receipt, spend-policy, intent-seal, intent-lockbox, cron-attestation. `attest` / `attestReceipt` / `attestPolicy` / `attestIntent` / `attestLockbox` / `attestCron` / `verifyToken({ kinds, allowExpired })`. |
+=======
+| `api/_attest.js` | Ed25519 passport + decision-receipt attestation (`PASSPORT_SIGNING_KEY`). `attest` / `attestReceipt` / `verifyToken({ kinds, allowExpired })`. |
+| `api/_x402.js` | Shared x402 v2 gate (Solana + Base + dormant BNB Chain/B402). BSC lane arms only when `X402_PAY_TO_BSC` is set; see `docs/B402-RESEARCH.md` / `docs/B402-ENV.md`. XRPL inputs get a free `400` **external referral** to cloudpayX (cloudpayX schema) **before** any 402 (no charge). Pricing, site-origin bypass, validate-before-settle unchanged. |
+| `lib/peers.js` | External network referrals + `detectNetwork` / `xrplHandoffBody` (cloudpayX schema: `status`, `supported_network`, `requested_network`, `recommended_provider`). Guardian refers, does not assess or vouch. |
+| `docs/B402-RESEARCH.md` | Part 1 research: Binance B402 onboarding, Tesla RSA auth, wire shape, BSC assets/decimals, sandbox. |
+| `docs/B402-ENV.md` | Vercel env checklist for dormant B402/BSC lane (no secrets). |
+>>>>>>> b604214 (Add dormant BNB Chain (B402) payment lane to x402 gate)
+| `api/passport.js` | GET /api/passport — `?address=`. Stable Passport JSON + Ed25519 attestation. Same 1k-sig window as `/api/address`; seed-mint `mintAffinity`; x402; `Cache-Control: no-store`. No LLM. |
+| `api/_grade.js` | Shared Solana graders — `gradeAddress`, `mintAuthorityFacts`, `programNovelty`, seed `mintAffinity`. Used by handshake/preflight/delta/batch/program/alerts. |
+| `api/handshake.js` | GET/POST `/api/handshake` — bilateral Passport Handshake. Preferred `tokenA`+`tokenB` (verify before settle); fallback `addressA`+`addressB` (measure both). Returns `kind:'cyre-handshake'`, `delta`, `brief`. x402 default $0.01 (`X402_PRICE_HANDSHAKE`). `Cache-Control: no-store`. No LLM. |
+| `api/preflight.js` | GET/POST `/api/preflight` — Intent Preflight before sign. Required `from`; optional `to`, `mint`, `programIds`. Grades actors + mint authorities + program novelty + lookalike shape. Returns `kind:'cyre-preflight'`, scoped `signals`, `brief`. x402 default $0.01 (`X402_PRICE_PREFLIGHT`). `Cache-Control: no-store`. No LLM. Not a tx simulator. |
+| `api/receipt.js` | GET/POST `/api/receipt` — Decision Receipt. Seals `actor`+`intentHash`+`action` (+ optional score/risk/counterparties) into Ed25519 `cyre-decision-receipt`. x402 default $0.005 (`X402_PRICE_RECEIPT`). Header `X-Guardian-Receipt`. No LLM. |
+| `api/receipt-verify.js` | Free verify for decision receipts — `/api/receipt/verify` rewrite. |
+| `api/delta.js` | GET/POST `/api/delta?token=` — Passport Delta. Prior token may be expired; re-grades address; returns `scoreDrift`/`brief`; optional `issueFresh`. x402 default $0.01 (`X402_PRICE_DELTA`). |
+| `api/batch.js` | GET/POST `/api/batch?from=&list=` — Settlement Batch (≤10). Rank recipients by score gap vs payer. x402 default $0.02 (`X402_PRICE_BATCH`). |
+| `api/program.js` | GET/POST `/api/program?programId=&address=` — Program novelty brief + optional wallet context. x402 default $0.01 (`X402_PRICE_PROGRAM`). |
+| `api/alerts.js` | GET/POST `/api/alerts?list=&minRisk=` — Counterparty alert poll (≤10). Hits only for risk/dormant/burst/failures. x402 default $0.015 (`X402_PRICE_ALERTS`). |
+| `api/gate.js` | GET/POST `/api/gate` — **Guardian Gate**. Before any external x402 pay: grade `payTo` (Base EVM via `BASE_RPC` or Solana), optional `amount`/`resourceUrl`/`from`. x402 default **$0.001** (`X402_PRICE_GATE`=1000). Tags include gate/before-pay/checkout. `Cache-Control: no-store`. No LLM. |
+| `api/route.js` | GET/POST `/api/route` — **Pay-route Oracle**. Gate-class counterparty grade + `listedAmount` offer-pin + facilitator/network hygiene + payTo-recycle. x402 default **$0.002** (`X402_PRICE_ROUTE`). `Cache-Control: no-store`. No LLM. |
+| `api/lookalike.js` | GET/POST `/api/lookalike` — destination vs known `contacts` (≤20): truncation traps, near-edits, confusables. Pure compare via `_lookalike.js`. x402 default **$0.002**. No LLM. |
+| `api/_lookalike.js` | Pure lookalike helpers (`comparePair`, `scanLookalikes`, Levenshtein). |
+| `api/ticket.js` | GET/POST `/api/ticket` — **Session Ticket**. Verify Passport/Receipt + freshness SLA (`maxAgeSeconds`) + optional address/risk pins → `admitted`. x402 default **$0.002**. Free verifiers remain at passport/receipt verify. No LLM. |
+| `api/hint.js` | Free GET `/api/hint?q=` — discovery tip (bazaar/caution/lockbox + Gate/Route/Pack ladder). XRPL/Ripple/RLUSD/`r…` → `next: cloudpayX` + `recommended_provider`. No x402. |
+| `api/_paybrief.js` | Shared payTo grade + URL/amount signals + `cautionBandFromScore` for bazaar/caution. |
+| `api/bazaar.js` | GET/POST `/api/bazaar` — **Bazaar Scan**. Probe resourceUrl for 402, offer forensics, payTo grade. x402 default **$0.003**. No LLM. |
+| `api/caution.js` | GET/POST `/api/caution` — **Settlement Caution**. Pattern brief + withhold band. Not insurance. x402 default **$0.002**. No LLM. |
+| `api/lockbox.js` | GET/POST `/api/lockbox` — seal intentHash lockbox (bearer token). x402 default **$0.002**. No LLM. |
+| `api/lockbox-verify.js` | Free verify — `/api/lockbox/verify` rewrite (also accepts intent seals). |
+| `api/lockbox-match.js` | GET/POST `/api/lockbox/match` — compare seal vs proposal. x402 default **$0.001**. No LLM. |
+| `api/_offerparse.js` | Pure 402 PAYMENT-REQUIRED / accepts[] decode + forensics (`decodePaymentRequired`, `analyzeOffer`). |
+| `api/_policycheck.js` | Pure spend-policy evaluate (`evaluatePolicy`) vs proposed pay. |
+| `api/policy.js` | GET/POST `/api/policy` — seal spend constitution (maxSpend, allow/deny hosts, networks, maxRisk, requireTicket, denyFreshEoa). x402 default **$0.002**. No LLM. |
+| `api/policy-verify.js` | Free verify — `/api/policy/verify` rewrite. |
+| `api/policy-check.js` | GET/POST `/api/policy/check` — enforce sealed policy vs proposal. x402 default **$0.001**. No LLM. |
+| `api/intent.js` | GET/POST `/api/intent` — seal intentHash before pay/sign. x402 default **$0.002**. No LLM. |
+| `api/intent-verify.js` | Free verify (+ optional hash match) — `/api/intent/verify` rewrite. |
+| `api/offer.js` | GET/POST `/api/offer` — 402 offer forensics on PAYMENT-REQUIRED / accepts[]. x402 default **$0.002**. No LLM. |
+| `api/pack.js` | GET/POST `/api/pack` — one-pay bundle: offer + lookalike + policy (+ ticket/intent). x402 default **$0.005**. No LLM. |
+| `api/mintalike.js` | GET/POST `/api/mintalike` — mint address + ticker lookalike vs known contacts/symbols. x402 default **$0.002**. No LLM. |
+| `api/host.js` | GET/POST `/api/host` — resource URL / host hygiene (+ optional origin HEAD). x402 default **$0.002**. No LLM. |
+| `api/escrow.js` | GET/POST `/api/escrow` — bilateral treasury brief (not custody). x402 default **$0.005**. No LLM. |
+| `api/pulse.js` | GET/POST `/api/pulse` — quiet counterparty pulse (≤10; hits vs prior fingerprints). x402 default **$0.005**. No LLM. |
+| `api/cron-receipt.js` | POST `/api/cron-receipt` — watcher/cron attestation (job, counts, digest). x402 default **$0.002**. No LLM. |
+| `api/cron-receipt-verify.js` | Free verify — `/api/cron-receipt/verify` rewrite. |
 | `api/forensics.js` | GET /api/forensics — `?address=` (single). Measured patterns: dormant→active, burst, failure spike, mint-affinity hold/touch vs SPEC seed mints. Same 1k-sig window + one token-accounts call as Passport; collateral-loop + transfer-hook/eligibility friction named but `evaluated:false` in v1; `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
 | `api/signals.js` | GET /api/signals — optional `?address=` / `?list=` (≤10). Empty default → empty feed + message (quiet holders not yet filtered from SPEC seed mints; same Watch policy). Per address: Watch patterns (dormant→active, burst, failure spike) + mintAffinity via **per-mint** `getTokenAccountsByOwner` only (never programId dump). Response `{ ok, kind:'cyre-signals', version:1, disclaimer, window, items, counters }`; brief sleep between wallets; soft-fail RPC; `Cache-Control: no-store`. No LLM. Env `SOLANA_RPC`. |
-| `api/oracle.js` | GET /api/oracle — Oracle Pulse v1. NestUSD **Pyth Lazer** seeds (fetch only with `PYTH_LAZER_API_KEY`); equity Hermes peers optional when primary measured. Response `{ ok, kind:'cyre-oracle', version:1, disclaimer, fetchedAt, feeds, patterns }`; patterns stale/spike/divergence cite measured numbers only; USDY/OUSG/syrupUSDC deferred (no verified public feed); `Cache-Control: no-store`. No LLM. |
+| `api/oracle.js` | GET `/api/oracle` — Oracle Pulse v1. NestUSD **Pyth Lazer** seeds (fetch only with `PYTH_LAZER_API_KEY`); equity Hermes peers optional when primary measured. Response `{ ok, kind:'cyre-oracle', version:1, disclaimer, fetchedAt, feeds, patterns }`; patterns stale/spike/divergence cite measured numbers only; USDY/OUSG/syrupUSDC deferred (no verified public feed); x402 for agents (`X402_PRICE_ORACLE`, default $0.01), site origin free; `Cache-Control: no-store`. No LLM. |
 | `api/rwa.mjs` | CoinGecko proxy, 60s cache, last-good fallback. Env `COINGECKO_API_KEY`. |
 | `cyre-token-256/512.png` | C7 full lockup (Guardian + HUD + C7). 512 = mint metadata image URI. |
 | `cyre-token-icon-128/256/32.png` | Face-forward circular crop — favicon, FAB, small UI. |
 | `cyre-token-ticker-128.png` | C7 letter crop — DEX lists / wallet tickers where detail must read at 32px. |
-| `vercel.json` | `{cleanUrls:true, trailingSlash:false}` — pages served extensionless. |
+| `vercel.json` | `{cleanUrls:true, trailingSlash:false}` + rewrites: passport/receipt/policy/intent/cron-receipt/lockbox verify (+ policy/check, lockbox/match). |
 
 
 

@@ -2,6 +2,10 @@
 // Facts about a token mint before you trade it. Patterns, not verdicts.
 // GET /api/token?mint=<address>
 // Optional: &holders=1 → holders-only retry (uses getTokenSupply + largest accounts).
+// Site + Vercel previews stay FREE. Agents pay via x402 (see ./_x402.js).
+//   X402_PRICE_TOKEN — atomic USDC (default 10000 = $0.01)
+
+import { createX402Gate, applyX402Result, isCyreOrPreviewRequest } from './_x402.js';
 
 const PRIMARY = process.env.SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
 const FALLBACKS = String(process.env.SOLANA_RPC_FALLBACK || '')
@@ -9,14 +13,86 @@ const FALLBACKS = String(process.env.SOLANA_RPC_FALLBACK || '')
   .map((s) => s.trim())
   .filter(Boolean);
 const RPCS = [PRIMARY, ...FALLBACKS].filter((u, i, a) => u && a.indexOf(u) === i);
-const ALLOWED = ['https://cyre.dev', 'https://www.cyre.dev'];
 
-function isAllowedRequest(origin, referer) {
-  if (ALLOWED.some((a) => origin === a || referer.startsWith(a))) return true;
-  // Vercel preview deploys for this project (so PR scans can resolve name/symbol)
-  const preview = /^https:\/\/cyre-guardian[\w.-]*\.vercel\.app/;
-  return preview.test(origin) || preview.test(referer);
-}
+const TOKEN_DESCRIPTION = 'Guardian token scan — mint/freeze authority, holder concentration, and supply facts. Patterns, not verdicts.';
+
+const TOKEN_DISCOVERY = {
+  bazaar: {
+    info: {
+      input: {
+        type: 'http',
+        method: 'GET',
+        queryParams: { mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v' }
+      },
+      output: {
+        type: 'json',
+        example: {
+          mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+          name: 'USD Coin',
+          symbol: 'USDC',
+          supply: 1000000,
+          decimals: 6,
+          mintAuthorityRevoked: true,
+          freezeAuthorityRevoked: true,
+          score: 0,
+          risk: 'LOW',
+          signals: [{ level: 'good', text: 'Mint authority revoked — supply is fixed.' }]
+        }
+      }
+    },
+    schema: {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        input: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'http' },
+            method: { type: 'string', enum: ['GET', 'HEAD', 'DELETE'] },
+            queryParams: {
+              type: 'object',
+              properties: {
+                mint: { type: 'string', description: 'Solana token mint address (base58)' }
+              },
+              required: ['mint']
+            }
+          },
+          required: ['type', 'method'],
+          additionalProperties: false
+        },
+        output: {
+          type: 'object',
+          properties: {
+            type: { type: 'string' },
+            example: {
+              type: 'object',
+              properties: {
+                mint: { type: 'string' },
+                name: { type: 'string' },
+                symbol: { type: 'string' },
+                score: { type: 'number' },
+                risk: { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH'] },
+                signals: { type: 'array' }
+              }
+            }
+          },
+          required: ['type']
+        }
+      },
+      required: ['input']
+    }
+  }
+};
+
+const x402Gate = createX402Gate({
+  price: String(process.env.X402_PRICE_TOKEN || '10000'),
+  resourcePath: '/api/token',
+  description: TOKEN_DESCRIPTION,
+  serviceName: 'CYRE Guardian',
+  tags: ['risk', 'fraud', 'solana', 'token', 'security'],
+  discovery: TOKEN_DISCOVERY,
+  isFree: isCyreOrPreviewRequest
+});
 
 // best-effort per-instance throttle (same pattern as api/chat.js)
 let calls = 0, windowStart = Date.now();
@@ -274,18 +350,24 @@ function buildSignals(mintAuthority, freezeAuthority, holders) {
 }
 
 export default async function handler(req, res) {
-  // origin gate
-  const origin = req.headers.origin || '';
-  const referer = req.headers.referer || '';
-  if (!isAllowedRequest(origin, referer))
-    return res.status(403).json({ error: 'forbidden' });
+  const mint = (req.query.mint || '').trim();
+
+  // ----- x402 gate, quote step -----
+  // Unpaid callers get the 402 quote BEFORE any input validation, so Bazaar's
+  // /validate crawler (bare probe, no params) sees a 402 and not a 400.
+  // Nothing is computed or billed here.
+  const hasPayment = !!(req.headers['payment-signature'] || req.headers['x-payment']);
+  if (!hasPayment) {
+    const quote = await x402Gate(req);
+    if (applyX402Result(res, quote)) return;
+  }
 
   // throttle: 60 scans/min per warm instance
   const now = Date.now();
   if (now - windowStart > 60000) { calls = 0; windowStart = now; }
   if (++calls > 60) return res.status(429).json({ error: 'slow down' });
 
-  const mint = (req.query.mint || '').trim();
+  // ----- input validation (refusals stay free — runs before any settle) -----
   if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint))
     return res.status(400).json({ error: 'not a valid Solana address' });
 
@@ -299,13 +381,33 @@ export default async function handler(req, res) {
     let holders = { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
     let meta = { name: null, symbol: null };
 
+    // ----- mint existence BEFORE settle (reuse result downstream; no duplicate RPC) -----
+    let supplyValue = null;
+    let mintInfo = null;
+    if (holdersOnly) {
+      const tokSupply = await rpc('getTokenSupply', [mint, { commitment: 'confirmed' }]);
+      supplyValue = tokSupply && tokSupply.value;
+      if (!supplyValue) return res.status(404).json({ error: 'mint supply not found' });
+    } else {
+      const acct = await rpc('getAccountInfo', [mint, { encoding: 'jsonParsed', commitment: 'confirmed' }]);
+      if (!acct || !acct.value) return res.status(404).json({ error: 'account not found' });
+      const parsed = acct.value.data && acct.value.data.parsed;
+      if (!parsed || parsed.type !== 'mint')
+        return res.status(400).json({ error: 'address is not a token mint' });
+      mintInfo = parsed.info;
+    }
+
+    // ----- x402 gate, verify + settle step (paid callers only; mint already resolved) -----
+    if (hasPayment) {
+      const gate = await x402Gate(req);
+      if (applyX402Result(res, gate)) return;
+    }
+
     if (holdersOnly) {
       // Prefer index (no RPC). Only hit chain if the index has no topHolders.
       const holdersP = measureHoldersViaRugcheck(mint).catch(() => null);
       const jupMetaP = fetchMetaViaJupiter(mint);
-      const tokSupply = await rpc('getTokenSupply', [mint, { commitment: 'confirmed' }]);
-      const v = tokSupply && tokSupply.value;
-      if (!v) return res.status(404).json({ error: 'mint supply not found' });
+      const v = supplyValue;
       decimals = Number(v.decimals) || 0;
       supply = Number(v.uiAmount);
       if (!Number.isFinite(supply)) {
@@ -325,17 +427,9 @@ export default async function handler(req, res) {
         meta = await fetchTokenMeta(mint, meta);
       }
     } else {
-      // Mint account + holder index + Jupiter meta in parallel
-      const acctP = rpc('getAccountInfo', [mint, { encoding: 'jsonParsed', commitment: 'confirmed' }]);
       const holdersP = measureHoldersViaRugcheck(mint).catch(() => null);
       const jupMetaP = fetchMetaViaJupiter(mint);
-      const acct = await acctP;
-      if (!acct || !acct.value) return res.status(404).json({ error: 'account not found' });
-      const parsed = acct.value.data && acct.value.data.parsed;
-      if (!parsed || parsed.type !== 'mint')
-        return res.status(400).json({ error: 'address is not a token mint' });
-
-      const info = parsed.info;
+      const info = mintInfo;
       mintAuthority = info.mintAuthority || null;   // null = revoked
       freezeAuthority = info.freezeAuthority || null;
       decimals = info.decimals;

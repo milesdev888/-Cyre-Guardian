@@ -1,7 +1,14 @@
-// api/passport.js — CYRE Passport v1
-// Portable RWA profile from measured address signals (same 1k-sig window).
+// api/passport.js — CYRE Passport v1 + signed attestation + x402 gate
+// Portable RWA profile from measured address signals (same 1k-sig window),
+// now issued with an Ed25519 attestation an agent can present to anyone
+// (verify free at /api/passport/verify). Site visitors (cyre.dev) stay FREE;
+// direct API callers pay per passport via x402 — same gate as /api/address.
 // No LLM in the hot path. Patterns, not verdicts. No invented metrics.
-// Env: SOLANA_RPC (same as /api/address)
+// Env: SOLANA_RPC, X402_* (see ./_x402.js), PASSPORT_SIGNING_KEY / PASSPORT_TTL_SECONDS (see ./_attest.js)
+//      X402_PRICE_PASSPORT — atomic USDC override for this route (default: X402_PRICE or 5000 = $0.005)
+
+import { createX402Gate, applyX402Result, isCyreSiteRequest } from './_x402.js';
+import { attest, issuerPublicKey } from './_attest.js';
 
 const RPC = process.env.SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
 const B58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
@@ -18,6 +25,89 @@ const SEED_MINTS = [
   { symbol: 'TSLAx', mint: 'XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB' },
   { symbol: 'SPYx', mint: 'XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W' }
 ];
+
+const DESCRIPTION = 'Guardian Passport — signed, expiring attestation of an address\'s measured risk profile. Present it to any counterparty; verify free at /api/passport/verify. Patterns, not verdicts.';
+
+const EXAMPLE_ADDR = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM';
+const DISCOVERY = {
+  bazaar: {
+    info: {
+      input: { type: 'http', method: 'GET', queryParams: { address: EXAMPLE_ADDR } },
+      output: {
+        type: 'json',
+        example: {
+          ok: true,
+          kind: 'cyre-passport',
+          address: EXAMPLE_ADDR,
+          score: 12,
+          riskLevel: 'LOW',
+          signalsTriggered: 0,
+          signalsEvaluated: 6,
+          mintAffinity: [{ symbol: 'USDY', hold: false, touch: false }],
+          attestation: {
+            alg: 'Ed25519',
+            issuer: 'cyre.dev',
+            claims: { address: EXAMPLE_ADDR, score: 12, riskLevel: 'LOW', issuedAt: '2026-08-29T00:00:00.000Z', expiresAt: '2026-08-30T00:00:00.000Z' },
+            token: '<base64url-claims>.<base64url-signature>'
+          }
+        }
+      }
+    },
+    schema: {
+      $schema: 'https://json-schema.org/draft/2020-12/schema',
+      type: 'object',
+      properties: {
+        input: {
+          type: 'object',
+          properties: {
+            type: { type: 'string', const: 'http' },
+            method: { type: 'string', enum: ['GET', 'HEAD', 'DELETE'] },
+            queryParams: {
+              type: 'object',
+              properties: { address: { type: 'string', description: 'Solana wallet or program address (base58) to issue a passport for' } },
+              required: ['address']
+            }
+          },
+          required: ['type', 'method'],
+          additionalProperties: false
+        },
+        output: {
+          type: 'object',
+          properties: {
+            type: { type: 'string' },
+            example: {
+              type: 'object',
+              properties: {
+                ok: { type: 'boolean' },
+                address: { type: 'string' },
+                score: { type: 'number', description: '0-100 risk score (higher = riskier)' },
+                riskLevel: { type: 'string', enum: ['LOW', 'MEDIUM', 'HIGH'] },
+                signals: { type: 'array', description: 'Explainable risk signals with points and detail' },
+                mintAffinity: { type: 'array', description: 'Hold/touch affinity to seed RWA mints' },
+                attestation: {
+                  type: 'object',
+                  description: 'Ed25519-signed, expiring receipt. Present `token` to a counterparty; they verify it free at GET /api/passport/verify?token=...'
+                }
+              }
+            }
+          },
+          required: ['type']
+        }
+      },
+      required: ['input']
+    }
+  }
+};
+
+const x402Gate = createX402Gate({
+  price: String(process.env.X402_PRICE_PASSPORT || process.env.X402_PRICE || '5000'),
+  resourcePath: '/api/passport',
+  description: DESCRIPTION,
+  serviceName: 'CYRE Guardian',
+  tags: ['risk', 'fraud', 'solana', 'wallet', 'security', 'attestation', 'identity'],
+  discovery: DISCOVERY,
+  isFree: isCyreSiteRequest
+});
 
 async function rpc(method, params) {
   const r = await fetch(RPC, {
@@ -245,6 +335,17 @@ function buildMeasured(address, list, bal, mintAffinity) {
 export default async function handler(req, res) {
   const address = String((req.query && req.query.address) || '').trim();
 
+  // ----- x402 gate, quote step -----
+  // Unpaid callers get the 402 quote BEFORE any input validation, so Bazaar's
+  // /validate crawler (bare probe, no params) sees a 402 and not a 400.
+  // Nothing is computed or billed here.
+  const hasPayment = !!(req.headers['payment-signature'] || req.headers['x-payment']);
+  if (!hasPayment) {
+    const quote = await x402Gate(req);
+    if (applyX402Result(res, quote)) return;
+  }
+
+  // ----- input validation (refusals stay free — runs before any settle) -----
   if (!B58.test(address)) {
     res.setHeader('Cache-Control', 'no-store');
     return res.status(400).json({
@@ -252,6 +353,12 @@ export default async function handler(req, res) {
       error: 'That does not look like a Solana address.',
       disclaimer: DISCLAIMER
     });
+  }
+
+  // ----- x402 gate, verify + settle step (paid callers only) -----
+  if (hasPayment) {
+    const gate = await x402Gate(req);
+    if (applyX402Result(res, gate)) return;
   }
 
   try {
@@ -274,10 +381,18 @@ export default async function handler(req, res) {
     const mintAffinity = buildMintAffinity(accounts);
     const passport = buildMeasured(address, list, bal, mintAffinity);
 
+    // Signed, expiring attestation (null when PASSPORT_SIGNING_KEY is not set — never blocks the passport).
+    const signed = passport.empty ? { attestation: null, token: null, unsigned: 'no history to attest' } : attest(passport);
+    if (signed.token) res.setHeader('X-Guardian-Passport', signed.token);
+
     res.setHeader('Cache-Control', 'no-store'); // fresh measured passport only — never CDN-reuse
     return res.status(200).json({
       ok: true,
-      ...passport
+      ...passport,
+      attestation: signed.attestation,
+      ...(signed.unsigned ? { unsigned: signed.unsigned } : {}),
+      verify: 'https://cyre.dev/api/passport/verify',
+      issuerPublicKey: issuerPublicKey()
     });
   } catch (e) {
     console.error('passport', e && e.message);
