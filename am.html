@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Market Index — CYRE Guardian</title>
+  <meta name="description" content="Live Agentic Market index snapshot for cyre.dev — which Guardian x402 endpoints are listed, pricing, and L30D call stats.">
+  <link rel="icon" href="/cyre-token-icon-128.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/am.css?v=am1">
+</head>
+<body>
+  <div id="am-root">
+    <div class="am-shell">
+      <header class="am-top">
+        <div class="am-kicker">Guardian · agentic market</div>
+        <h1><span>cyre.dev</span> on Agentic Market</h1>
+        <p class="am-sub">How the Coinbase Agentic Market indexes Guardian right now — live from their API.</p>
+        <p class="am-links">
+          <a href="/monitor">Settlement patch bay</a>
+          <a href="/SKILL.md">SKILL.md</a>
+          <a href="https://agentic.market" target="_blank" rel="noopener noreferrer">agentic.market</a>
+        </p>
+        <div class="am-meta" id="am-service-meta"></div>
+        <p class="am-updated" id="am-updated"></p>
+      </header>
+
+      <div class="am-err" id="am-err" hidden role="alert"></div>
+      <p class="am-loading" id="am-loading">Loading Agentic Market index…</p>
+
+      <div id="am-stats" class="am-stats" aria-label="Summary stats"></div>
+      <div id="am-cats" class="am-cats" aria-label="Category progress"></div>
+
+      <div class="am-panel">
+        <div class="am-panel-h">
+          <h2>All 36 paid product endpoints</h2>
+          <div class="am-pills" id="am-pills"></div>
+        </div>
+        <div class="am-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>AM</th>
+                <th>Category</th>
+                <th>Route</th>
+                <th>Price</th>
+                <th>L30D</th>
+                <th>Tags</th>
+              </tr>
+            </thead>
+            <tbody id="am-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <p class="am-foot">Pending rows = settled on cyre.dev but not yet visible in Agentic Market search. <a href="/monitor">← patch bay</a> · <a href="/">cyre.dev</a></p>
+    </div>
+  </div>
+  <script defer src="/am.js?v=am1"></script>
+</body>
+</html>

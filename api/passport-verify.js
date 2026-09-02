@@ -8,6 +8,7 @@
 // Verification is deliberately free: every agent that checks a Guardian stamp is a future buyer.
 
 import { verifyToken, issuerPublicKey, ISSUER, ALG } from './_attest.js';
+import { recordVerifyHit } from './_traffic.js';
 
 const DISCLAIMER = 'Patterns, not verdicts.';
 
@@ -21,6 +22,7 @@ function readBody(req) {
 }
 
 export default async function handler(req, res) {
+  recordVerifyHit('/api/passport/verify', req);
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
