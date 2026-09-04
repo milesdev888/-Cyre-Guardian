@@ -254,7 +254,7 @@ Signal ids: `age`, `burst`, `failures`, `dormant`, `balance`, `history`. Score b
 
 ### /api/token
 
-Mint/freeze authority, LP lock/burn (deepest Raydium/Orca/Meteora pool), deployer age, holder concentration (ex-pool). Weighted score (0–100): lock 30% · mint auth 25% · deployer 25% · holders 20%. Hard-cap to HIGH when mint authority is live or LP is fully free. Raw fields (`liquidity`, `deployer`, `scoreParts`) returned alongside the score. Locker program IDs live in `config/lockers.json`. Short in-process TTL cache.
+Mint/freeze authority, LP lock/burn (deepest Raydium/Orca/Meteora pool), deployer age, holder concentration (ex-pool). Weighted score (0–100): lock 30% · mint auth 25% · deployer 25% · holders 20%. Hard-cap to HIGH when mint authority is live or LP is fully free. Raw fields (`liquidity`, `deployer`, `scoreParts`) returned alongside the score. Locker program IDs live in `api/_lockers.js`. Short in-process TTL cache.
 
 ### /api/passport
 

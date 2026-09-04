@@ -2,26 +2,10 @@
 // Parses RugCheck markets/lockers/holders + light deployer age via RPC.
 // Never uses RugCheck's composite risk score / "rugged" label as our score.
 
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { LOCKERS } from './_lockers.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-let LOCKER_CFG = null;
 function lockersConfig() {
-  if (LOCKER_CFG) return LOCKER_CFG;
-  try {
-    LOCKER_CFG = JSON.parse(readFileSync(join(__dirname, '../config/lockers.json'), 'utf8'));
-  } catch (_) {
-    LOCKER_CFG = {
-      burnAddresses: ['11111111111111111111111111111111', '1nc1nerator11111111111111111111111111111111'],
-      lockerPrograms: [],
-      lockerTypes: {},
-      poolAccountTypes: ['AMM', 'POOL', 'VAULT', 'MARKET']
-    };
-  }
-  return LOCKER_CFG;
+  return LOCKERS;
 }
 
 function burnSet() {
@@ -178,7 +162,8 @@ export function holdersExcludingPools(report, fallbackHolders) {
 }
 
 /**
- * Best-effort deployer age from signature history (newest→oldest pagination).
+ * Best-effort deployer age from signature history (newest→oldest).
+ * Single page only — keep scans inside Vercel time limits.
  */
 export async function measureDeployer(creator, rpcFn) {
   const out = {
@@ -191,27 +176,18 @@ export async function measureDeployer(creator, rpcFn) {
   if (!creator || typeof rpcFn !== 'function') return out;
 
   try {
-    let before = undefined;
-    let oldest = null;
-    let newest = null;
-    for (let page = 0; page < 3; page++) {
-      const opts = { limit: 1000 };
-      if (before) opts.before = before;
-      const sigs = await rpcFn('getSignaturesForAddress', [creator, opts]);
-      if (!Array.isArray(sigs) || !sigs.length) break;
-      if (!newest && sigs[0] && sigs[0].blockTime) newest = sigs[0].blockTime;
-      const last = sigs[sigs.length - 1];
-      if (last && last.blockTime) oldest = last.blockTime;
-      if (sigs.length < 1000) break;
-      before = last.signature;
-    }
-    if (oldest) {
-      out.walletAgeDays = Math.max(0, Math.floor((Date.now() / 1000 - oldest) / 86400));
+    const sigs = await Promise.race([
+      rpcFn('getSignaturesForAddress', [creator, { limit: 1000 }]),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('deployer-timeout')), 2500))
+    ]);
+    if (!Array.isArray(sigs) || !sigs.length) return out;
+    const oldest = sigs[sigs.length - 1];
+    if (oldest && oldest.blockTime) {
+      out.walletAgeDays = Math.max(0, Math.floor((Date.now() / 1000 - oldest.blockTime) / 86400));
       out.measured = true;
     }
   } catch (_) { /* leave unmeasured */ }
 
-  // creatorTokens occasionally populated by indexers
   return out;
 }
 

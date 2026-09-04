@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "_comment": "Canonical source is api/_lockers.js (imported by the serverless function). Keep this JSON in sync for docs/editors.",
   "burnAddresses": [
     "11111111111111111111111111111111",
     "1nc1nerator11111111111111111111111111111111",
@@ -14,14 +15,5 @@
     { "id": "CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C", "name": "Raydium CPMM" },
     { "id": "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc", "name": "Orca Whirlpool" },
     { "id": "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo", "name": "Meteora DLMM" }
-  ],
-  "lockerTypes": {
-    "jupiter_locker": "Jupiter Lock",
-    "raydium_locker": "Raydium",
-    "streamflow": "Streamflow",
-    "meteora_locker": "Meteora",
-    "orca_locker": "Orca",
-    "bags_locker": "Bags"
-  },
-  "poolAccountTypes": ["AMM", "POOL", "VAULT", "MARKET"]
+  ]
 }
