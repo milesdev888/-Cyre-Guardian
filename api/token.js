@@ -6,6 +6,13 @@
 //   X402_PRICE_TOKEN — atomic USDC (default 10000 = $0.01)
 
 import { createX402Gate, applyX402Result, isCyreOrPreviewRequest } from './_x402.js';
+import {
+  extractLiquidity,
+  holdersExcludingPools,
+  measureDeployer,
+  deployerFromReport,
+  buildRiskV2
+} from './_token-risk.js';
 
 const PRIMARY = process.env.SOLANA_RPC || 'https://api.mainnet-beta.solana.com';
 const FALLBACKS = String(process.env.SOLANA_RPC_FALLBACK || '')
@@ -14,7 +21,7 @@ const FALLBACKS = String(process.env.SOLANA_RPC_FALLBACK || '')
   .filter(Boolean);
 const RPCS = [PRIMARY, ...FALLBACKS].filter((u, i, a) => u && a.indexOf(u) === i);
 
-const TOKEN_DESCRIPTION = 'Guardian token scan — mint/freeze authority, holder concentration, and supply facts. Patterns, not verdicts.';
+const TOKEN_DESCRIPTION = 'Guardian token scan — mint/freeze authority, LP lock/burn, deployer age, holder concentration. Patterns, not verdicts.';
 
 const TOKEN_DISCOVERY = {
   bazaar: {
@@ -96,6 +103,29 @@ const x402Gate = createX402Gate({
 
 // best-effort per-instance throttle (same pattern as api/chat.js)
 let calls = 0, windowStart = Date.now();
+
+/** Short TTL cache — LP/deployer checks are RPC/index heavy. */
+const SCAN_CACHE_TTL_MS = Number(process.env.TOKEN_SCAN_CACHE_TTL_MS || 45000);
+/** @type {Map<string, { at: number, body: object }>} */
+const scanCache = new Map();
+
+function cacheGet(mint) {
+  const hit = scanCache.get(mint);
+  if (!hit) return null;
+  if (Date.now() - hit.at > SCAN_CACHE_TTL_MS) {
+    scanCache.delete(mint);
+    return null;
+  }
+  return hit.body;
+}
+
+function cacheSet(mint, body) {
+  scanCache.set(mint, { at: Date.now(), body });
+  if (scanCache.size > 200) {
+    const first = scanCache.keys().next().value;
+    scanCache.delete(first);
+  }
+}
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -254,14 +284,46 @@ async function fetchRugcheckReport(mint) {
   throw lastErr || new Error('holder index unavailable');
 }
 
-// Indexed holders + token name/symbol from the same RugCheck report.
-// We only read pct + metadata fields — never their risk score / "rugged" labels.
+// Indexed holders + token name/symbol + full report (liquidity / creator).
+// We only read measured fields — never RugCheck's composite risk score / "rugged" labels.
 async function measureHoldersViaRugcheck(mint) {
   const d = await fetchRugcheckReport(mint);
   const meta = metaFromRugcheckReport(d);
   const holders = holdersFromRugcheckReport(d);
   if (!holders) throw new Error('holder index empty');
-  return { ...holders, name: meta.name, symbol: meta.symbol };
+  return { ...holders, name: meta.name, symbol: meta.symbol, report: d };
+}
+
+async function fetchRugcheckBundle(mint) {
+  try {
+    const d = await fetchRugcheckReport(mint);
+    const meta = metaFromRugcheckReport(d);
+    const holdersRaw = holdersFromRugcheckReport(d);
+    const holders = holdersExcludingPools(d, holdersRaw);
+    if (holdersRaw && !holders.holdersMeasured) {
+      Object.assign(holders, holdersRaw);
+    }
+    return {
+      report: d,
+      meta,
+      holders: holders.holdersMeasured ? { ...holders, name: meta.name, symbol: meta.symbol } : null,
+      liquidity: extractLiquidity(d),
+      deployerSeed: deployerFromReport(d)
+    };
+  } catch (_) {
+    return { report: null, meta: { name: null, symbol: null }, holders: null, liquidity: extractLiquidity(null), deployerSeed: deployerFromReport(null) };
+  }
+}
+
+function buildSignals(mintAuthority, freezeAuthority, holders) {
+  // Legacy path kept for callers that only have authority+holders (holders=1 merge).
+  return buildRiskV2({
+    mintAuthority,
+    freezeAuthority,
+    liquidity: { measured: false },
+    holders,
+    deployer: { creator: null }
+  });
 }
 
 async function fetchMetaViaJupiter(mint) {
@@ -308,47 +370,6 @@ async function measureHolders(mint, supply, decimals) {
   return measureHoldersViaRpc(mint, supply, decimals);
 }
 
-function buildSignals(mintAuthority, freezeAuthority, holders) {
-  const signals = [];
-  let score = 0;
-
-  if (mintAuthority) {
-    score += 30;
-    signals.push({ level: 'high', text: 'Mint authority is ACTIVE — the creator can print unlimited new supply at any time.' });
-  } else {
-    signals.push({ level: 'good', text: 'Mint authority revoked — supply is fixed.' });
-  }
-
-  if (freezeAuthority) {
-    score += 25;
-    signals.push({ level: 'high', text: 'Freeze authority is ACTIVE — the creator can freeze your tokens in your wallet.' });
-  } else {
-    signals.push({ level: 'good', text: 'Freeze authority revoked — tokens cannot be frozen.' });
-  }
-
-  if (holders.holdersMeasured) {
-    const top1 = holders.top1;
-    const top10 = holders.top10;
-    if (top1 > 20) {
-      score += 15;
-      signals.push({ level: 'med', text: 'Largest single account holds ' + top1.toFixed(1) + '% of supply. Note: large accounts are sometimes liquidity pools, not individuals.' });
-    }
-    if (top10 > 60) {
-      score += 15;
-      signals.push({ level: 'med', text: 'Top 10 accounts hold ' + top10.toFixed(1) + '% of supply — concentrated.' });
-    } else if (top10 > 0) {
-      signals.push({ level: 'info', text: 'Top 10 accounts hold ' + top10.toFixed(1) + '% of supply.' });
-    }
-  } else {
-    signals.push({ level: 'info', text: 'Holder concentration not measured this run. Mint and freeze authority facts above still apply.' });
-  }
-
-  signals.push({ level: 'info', text: 'LP lock status is not assessed in this scan. Verify locks on the pool page before sizing a position.' });
-
-  const risk = score >= 45 ? 'HIGH' : score >= 20 ? 'MEDIUM' : 'LOW';
-  return { signals, score, risk };
-}
-
 export default async function handler(req, res) {
   const mint = (req.query.mint || '').trim();
 
@@ -374,12 +395,23 @@ export default async function handler(req, res) {
   const holdersOnly = String(req.query.holders || '') === '1';
 
   try {
+    if (!holdersOnly) {
+      const cached = cacheGet(mint);
+      if (cached) {
+        res.setHeader('cache-control', 'no-store');
+        res.setHeader('x-guardian-cache', 'HIT');
+        return res.status(200).json(cached);
+      }
+    }
+
     let mintAuthority = null;
     let freezeAuthority = null;
     let decimals = 0;
     let supply = 0;
     let holders = { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
     let meta = { name: null, symbol: null };
+    let liquidity = { measured: false, lockedPct: null, burnedPct: null, freePct: null, unlockDate: null, lockerName: null, poolType: null, poolUsd: null };
+    let deployer = { creator: null, tokensDeployed: null, ruggedCount: null, walletAgeDays: null, measured: false };
 
     // ----- mint existence BEFORE settle (reuse result downstream; no duplicate RPC) -----
     let supplyValue = null;
@@ -405,7 +437,7 @@ export default async function handler(req, res) {
 
     if (holdersOnly) {
       // Prefer index (no RPC). Only hit chain if the index has no topHolders.
-      const holdersP = measureHoldersViaRugcheck(mint).catch(() => null);
+      const bundleP = fetchRugcheckBundle(mint);
       const jupMetaP = fetchMetaViaJupiter(mint);
       const v = supplyValue;
       decimals = Number(v.decimals) || 0;
@@ -413,8 +445,9 @@ export default async function handler(req, res) {
       if (!Number.isFinite(supply)) {
         supply = Number(v.amount) / Math.pow(10, decimals);
       }
-      holders = (await holdersP) || { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
-      meta = { name: holders.name || null, symbol: holders.symbol || null };
+      const bundle = await bundleP;
+      holders = bundle.holders || { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
+      meta = { name: (bundle.meta && bundle.meta.name) || holders.name || null, symbol: (bundle.meta && bundle.meta.symbol) || holders.symbol || null };
       if (!holders.holdersMeasured) {
         try { holders = await measureHoldersViaRpc(mint, supply, decimals); }
         catch (_) { /* leave unmeasured */ }
@@ -427,7 +460,7 @@ export default async function handler(req, res) {
         meta = await fetchTokenMeta(mint, meta);
       }
     } else {
-      const holdersP = measureHoldersViaRugcheck(mint).catch(() => null);
+      const bundleP = fetchRugcheckBundle(mint);
       const jupMetaP = fetchMetaViaJupiter(mint);
       const info = mintInfo;
       mintAuthority = info.mintAuthority || null;   // null = revoked
@@ -435,8 +468,11 @@ export default async function handler(req, res) {
       decimals = info.decimals;
       supply = Number(info.supply) / Math.pow(10, decimals);
 
-      holders = (await holdersP) || { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
-      meta = { name: holders.name || null, symbol: holders.symbol || null };
+      const bundle = await bundleP;
+      liquidity = bundle.liquidity || liquidity;
+      deployer = bundle.deployerSeed || deployer;
+      holders = bundle.holders || { top1: 0, top10: 0, holdersMeasured: false, holderCount: 0, source: null };
+      meta = { name: (bundle.meta && bundle.meta.name) || holders.name || null, symbol: (bundle.meta && bundle.meta.symbol) || holders.symbol || null };
       if (!holders.holdersMeasured) {
         try { holders = await measureHoldersViaRpc(mint, supply, decimals); }
         catch (_) { /* leave unmeasured */ }
@@ -447,6 +483,18 @@ export default async function handler(req, res) {
       }
       if (!meta.name && !meta.symbol) {
         meta = await fetchTokenMeta(mint, meta);
+      }
+
+      // Enrich deployer age via RPC (best-effort; does not block on failure)
+      if (deployer.creator) {
+        const age = await measureDeployer(deployer.creator, rpc);
+        deployer = {
+          ...deployer,
+          walletAgeDays: age.walletAgeDays,
+          measured: deployer.measured || age.measured,
+          tokensDeployed: deployer.tokensDeployed != null ? deployer.tokensDeployed : age.tokensDeployed,
+          ruggedCount: deployer.ruggedCount != null ? deployer.ruggedCount : age.ruggedCount
+        };
       }
     }
 
@@ -466,10 +514,15 @@ export default async function handler(req, res) {
       });
     }
 
-    const { signals, score, risk } = buildSignals(mintAuthority, freezeAuthority, holders);
+    const scored = buildRiskV2({
+      mintAuthority,
+      freezeAuthority,
+      liquidity,
+      holders,
+      deployer
+    });
 
-    res.setHeader('cache-control', 'no-store');
-    return res.status(200).json({
+    const body = {
       mint,
       name: meta.name,
       symbol: meta.symbol,
@@ -480,9 +533,36 @@ export default async function handler(req, res) {
       top10Pct: holders.holdersMeasured ? +holders.top10.toFixed(2) : null,
       holdersMeasured: holders.holdersMeasured,
       holdersSource: holders.source || null,
-      score, risk, signals,
+      liquidity: {
+        measured: !!liquidity.measured,
+        lockedPct: liquidity.lockedPct,
+        burnedPct: liquidity.burnedPct,
+        freePct: liquidity.freePct,
+        unlockDate: liquidity.unlockDate,
+        lockerName: liquidity.lockerName,
+        poolType: liquidity.poolType,
+        poolUsd: liquidity.poolUsd
+      },
+      deployer: {
+        creator: deployer.creator,
+        tokensDeployed: deployer.tokensDeployed,
+        ruggedCount: deployer.ruggedCount,
+        walletAgeDays: deployer.walletAgeDays,
+        measured: !!deployer.measured
+      },
+      score: scored.score,
+      scoreMax: scored.scoreMax,
+      scoreParts: scored.scoreParts,
+      hardCap: scored.hardCap,
+      risk: scored.risk,
+      signals: scored.signals,
       disclaimer: 'Patterns, not verdicts. This scan reports on-chain facts; it is not investment advice and cannot detect every risk.'
-    });
+    };
+
+    cacheSet(mint, body);
+    res.setHeader('cache-control', 'no-store');
+    res.setHeader('x-guardian-cache', 'MISS');
+    return res.status(200).json(body);
   } catch (e) {
     return res.status(502).json({ error: 'scan failed — RPC busy, try again' });
   }
