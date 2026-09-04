@@ -32,10 +32,18 @@ button.ghost{background:transparent;border:1px solid rgba(0,82,255,.35);color:va
 .hint{color:var(--dim);font-size:13px;margin-bottom:10px}
 .token-note{color:var(--dim);font-size:12px;line-height:1.6;margin-bottom:26px;padding:10px 14px;border:1px solid rgba(0,82,255,.15);border-radius:12px;background:rgba(13,16,23,.45)}
 #report{display:none}
-.risk-banner{border-radius:16px;padding:20px 22px;margin-bottom:16px;border:1px solid var(--line);background:rgba(13,16,23,.7);backdrop-filter:blur(14px)}
+.risk-banner{border-radius:16px;padding:20px 22px;margin-bottom:16px;border:1px solid var(--line);background:rgba(13,16,23,.7);backdrop-filter:blur(14px);display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:14px}
+.risk-banner .risk-main{min-width:0;flex:1}
 .risk-banner b{font-family:Sora,Inter,sans-serif;font-size:22px}
 .r-LOW b{color:var(--live)} .r-MEDIUM b{color:var(--amber)} .r-HIGH b{color:var(--red)}
 .risk-banner small{display:block;color:var(--dim);margin-top:4px}
+.lock-pill{display:none;align-items:center;gap:8px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(13,16,23,.85);font-family:'IBM Plex Mono',Menlo,monospace;font-size:12px;cursor:help;flex:none}
+.lock-pill.is-on{display:inline-flex}
+.lock-pill .lock-ico{width:18px;height:18px;flex:none}
+.lock-pill.lock-green{border-color:rgba(15,174,110,.45);color:var(--live)}
+.lock-pill.lock-amber{border-color:rgba(255,190,80,.45);color:var(--amber)}
+.lock-pill.lock-red{border-color:rgba(255,77,94,.45);color:var(--red)}
+.lock-pill .lock-sub{display:block;color:var(--dim);font-size:10px;margin-top:2px}
 .token-id{display:none;border-radius:16px;padding:18px 20px;margin-bottom:14px;border:1px solid rgba(0,82,255,.28);background:linear-gradient(135deg,rgba(0,82,255,.08),rgba(13,16,23,.85));backdrop-filter:blur(14px)}
 .token-id small{color:var(--dim);font-size:11px;letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:8px}
 .token-id .token-id-row{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 12px}
@@ -47,6 +55,7 @@ button.ghost{background:transparent;border:1px solid rgba(0,82,255,.35);color:va
 .i-good{background:var(--live)} .i-info{background:var(--ice)} .i-med{background:var(--amber)} .i-high{background:var(--red)}
 .sig p{color:var(--text);font-size:14px;line-height:1.6}
 .facts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+@media(min-width:560px){.facts{grid-template-columns:1fr 1fr 1fr}}
 .fact{background:rgba(13,16,23,.7);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .fact small{color:var(--dim);font-size:11px;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:4px}
 .fact b{font-size:15px}
@@ -106,7 +115,7 @@ a{color:var(--ice)}
   <a class="back" href="/">← cyre.dev</a>
   <div class="kicker">GUARDIAN TOKEN SCAN</div>
   <h1>Before you trade: check the <span>mint</span>.</h1>
-  <p class="sub">Guardian shows mint and freeze authority status, supply, and holder concentration for any Solana token. Facts, not verdicts — you decide. Free scan; nothing to sign until you choose to swap.</p>
+  <p class="sub">Guardian shows mint and freeze authority, LP lock/burn, deployer age, and holder concentration for any Solana token. Facts, not verdicts — you decide. Free scan; nothing to sign until you choose to swap.</p>
 
   <div class="scanbox">
     <input id="mint" placeholder="Token mint address…" autocomplete="off" spellcheck="false">
@@ -136,7 +145,16 @@ a{color:var(--ice)}
       </div>
       <span class="token-mint" id="token-mint"></span>
     </div>
-    <div class="risk-banner" id="banner"><b id="riskword"></b><small id="riskscore"></small></div>
+    <div class="risk-banner" id="banner">
+      <div class="risk-main">
+        <b id="riskword"></b>
+        <small id="riskscore"></small>
+      </div>
+      <div class="lock-pill" id="lock-pill" title="">
+        <svg class="lock-ico" id="lock-ico" viewBox="0 0 24 24" fill="none" aria-hidden="true"></svg>
+        <span><span id="lock-label"></span><span class="lock-sub" id="lock-sub"></span></span>
+      </div>
+    </div>
     <div class="facts" id="facts"></div>
     <div id="signals"></div>
     <div class="disclaim">Patterns, not verdicts. This scan reports on-chain facts at the moment you run it; it is not investment advice, cannot detect every risk, and a clean scan is not a recommendation to buy. CYRE never DMs you or asks you to connect a wallet anywhere but this page.</div>
@@ -205,43 +223,12 @@ async function scan(){
       if (!d.symbol && hold.d.symbol) d.symbol = hold.d.symbol;
     }
     if (hold && hold.r && hold.r.ok && hold.d && hold.d.holdersMeasured) {
+      // Prefer server score (includes LP/deployer). Only patch holder display fields.
       d.top1Pct = hold.d.top1Pct;
       d.top10Pct = hold.d.top10Pct;
       d.holdersMeasured = true;
       d.holdersSource = hold.d.holdersSource || d.holdersSource;
-      d.signals = (d.signals || []).filter(function(s){
-        return !(s && s.text && (
-          s.text.indexOf('Holder concentration not measured') === 0 ||
-          s.text.indexOf('Largest single account holds') === 0 ||
-          s.text.indexOf('Top 10 accounts hold') === 0
-        ));
-      });
-      if (d.top1Pct != null && d.top1Pct > 20) {
-        d.signals.splice(Math.min(2, d.signals.length), 0, {
-          level: 'med',
-          text: 'Largest single account holds ' + Number(d.top1Pct).toFixed(1) + '% of supply. Note: large accounts are sometimes liquidity pools, not individuals.'
-        });
-      }
-      if (d.top10Pct != null && d.top10Pct > 60) {
-        d.signals.splice(Math.min(3, d.signals.length), 0, {
-          level: 'med',
-          text: 'Top 10 accounts hold ' + Number(d.top10Pct).toFixed(1) + '% of supply — concentrated.'
-        });
-      } else if (d.top10Pct != null && d.top10Pct > 0) {
-        d.signals.splice(Math.min(3, d.signals.length), 0, {
-          level: 'info',
-          text: 'Top 10 accounts hold ' + Number(d.top10Pct).toFixed(1) + '% of supply.'
-        });
-      }
     }
-
-    // Recompute risk score after holder enrichment (higher = more risk flags)
-    d.score = 0;
-    if (!d.mintAuthorityRevoked) d.score += 30;
-    if (!d.freezeAuthorityRevoked) d.score += 25;
-    if (d.top1Pct != null && d.top1Pct > 20) d.score += 15;
-    if (d.top10Pct != null && d.top10Pct > 60) d.score += 15;
-    d.risk = d.score >= 45 ? 'HIGH' : d.score >= 20 ? 'MEDIUM' : 'LOW';
 
     if (!d.name || !d.symbol) {
       var resolved = await resolveProjectName(m, d);
@@ -254,12 +241,15 @@ async function scan(){
     b.className = 'risk-banner r-'+d.risk;
     document.getElementById('riskword').textContent = d.risk+' RISK PATTERN';
     document.getElementById('riskscore').textContent = scoreLine(d);
+    renderLockPill(d);
     document.getElementById('facts').innerHTML =
       fact('Mint authority', d.mintAuthorityRevoked?'Revoked ✓':'ACTIVE ⚠') +
       fact('Freeze authority', d.freezeAuthorityRevoked?'Revoked ✓':'ACTIVE ⚠') +
       fact('Top holder', d.top1Pct != null ? d.top1Pct+'%' : 'Not measured') +
-      fact('Top 10 holders', d.top10Pct != null ? d.top10Pct+'%' : 'Not measured');
-    document.getElementById('signals').innerHTML = d.signals.map(function(s){
+      fact('Top 10 holders', d.top10Pct != null ? d.top10Pct+'%' : 'Not measured') +
+      fact('LP secured', lockFact(d)) +
+      fact('Deployer age', d.deployer && d.deployer.walletAgeDays != null ? (d.deployer.walletAgeDays + 'd') : 'Not measured');
+    document.getElementById('signals').innerHTML = (d.signals || []).map(function(s){
       return '<div class="sig"><i class="i-'+s.level+'"></i><p>'+s.text+'</p></div>';
     }).join('');
     rep.style.display='block';
@@ -268,6 +258,42 @@ async function scan(){
   go.disabled = false; go.textContent = 'Scan';
 }
 function fact(k,v){ return '<div class="fact"><small>'+k+'</small><b>'+v+'</b></div>'; }
+function lockFact(d){
+  var L = d && d.liquidity;
+  if (!L || !L.measured) return 'Not measured';
+  var secured = (Number(L.lockedPct)||0) + (Number(L.burnedPct)||0);
+  return secured.toFixed(0) + '%';
+}
+function renderLockPill(d){
+  var pill = document.getElementById('lock-pill');
+  var ico = document.getElementById('lock-ico');
+  var label = document.getElementById('lock-label');
+  var sub = document.getElementById('lock-sub');
+  var L = d && d.liquidity;
+  if (!pill || !L || !L.measured) {
+    if (pill) pill.className = 'lock-pill';
+    return;
+  }
+  var locked = Number(L.lockedPct) || 0;
+  var burned = Number(L.burnedPct) || 0;
+  var secured = locked + burned;
+  var tone = secured >= 90 ? 'green' : secured >= 50 ? 'amber' : 'red';
+  var closed = secured >= 50;
+  pill.className = 'lock-pill is-on lock-' + tone;
+  label.textContent = burned >= locked && burned > 0
+    ? (burned.toFixed(0) + '% burned')
+    : (secured.toFixed(0) + '% locked');
+  var tip = [];
+  if (L.lockerName) tip.push(L.lockerName);
+  if (L.unlockDate) tip.push('Unlock ' + L.unlockDate);
+  else if (closed) tip.push(burned >= locked ? 'Burned / permanent' : 'No unlock date measured');
+  if (L.freePct != null) tip.push(Number(L.freePct).toFixed(0) + '% free');
+  sub.textContent = tip[0] || '';
+  pill.title = tip.join(' · ') + (L.unlockDate ? ' — a lock expiring soon is not a lasting lock' : '');
+  ico.innerHTML = closed
+    ? '<rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2" fill="none"/>'
+    : '<rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 0 1 7.5-1.5" stroke="currentColor" stroke-width="2" fill="none"/>';
+}
 function renderTokenId(d, mint){
   var box = document.getElementById('token-id');
   var name = (d && d.name) ? String(d.name).trim() : '';
@@ -314,9 +340,9 @@ async function resolveProjectName(mint, seeded){
 function scoreLine(d){
   var supply = 'supply ' + Number(d.supply).toLocaleString();
   var s = Number(d.score) || 0;
-  // Higher = more risk flags. 0 is a real result (clean on measured checks), not "missing".
-  if (s === 0) return 'Risk score 0 / 85 — no flags · ' + supply;
-  return 'Risk score ' + s + ' / 85 · ' + supply;
+  var max = Number(d.scoreMax) || 100;
+  if (s === 0) return 'Risk score 0 / ' + max + ' — no flags · ' + supply;
+  return 'Risk score ' + s + ' / ' + max + (d.hardCap ? ' · hard-capped' : '') + ' · ' + supply;
 }
 document.getElementById('mint').addEventListener('keydown',function(e){ if(e.key==='Enter') scan(); });
 (function(){

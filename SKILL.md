@@ -254,7 +254,7 @@ Signal ids: `age`, `burst`, `failures`, `dormant`, `balance`, `history`. Score b
 
 ### /api/token
 
-Mint/freeze authority, holder concentration, supply. Scoring: active mint +30, freeze +25, top1 >20% +15, top10 >60% +15. LP lock **not** assessed.
+Mint/freeze authority, LP lock/burn (deepest Raydium/Orca/Meteora pool), deployer age, holder concentration (ex-pool). Weighted score (0–100): lock 30% · mint auth 25% · deployer 25% · holders 20%. Hard-cap to HIGH when mint authority is live or LP is fully free. Raw fields (`liquidity`, `deployer`, `scoreParts`) returned alongside the score. Locker program IDs live in `config/lockers.json`. Short in-process TTL cache.
 
 ### /api/passport
 
