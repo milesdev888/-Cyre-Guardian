@@ -1,111 +1,73 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="theme-guardian">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CYRE — Synthetic Intelligence · The chain has a witness</title>
-  <meta name="description" content="CYRE is Synthetic Intelligence infrastructure for real-world assets on Solana. Guardian watches the chain — patterns, not verdicts.">
-  <meta property="og:image" content="https://cyre.dev/cyre-token-icon-256.png">
-  <meta name="twitter:card" content="summary_large_image">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Guardian — The chain has a witness</title>
+  <meta name="description" content="Guardian watches mints and contracts across Solana and EVM. Grades and patterns, not verdicts.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cyre.dev/">
+  <meta property="og:title" content="Guardian — The chain has a witness">
+  <meta property="og:description" content="Paste a Solana mint or 0x contract. Guardian reports patterns, not verdicts.">
+  <meta property="og:image" content="https://cyre.dev/guardian-mark.svg">
+  <meta name="twitter:card" content="summary">
   <meta name="twitter:site" content="@Cyredev888">
-  <meta name="twitter:image" content="https://cyre.dev/cyre-token-icon-256.png">
-  <link rel="icon" href="/cyre-token-icon-128.png" type="image/png">
-  <link rel="apple-touch-icon" href="/cyre-token-icon-256.png">
+  <meta name="twitter:title" content="Guardian — The chain has a witness">
+  <meta name="twitter:image" content="https://cyre.dev/guardian-mark.svg">
+  <link rel="icon" href="/guardian-mark.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/guardian-mark.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/homepage.css?v=cb10">
-  <link rel="stylesheet" href="/theme-purple-deep.css?v=cb4">
-  <script defer src="/guardian-chain-live.js?v=spin1"></script>
-  <script defer src="/hero-meteors.js?v=spin1"></script>
-  <script defer src="/guardian-popout.js?v=cb4"></script>
-  <script defer src="/access-form.js?v=spin1"></script>
-  <script defer src="/rwa-widget.js?v=spin1"></script>
-  <script defer src="/ai-presence.js?v=cb3"></script>
-  <script defer src="/footer-polish.js?v=spin1"></script>
-  <script defer src="/guardian-cortex.js?v=spin1"></script>
-  <script defer src="/guardian-head.js?v=cb3"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/theme-guardian.css?v=gd1">
+  <link rel="stylesheet" href="/homepage.css?v=gd1">
+  <script defer src="/guardian-chain-live.js?v=gd1"></script>
+  <script defer src="/guardian-popout.js?v=gd1"></script>
+  <script defer src="/access-form.js?v=gd1"></script>
+  <script defer src="/rwa-widget.js?v=gd1"></script>
+  <script defer src="/footer-polish.js?v=gd1"></script>
+  <script defer src="/guardian-home-report.js?v=gd1"></script>
 </head>
 <body>
-  <div class="bg-grid" aria-hidden="true"></div>
-  <header class="masthead shell">
-    <div class="pill">
-      <a class="brand" href="/" aria-label="CYRE home">
-        <span class="brand-orb" aria-hidden="true"></span>
-        <span>CY<span class="brand-r">R</span>E</span>
+  <header class="gh-masthead">
+    <div class="gh-shell gh-mast-in">
+      <a class="gh-brand" href="/" aria-label="Guardian home">
+        <img src="/guardian-mark.svg" alt="" width="36" height="36">
+        <strong>Guardian</strong>
       </a>
-      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle menu">
-        <span class="nav-toggle-line" aria-hidden="true"></span>
+      <button class="gh-nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Toggle menu">
+        <span aria-hidden="true"></span>
       </button>
-      <nav id="site-nav" class="nav nav-links" aria-label="Primary">
-        <a href="/app" class="nav-app">Guardian App</a>
-        <a href="/monitor" class="nav-monitor">Monitor</a>
-        <a href="/am" class="nav-am">Agentic Market</a>
+      <nav id="site-nav" class="gh-nav" aria-label="Primary">
+        <a href="/app">App</a>
+        <a href="/app#scan">Scan</a>
+        <a href="/monitor">Monitor</a>
         <a href="/docs">Docs</a>
-        <a href="/app#tokenomics" class="nav-token"><img src="/cyre-token-ticker-128.png" alt="" width="18" height="18">$C7</a>
+        <a href="/auto">Auto</a>
+        <a href="/check.html">Check</a>
         <a href="#access" class="req">Request access</a>
       </nav>
     </div>
   </header>
 
-  <main class="shell">
-    <section class="hero hero-grid" aria-labelledby="hero-title">
+  <main class="gh-shell">
+    <section class="gh-hero hero hero-grid" aria-labelledby="hero-title">
       <div>
-        <div class="kicker">Synthetic Intelligence · RWA fraud-watch</div>
-        <h1 id="hero-title"><span class="hero-blink">The</span> chain has a witness.</h1>
-        <p class="lede">CYRE is Synthetic Intelligence infrastructure for real-world assets on Solana. Guardian watches the chain — patterns, not verdicts.</p>
+        <div class="eyebrow">Patterns, not verdicts</div>
+        <h1 id="hero-title">The chain has a witness.</h1>
+        <p class="lede">Guardian watches mints and contracts on Solana, Ethereum, Base, Arbitrum, and Robinhood Chain. Paste first — no dropdown. You read the patterns. You decide.</p>
         <div class="cta-row">
-          <a class="btn b-main b-app-glow" href="/app">Open Guardian App</a>
-          <button class="btn b-ghost" type="button" id="talk-to-guardian">Talk to Guardian</button>
+          <a class="btn btn-gold" href="/app#scan">Open Scan</a>
+          <button class="btn btn-ghost" type="button" id="talk-to-guardian">Talk to Guardian</button>
         </div>
-        <div class="trust-line" aria-label="Trust line">
-          <span>Live monitoring</span>
-          <span>On-chain &amp; off-chain</span>
-          <span>Built for institutions</span>
-        </div>
-      </div>
-
-      <div class="hero-visual" aria-label="Guardian visual">
-          <div class="orb-stage orbit">
-          <div class="orbit-ring ring r1" aria-hidden="true"></div>
-          <!-- Nodes sit on the perfect circle (r≈42% from center) -->
-          <div class="agent-node" style="--x:18%;--y:28%">
-            <span class="node-orbits" aria-hidden="true"></span>
-            <span class="node-core"></span>
-            <span class="node-meta"><i class="dot live"></i>SCAN</span>
-          </div>
-          <div class="agent-node" style="--x:14%;--y:68%">
-            <span class="node-orbits" aria-hidden="true"></span>
-            <span class="node-core"></span>
-            <span class="node-meta"><i class="dot live"></i>WATCH</span>
-          </div>
-          <div class="agent-node" style="--x:78%;--y:70%">
-            <span class="node-orbits" aria-hidden="true"></span>
-            <span class="node-core"></span>
-            <span class="node-meta"><i class="dot live"></i>SWAP</span>
-          </div>
-          <div class="agent-node" style="--x:86%;--y:48%">
-            <span class="node-orbits" aria-hidden="true"></span>
-            <span class="node-core"></span>
-            <span class="node-meta"><i class="dot live"></i>SCORE</span>
-          </div>
-          <div class="agent-node" style="--x:78%;--y:24%">
-            <span class="node-orbits" aria-hidden="true"></span>
-            <span class="node-core gate"></span>
-            <span class="node-meta gate"><i class="dot live"></i>GATE</span>
-          </div>
-          <div class="head-wrap portrait" role="img" aria-label="Guardian wireframe particle head">
-            <canvas id="guardian-head" width="640" height="800" aria-hidden="true"></canvas>
-          </div>
-        </div>
-        <div class="chips" aria-label="Guardian status">
+        <div class="gh-chips" aria-label="Guardian status">
           <div class="status-chip live" id="chip-live">
             <span class="label">LIVE</span>
             <strong>Guardian active</strong>
           </div>
           <div class="status-chip risk" id="chip-risk">
-            <span class="label">RISK LOW</span>
-            <strong>No immediate threats</strong>
+            <span class="label">RISK</span>
+            <strong>Patterns only</strong>
           </div>
           <div class="status-chip watch" id="chip-watch">
             <span class="label">WATCHING</span>
@@ -113,125 +75,135 @@
           </div>
         </div>
       </div>
+
+      <aside class="report-card" id="c7-report" aria-label="Live $C7 Guardian report">
+        <header>
+          <b class="report-name">$C7</b>
+          <span class="report-score">Live scan</span>
+        </header>
+        <p class="report-status">Reading the mint…</p>
+        <div class="report-body" hidden>
+          <div class="report-row">
+            <div>
+              <small>Pattern band</small>
+              <div class="report-grade">—</div>
+            </div>
+          </div>
+          <div class="report-row"><small>Mint authority</small><span class="val" id="c7-mint-auth">…</span></div>
+          <div class="report-row"><small>Freeze authority</small><span class="val" id="c7-freeze">…</span></div>
+          <div class="report-row"><small>LP lock / burn</small><span class="val" id="c7-lp">…</span></div>
+          <div class="report-row"><small>Top holder</small><span class="val" id="c7-top1">…</span></div>
+          <div class="report-row"><small>Top 10 holders</small><span class="val" id="c7-top10">…</span></div>
+          <p class="report-signals" style="color:var(--muted);font-size:13px;line-height:1.55;padding:10px 0 4px"></p>
+        </div>
+        <p class="mint">979sitxCjWFPdAsrF2ybKNENwFcpiHDwaAasC5Xa5qww</p>
+        <a class="report-open" href="/scan?mint=979sitxCjWFPdAsrF2ybKNENwFcpiHDwaAasC5Xa5qww">Open full scan →</a>
+      </aside>
     </section>
 
     <div id="rwa-feed" aria-live="polite"></div>
 
-    <section class="section" aria-labelledby="product-cards-title">
-      <div class="section-head">
-        <div>
-          <div class="eyebrow">Guardian App</div>
-          <h2 id="product-cards-title">Scan, check, watch, oracle — everything in one place.</h2>
-          <p class="section-copy">No more hunting across pages. Open the app once and move between every Guardian flow from the sidebar or mobile tabs.</p>
-        </div>
-        <a class="btn b-main b-app-glow" href="/app" style="align-self:flex-start;margin-top:8px">Launch Guardian App</a>
-      </div>
-      <div class="cards">
-        <article class="card card-featured">
-          <span class="label">Trade</span>
-          <h3>Scan &amp; Swap</h3>
-          <p>Solana mints and EVM contracts (Ethereum, Base, Arbitrum, Robinhood Chain) — then Jupiter swap on Solana after you've read the report.</p>
-          <a href="/app#scan">Open in App →</a>
-        </article>
-        <article class="card">
-          <span class="label">Analyze</span>
-          <h3>Check · Score · Passport · Forensics</h3>
-          <p>Address intelligence, wallet grade cards, portable JSON passports, and single-address pattern boards.</p>
-          <a href="/app#check">Open in App →</a>
-        </article>
-        <article class="card">
-          <span class="label">Monitor</span>
-          <h3>Watch · Oracle · Signals</h3>
-          <p>Wallet alerts, RWA oracle feed monitor, and the public measured pattern feed.</p>
-          <a href="/app#watch">Open in App →</a>
-        </article>
-        <article class="card">
-          <span class="label">Agentic market</span>
-          <h3>x402 settlement board</h3>
-          <p>Live patch bay for every Guardian paid route — probes, settles, internal vs external agents.</p>
-          <a href="/monitor">Open monitor →</a>
-        </article>
-        <article class="card">
-          <span class="label">Project</span>
-          <h3>Tokenomics · Roadmap · Airdrop</h3>
-          <p>$C7 supply and locks, shipped vs next, and community allocation details — CA only here and @Cyredev888.</p>
-          <a href="/app#tokenomics">Open in App →</a>
-        </article>
-      </div>
+    <section class="gh-rules" aria-labelledby="work-title">
+      <div class="eyebrow" id="work-title">The work</div>
+      <a class="gh-rule" href="/app#scan">
+        <span class="gh-rule-kicker">Trade</span>
+        <span class="gh-rule-title">Scan &amp; Swap</span>
+        <span class="arrow" aria-hidden="true">→</span>
+        <p>Solana mint or 0x contract. Mint, freeze, proxy, tax, LP, holders — then Jupiter on Solana after you read the report.</p>
+      </a>
+      <a class="gh-rule" href="/app#check">
+        <span class="gh-rule-kicker">Analyze</span>
+        <span class="gh-rule-title">Check</span>
+        <span class="arrow" aria-hidden="true">→</span>
+        <p>Six explainable wallet signals. Patterns, not a pass/fail stamp.</p>
+      </a>
+      <a class="gh-rule" href="/check.html">
+        <span class="gh-rule-kicker">Landing</span>
+        <span class="gh-rule-title">Standalone Check</span>
+        <span class="arrow" aria-hidden="true">→</span>
+        <p>Ad-safe address check without the app chrome.</p>
+      </a>
+      <a class="gh-rule" href="/app#watch">
+        <span class="gh-rule-kicker">Monitor</span>
+        <span class="gh-rule-title">Watch</span>
+        <span class="arrow" aria-hidden="true">→</span>
+        <p>Measured wallet alerts. Quiet lists only.</p>
+      </a>
+      <a class="gh-rule" href="/monitor">
+        <span class="gh-rule-kicker">Agents</span>
+        <span class="gh-rule-title">Monitor</span>
+        <span class="arrow" aria-hidden="true">→</span>
+        <p>x402 settlement board — probes and paid routes.</p>
+      </a>
+      <a class="gh-rule" href="/docs">
+        <span class="gh-rule-kicker">Reference</span>
+        <span class="gh-rule-title">Docs</span>
+        <span class="arrow" aria-hidden="true">→</span>
+        <p>How Guardian reports. What it will not say.</p>
+      </a>
     </section>
 
-    <section class="section" aria-labelledby="trust-strip-title">
-      <div class="trust-band">
-        <div class="eyebrow">Trusted infrastructure</div>
-        <h2 id="trust-strip-title">Built for teams that need signals they can explain.</h2>
-        <p>Trusted infrastructure for Synthetic Intelligence workflows across real-world assets, with clear operator posture and institution-friendly controls.</p>
-        <div class="trust-grid">
-          <div class="trust-item">
-            <strong>AI-powered detection</strong>
-            <span>Guardian watches for behavior across linked activity so teams can triage faster.</span>
-          </div>
-          <div class="trust-item">
-            <strong>Explainable signals</strong>
-            <span>Outputs are framed as patterns and context, giving investigators room to make the call.</span>
-          </div>
-          <div class="trust-item">
-            <strong>Private by design</strong>
-            <span>Access is controlled, with workflows shaped for sensitive counterparties and internal review.</span>
-          </div>
-          <div class="trust-item">
-            <strong>Enterprise ready</strong>
-            <span>Designed for teams that need operational discipline, integrations, and measured rollout.</span>
-          </div>
+    <section class="gh-token" aria-labelledby="token-title">
+      <div class="eyebrow">Token</div>
+      <h2 id="token-title">$C7 — the CYRE token</h2>
+      <p>Fixed 100,000,000 supply. Mint immutable. Liquidity locked at graduation. Contract address published only here and on @Cyredev888. Not an offer. Not a recommendation.</p>
+      <div class="ca-box">
+        <button type="button" id="c7-mint" title="Tap to copy" aria-label="Copy $C7 mint">979sitxCjWFPdAsrF2ybKNENwFcpiHDwaAasC5Xa5qww</button>
+        <div class="ca-links">
+          <a href="/tokenomics">Tokenomics</a>
+          <a href="https://solscan.io/token/979sitxCjWFPdAsrF2ybKNENwFcpiHDwaAasC5Xa5qww" target="_blank" rel="noopener">Solscan</a>
         </div>
       </div>
     </section>
 
-    <section class="section" id="access" aria-labelledby="access-title">
-      <div class="access-band">
-        <div>
-          <div class="eyebrow">Request access</div>
-          <h2 id="access-title">Bring Guardian into the workflow.</h2>
-          <p>CYRE is early stage and onboarding is limited. If you are building in real-world assets on Solana, request access and tell us what you need watched.</p>
-        </div>
-        <div class="cta-row">
-          <a class="btn b-main req" href="#access">Request access</a>
-        </div>
-      </div>
+    <section class="gh-access" id="access" aria-labelledby="access-title">
+      <div class="eyebrow">Request access</div>
+      <h2 id="access-title">Bring Guardian into the workflow.</h2>
+      <p>Early-stage. Limited onboarding. If you are building in real-world assets, tell us what needs watching.</p>
+      <a class="btn btn-gold req" href="#access">Request access</a>
     </section>
   </main>
 
-  <footer class="shell">
-    <div class="footer-row">
-      <div>
-        <div class="footer-brand">CYRE</div>
-        <p class="footer-copy">Synthetic Intelligence infrastructure for real-world assets on Solana.</p>
-      </div>
-      <div class="footer-meta">Early-stage product · Guardian surfaces patterns, not verdicts.</div>
+  <footer class="gh-shell gh-foot">
+    <div>
+      <div class="who">CYRE</div>
+      <p>Synthetic Intelligence infrastructure. Guardian never DMs first, never asks you to connect a wallet off this site.</p>
     </div>
+    <div>Patterns, not verdicts. Digital assets are volatile.</div>
   </footer>
 
   <script>
     (function () {
-      var navToggle = document.querySelector('.nav-toggle');
+      var navToggle = document.querySelector('.gh-nav-toggle');
       var nav = document.getElementById('site-nav');
       function closeMenu() {
         if (!navToggle || !nav) return;
         navToggle.setAttribute('aria-expanded', 'false');
         nav.classList.remove('is-open');
-        document.body.classList.remove('menu-open');
       }
       if (navToggle && nav) {
         navToggle.addEventListener('click', function () {
           var open = navToggle.getAttribute('aria-expanded') === 'true';
           navToggle.setAttribute('aria-expanded', String(!open));
           nav.classList.toggle('is-open', !open);
-          document.body.classList.toggle('menu-open', !open);
         });
         nav.addEventListener('click', function (event) {
           if (event.target.closest('a')) closeMenu();
         });
         window.addEventListener('resize', function () {
           if (window.innerWidth > 840) closeMenu();
+        });
+      }
+      var mint = document.getElementById('c7-mint');
+      if (mint) {
+        mint.addEventListener('click', function () {
+          var t = mint.textContent.trim();
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(t).then(function () {
+              mint.setAttribute('title', 'Copied');
+              setTimeout(function () { mint.setAttribute('title', 'Tap to copy'); }, 1200);
+            }).catch(function () {});
+          }
         });
       }
     })();

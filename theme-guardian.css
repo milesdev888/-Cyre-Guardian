@@ -1,0 +1,132 @@
+/* theme-guardian.css — Guardian forest / brass. Homepage v=gd1 */
+:root {
+  --bg: #0A0F0A;
+  --panel: #101710;
+  --line: #232D20;
+  --cream: #EDE7D5;
+  --muted: #97A08D;
+  --gold: #D8BC66;
+  --gold-deep: #B99C48;
+  --green: #6FA97C;
+  --guardian-gold: #D8BC66;
+  --guardian-gold-deep: #B99C48;
+  --guardian-panel: #101710;
+  --guardian-line: #232D20;
+  --guardian-cream: #EDE7D5;
+  --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-body: Inter, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+html.theme-guardian {
+  background: var(--bg);
+  color: var(--cream);
+}
+
+html.theme-guardian body {
+  background: var(--bg);
+  color: var(--cream);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Popout / access / chain bar — beat injected Coinbase-blue skins */
+html.theme-guardian #gp-fab {
+  border-color: rgba(216, 188, 102, 0.55) !important;
+  background: #0A0F0A !important;
+  box-shadow: 0 0 0 2px rgba(216, 188, 102, 0.22), 0 0 28px rgba(111, 169, 124, 0.18) !important;
+}
+html.theme-guardian #gp-fab .gp-pulse {
+  background: var(--green) !important;
+  border-color: #0A0F0A !important;
+  box-shadow: 0 0 10px rgba(111, 169, 124, 0.7) !important;
+}
+html.theme-guardian #gp-fab .gp-live {
+  color: var(--gold) !important;
+  border-color: rgba(216, 188, 102, 0.35) !important;
+  background: rgba(10, 15, 10, 0.9) !important;
+}
+html.theme-guardian #gp-panel {
+  background: rgba(16, 23, 16, 0.96) !important;
+  border-color: rgba(216, 188, 102, 0.28) !important;
+  color: var(--cream) !important;
+  box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.9), 0 0 32px rgba(216, 188, 102, 0.12) !important;
+}
+html.theme-guardian #gp-panel .gp-head {
+  border-bottom-color: rgba(216, 188, 102, 0.18) !important;
+}
+html.theme-guardian #gp-panel .gp-head h3 span {
+  color: var(--gold) !important;
+}
+html.theme-guardian #gp-panel .gp-form input {
+  background: rgba(10, 15, 10, 0.8) !important;
+  border-color: rgba(216, 188, 102, 0.22) !important;
+  color: var(--cream) !important;
+}
+html.theme-guardian #gp-panel .gp-form button,
+html.theme-guardian #gp-panel .gp-hear {
+  background: linear-gradient(135deg, #d8bc66, #b99c48) !important;
+  color: #0A0F0A !important;
+}
+html.theme-guardian #gp-panel .gp-msg.bot {
+  background: rgba(10, 15, 10, 0.75) !important;
+  border-color: rgba(216, 188, 102, 0.18) !important;
+}
+html.theme-guardian #gp-panel .gp-msg.user {
+  background: rgba(216, 188, 102, 0.12) !important;
+  border-color: rgba(216, 188, 102, 0.28) !important;
+}
+
+html.theme-guardian .axm {
+  background: var(--panel) !important;
+  border-color: var(--line) !important;
+}
+html.theme-guardian .axm h3 {
+  font-family: var(--font-display) !important;
+  color: var(--cream) !important;
+}
+html.theme-guardian .axm .axb {
+  background: var(--gold) !important;
+  color: #0A0F0A !important;
+}
+html.theme-guardian .axm input,
+html.theme-guardian .axm textarea {
+  background: var(--bg) !important;
+  border-color: var(--line) !important;
+  color: var(--cream) !important;
+}
+
+html.theme-guardian .guardian-chain-bar {
+  color: var(--muted) !important;
+  border-color: rgba(216, 188, 102, 0.22) !important;
+  background: rgba(16, 23, 16, 0.85) !important;
+  font-family: var(--font-mono) !important;
+}
+html.theme-guardian .guardian-chain-bar.is-live {
+  color: var(--cream) !important;
+  border-color: rgba(216, 188, 102, 0.4) !important;
+}
+html.theme-guardian .guardian-chain-bar.is-live::before {
+  background: var(--green) !important;
+  box-shadow: 0 0 10px rgba(111, 169, 124, 0.55) !important;
+}
+
+html.theme-guardian #cyre-rwa {
+  background: transparent !important;
+  border-color: var(--line) !important;
+  color: var(--cream) !important;
+}
+html.theme-guardian #cyre-rwa::before {
+  background: linear-gradient(180deg, var(--gold), var(--green)) !important;
+}
+html.theme-guardian .cyre-rwa-eyebrow {
+  color: var(--gold) !important;
+}
+html.theme-guardian #cyre-rwa th,
+html.theme-guardian #cyre-rwa td {
+  border-bottom-color: var(--line) !important;
+}
+html.theme-guardian .cyre-rwa-cap b {
+  font-family: var(--font-display) !important;
+  color: var(--cream) !important;
+}
