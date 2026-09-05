@@ -4,7 +4,7 @@
 
   var SCAN_URLS = [
     "/api/multichain-scan",
-    "https://guardian-scan.onrender.com/api/scan",
+    "https://scan.cyre.dev/api/scan",
   ];
 
   function isEvm(s) {
