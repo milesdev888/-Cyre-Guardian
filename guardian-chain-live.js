@@ -50,8 +50,8 @@
       var st = document.createElement('style');
       st.id = 'guardian-chain-live-css';
       st.textContent =
-        '.guardian-chain-bar{margin-top:14px;font-family:IBM Plex Mono,ui-monospace,monospace;font-size:11px;' +
-        'letter-spacing:.06em;color:#8892a4;padding:8px 12px;border-radius:999px;border:1px solid rgba(95,208,255,.18);' +
+        '.guardian-chain-bar{margin-top:14px;font-family:JetBrains Mono,ui-monospace,monospace;font-size:11px;' +
+        'letter-spacing:.06em;color:#8892a4;padding:8px 12px;border-radius:999px;border:1px solid rgba(216,188,102,.18);' +
         'background:rgba(6,10,22,.75);display:inline-flex;align-items:center;gap:8px;max-width:calc(100% - 96px)}' +
         '.guardian-chain-bar::before{content:"";width:7px;height:7px;border-radius:50%;background:#8892a4;flex:none}' +
         '.guardian-chain-bar.is-live{color:#eefaff;border-color:rgba(0,82,255,.35)}' +

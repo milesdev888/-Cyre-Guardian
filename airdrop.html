@@ -10,8 +10,8 @@
 <link rel="apple-touch-icon" href="/cyre-token-icon-256.png">
 <style>
   :root{
-    --ice:#0052ff; --teal:#4fe3d0; --bg:#04070c;
-    --glass:rgba(13,22,34,.55); --line:rgba(0,82,255,.18);
+    --ice:#d8bc66; --teal:#4fe3d0; --bg:#04070c;
+    --glass:rgba(13,22,34,.55); --line:rgba(216,188,102,.18);
     --txt:#dbe9f4; --dim:#8fa6b8; --red:#ff5f6b;
   }
   *{margin:0;padding:0;box-sizing:border-box}
@@ -23,7 +23,7 @@
   body::before,body::after{
     content:""; position:fixed; border-radius:50%; filter:blur(90px); z-index:0; pointer-events:none;
   }
-  body::before{width:420px;height:420px;background:rgba(0,82,255,.10);top:-120px;left:-120px}
+  body::before{width:420px;height:420px;background:rgba(216,188,102,.10);top:-120px;left:-120px}
   body::after{width:380px;height:380px;background:rgba(79,227,208,.08);bottom:-100px;right:-100px}
   .wrap{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:0 20px 80px}
 
@@ -45,7 +45,7 @@
   }
   h1{
     font-size:clamp(44px,9vw,76px);font-weight:800;letter-spacing:-.02em;line-height:1.02;
-    background:linear-gradient(120deg,#fff 15%,#578bff 55%,#0052ff);
+    background:linear-gradient(120deg,#fff 15%,#e6cc7e 55%,#d8bc66);
     -webkit-background-clip:text;background-clip:text;color:transparent;
   }
   .h-sub{margin-top:14px;color:var(--dim);font-size:17px;line-height:1.6}
@@ -68,8 +68,8 @@
   }
   .tab:hover{color:var(--txt)}
   .tab[aria-selected="true"]{
-    color:#ffffff;background:linear-gradient(120deg,#0052ff,#2667ff);
-    border-color:transparent;box-shadow:0 0 24px rgba(0,82,255,.35);
+    color:#ede7d5;background:linear-gradient(120deg,#d8bc66,#e6cc7e);
+    border-color:transparent;box-shadow:0 0 24px rgba(216,188,102,.35);
   }
   .tab:focus-visible{outline:2px solid var(--ice);outline-offset:2px}
   .panel{display:none}
@@ -85,8 +85,8 @@
   }
   .card h3{font-size:16px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
   .idx{
-    width:26px;height:26px;flex:0 0 26px;border-radius:50%;font-size:13px;font-weight:800;color:#ffffff;
-    background:linear-gradient(120deg,#0052ff,#2667ff);display:flex;align-items:center;justify-content:center;
+    width:26px;height:26px;flex:0 0 26px;border-radius:50%;font-size:13px;font-weight:800;color:#ede7d5;
+    background:linear-gradient(120deg,#d8bc66,#e6cc7e);display:flex;align-items:center;justify-content:center;
   }
   .card p{color:var(--dim);font-size:14.5px;line-height:1.65}
   .card a{color:var(--ice);text-decoration:none}
@@ -99,8 +99,8 @@
 
   .cta{
     display:inline-block;margin-top:10px;padding:14px 28px;border-radius:999px;font-weight:800;font-size:15px;
-    color:#ffffff;background:linear-gradient(120deg,#0052ff,#2667ff);text-decoration:none;
-    box-shadow:0 0 24px rgba(0,82,255,.3);transition:transform .2s;
+    color:#ede7d5;background:linear-gradient(120deg,#d8bc66,#e6cc7e);text-decoration:none;
+    box-shadow:0 0 24px rgba(216,188,102,.3);transition:transform .2s;
   }
   .cta:hover{transform:translateY(-2px)}
 
@@ -119,6 +119,7 @@
     .split-seg:last-child{border-bottom:none}
   }
 </style>
+  <link rel="stylesheet" href="/theme-guardian.css?v=gf1">
 </head>
 <body>
 <div class="wrap">

@@ -44,19 +44,21 @@ cyre.dev/tokenomics and @Cyredev888.
 
 | File | What it is |
 |---|---|
-| `index.html` | **Homepage redesign** (Aug 2026): self-contained cinematic AI page — headline "The chain has a witness.", eyebrow **Synthetic Intelligence · RWA fraud-watch**, cyan `#5fd0ff` + violet `#9b7bff` + sparse gold particle accents, **wireframe/particle Guardian head** (idle morph dust→mesh→photo→dust; soft eye bloom on mesh, no cartoon eyes), orbit rings, compact status chips LIVE / RISK LOW / WATCHING beside head, cyan-glow Check CTA + transparent outline Talk to Guardian, single nav (no duplicate Tools strip), Watchlist/Forensics/Passport/Signals cards, trust strip (no fake metrics). Hero morph may show `/guardian2.jpg` during photo phase; FAB/popout still uses `/guardian2.jpg`. Loads `homepage.css`, `vortex.js`, `guardian-head.js`, `guardian-popout.js`, `access-form.js`, `rwa-widget.js`, `ai-presence.js`, `footer-polish.js`. |
-| `index-legacy.html` | Pre-redesign CYRE 7 shell snapshot for rollback. Do not serve as `/`. |
+| `index.html` | **Guardian forest homepage** (Sep 2026): self-contained dark forest page — brand **Guardian** (eye-in-shield mark), headline "The chain has a witness.", gold `#D8BC66` + cream `#EDE7D5` on ink `#0A0F0A`, Cormorant + Inter + JetBrains Mono. Hero scan bar → `guardian-scan.onrender.com` (Base58=Solana, `0x`=EVM). Sections: SCAN/WATCH/SCORE/GATE grid, live `$C7` report card (`guardian-home-report.js` → `/api/token`), tokenomics CTA, request-access + Talk to Guardian. Loads `access-form.js`, `guardian-popout.js`, `guardian-home-report.js`. |
+| `theme-guardian.css` | **Shared forest theme** for app + all secondary/tool pages. Remaps legacy blue tokens (`--cyan`, `--cb-blue`, `--ice`, `--ai-*`) to gold/cream/ink. Loaded by `/app`, Monitor, AM, Docs, product tools, and injected by `ai-vibe-loader.js`. |
+| `index-legacy.html` | Previous cinematic homepage snapshot for rollback. Do not serve as `/`. |
+| `guardian-home-report.js` | Homepage `$C7` report card — GET `/api/token` for mint/freeze/LP/top-holder; falls back to "See live report". |
 | `theme-glass.css` | Crystal glassmorphism skin (loaded by launch-banner.js). Delete = revert skin. |
-| `theme-purple-deep.css` | Institutional Coinbase-blue mood overrides (filename kept for cache links): ink `#0a0b0d`, primary `#0052ff`, surfaces `#12151c`. Loaded by `index.html` (after homepage.css) + injected by `ai-vibe-loader.js`. |
+| `theme-purple-deep.css` | Forest mood overrides (filename kept for cache links). Imports `theme-guardian.css`; gold `#d8bc66` primary on ink `#0a0f0a`. Loaded by secondary chrome pages + injected by `ai-vibe-loader.js`. |
 | `theme-blue.css` | Blue token overrides + avatar swap (`.portrait img` / `.g-av img` → /guardian2.jpg). |
 | `guardian-popout.js` | FAB (`/guardian2.jpg` + LIVE) → glass panel with `/guardian-video.mp4` + chat POST `/api/chat`. Does not replace `guardian-voice.js`. |
 | `nav-tools.js` | Ensures Guardian App link on secondary pages (standalone URLs redirect to `/app`). |
-| `ai-vibe-loader.js` | Injects `theme-ai-vibe.css` + `theme-purple-deep.css`; ensures nav-tools, guardian-popout, ai-presence, rwa/vortex/voice/access. Loaded by `launch-banner.js` (+ one-line on secondary pages). |
+| `ai-vibe-loader.js` | Injects `theme-guardian.css` + `theme-ai-vibe.css` + `theme-purple-deep.css`; ensures nav-tools, guardian-popout, ai-presence, rwa/vortex/voice/access. Loaded by `launch-banner.js` (+ one-line on secondary pages). |
 | `ai-presence.js` | SUPER AI idle: denser glow, orbit breathe/pulse, `.portrait` / orb rings (works with wireframe head wrap); reduced-motion safe. Loaded by `ai-vibe-loader.js`. |
 | `footer-polish.js` | Footer Docs/Security → `/roadmap`; Privacy/Terms/Support → mailto. |
 | `launch-banner.js` | Self-mounting: 3D word-funnel canvas banner (robot core), $C7 + Roadmap nav links, hero $C7 button (emblem), glass CSS loader, AI-vibe loader hook, claims-safe HUD bar. |
 | `vortex.js` | Living particle/network mesh behind hero — violet-heavy mood (`#7048dc` / `#9b7bff`) with cyan accents (`#5fd0ff`) and sparse gold/amber dots (~12%; `#d4a84b` / `#ffb454`); continuous motion; static frame if `prefers-reduced-motion`. |
-| `homepage.css` | Homepage styles — Coinbase-inspired blue CTAs (`#0052ff`), dark institutional surfaces. |
+| `homepage.css` | Shared chrome styles — forest CTAs (`#d8bc66`), cream text, ink surfaces. Used by Monitor / AM / Docs mastheads. |
 | `guardian-head.js` | Homepage hero canvas — **dust → mesh → photo → dust** (~22s): 0–16% dust; 16–30% dust→mesh; 30–48% dense violet/cyan particle wireframe head (soft eye bloom, no solid cartoon eyes); 48–60% mesh→photo; 60–82% her photo (`/guardian2.jpg` full-portrait crossfade, no circle crop/rim); 82–100% photo→dust. Fallback `/robot.jpg` if portrait fails. `prefers-reduced-motion` → static mesh. FAB/popout still uses `/guardian2.jpg`. |
 | `guardian-voice.js` | "Hear Guardian": tap → talking video → mp3 → speech-synth fallback chain; robot morph. |
 | `guardian-video.mp4` | 480² talking-Guardian clip (preload=none). |
@@ -81,7 +83,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `app.html` | **Guardian Console** — single entry for all products → cyre.dev/app. |
 | `app-redirect.js` | Standalone product URLs redirect to `/app#view` (skipped when `?embed=1` for iframes). **`/check` and `/scan` do not redirect** — they stay standalone for ad landings (no $C7 app chrome). `/check` also skips `ai-vibe-loader.js`; `rwa-widget.js` no-ops on `/check` and `/scan` so live crypto prices never appear on those URLs. |
 | `guardian-app.js` | Console routing, quick lookup, iframe loader, session context for address/mint. |
-| `guardian-app.css` | Console shell styles (sidebar, dashboard, bottom nav). |
+| `guardian-app.css` | Console shell styles (sidebar, dashboard, bottom nav) — forest palette matching homepage. |
 | `embed-mode.js` / `embed-mode.css` | Hides page chrome when tools run inside Guardian App iframes (`?embed=1`). |
 | `scan.html` | Guardian Token Scan + Protected Swap (phase 2) — paste mint → cyre.dev/scan. Scan via `/api/token`; swap via Jupiter Plugin after gate. See `SWAP-SPEC.md`. |
 | `scan-swap.js` | Scan-before-swap gate state machine (SWAP-SPEC §6). |

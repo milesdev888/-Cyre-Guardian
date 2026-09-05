@@ -80,7 +80,7 @@
 }
 
 .docs-body a {
-  color: #5fd0ff;
+  color: #d8bc66;
   text-decoration: none;
 }
 
@@ -92,8 +92,8 @@
 .docs-body code {
   font-family: var(--mono);
   font-size: 0.88em;
-  background: rgba(0, 82, 255, 0.1);
-  border: 1px solid rgba(0, 82, 255, 0.2);
+  background: rgba(216, 188, 102, 0.1);
+  border: 1px solid rgba(216, 188, 102, 0.2);
   border-radius: 4px;
   padding: 0.12em 0.4em;
 }

@@ -1,16 +1,16 @@
 #monitor-root {
-  --bg: #0a0b0d;
-  --bg2: #12151c;
+  --bg: #0a0f0a;
+  --bg2: #101710;
   --panel: rgba(18, 21, 28, 0.86);
   --line: rgba(30, 35, 48, 0.95);
   --text: #fff;
-  --muted: #8a919e;
-  --cb-blue: #0052ff;
-  --cb-blue-2: #2667ff;
+  --muted: #97a08d;
+  --cb-blue: #d8bc66;
+  --cb-blue-2: #e6cc7e;
   --green: #0fae6e;
-  --display: 'Sora', system-ui, sans-serif;
+  --display: 'Cormorant Garamond', system-ui, sans-serif;
   --body: 'Inter', system-ui, sans-serif;
-  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
@@ -62,9 +62,9 @@
 }
 
 #monitor-root .mon-am-link a {
-  color: #5fd0ff;
+  color: #d8bc66;
   text-decoration: none;
-  text-shadow: 0 0 10px rgba(95, 208, 255, 0.45);
+  text-shadow: 0 0 10px rgba(216, 188, 102, 0.45);
 }
 
 #monitor-root .mon-am-link a:hover {
@@ -212,13 +212,13 @@
   position: relative;
   aspect-ratio: 1;
   border-radius: 4px;
-  border: 1px solid rgba(95, 208, 255, 0.45);
+  border: 1px solid rgba(216, 188, 102, 0.45);
   background: rgba(18, 21, 28, 0.45);
   cursor: default;
   padding: 0;
   min-height: 56px;
   overflow: hidden;
-  box-shadow: 0 0 14px rgba(95, 208, 255, 0.18);
+  box-shadow: 0 0 14px rgba(216, 188, 102, 0.18);
   transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
 
@@ -235,7 +235,7 @@
   font-size: 8px;
   line-height: 1.2;
   letter-spacing: 0.02em;
-  color: #5fd0ff;
+  color: #d8bc66;
   text-align: center;
   pointer-events: none;
   z-index: 2;
@@ -243,9 +243,9 @@
   font-weight: 600;
   opacity: 1;
   text-shadow:
-    0 0 6px rgba(95, 208, 255, 1),
-    0 0 14px rgba(95, 208, 255, 0.85),
-    0 0 24px rgba(95, 208, 255, 0.5);
+    0 0 6px rgba(216, 188, 102, 1),
+    0 0 14px rgba(216, 188, 102, 0.85),
+    0 0 24px rgba(216, 188, 102, 0.5);
 }
 
 #monitor-root .mon-cell[data-state="dormant"] .mon-cell-in,
@@ -255,11 +255,11 @@
 }
 
 #monitor-root .mon-cell[data-state="probed"] .mon-cell-lbl {
-  color: #5fd0ff;
+  color: #d8bc66;
   text-shadow:
-    0 0 6px rgba(95, 208, 255, 1),
-    0 0 14px rgba(95, 208, 255, 0.85),
-    0 0 24px rgba(95, 208, 255, 0.5);
+    0 0 6px rgba(216, 188, 102, 1),
+    0 0 14px rgba(216, 188, 102, 0.85),
+    0 0 24px rgba(216, 188, 102, 0.5);
 }
 
 #monitor-root .mon-cell[data-state="settled"] .mon-cell-lbl,
@@ -288,7 +288,7 @@
 }
 
 #monitor-root .mon-cell[data-state="probed"] .mon-cell-in {
-  background: rgba(0, 82, 255, 0.12);
+  background: rgba(216, 188, 102, 0.12);
   opacity: 1;
 }
 
@@ -391,7 +391,7 @@
 
 #monitor-root .mon-tape-row.is-new {
   color: var(--text);
-  background: rgba(0, 82, 255, 0.08);
+  background: rgba(216, 188, 102, 0.08);
 }
 
 #monitor-root .mon-tape-row .src-internal {

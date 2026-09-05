@@ -23,12 +23,12 @@
   css.textContent =
     '@keyframes gEye{0%,100%{opacity:.25;transform:translate(-50%,-50%) scale(.8)}50%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}}' +
     '.g-eye{position:absolute;width:11%;aspect-ratio:1;border-radius:50%;pointer-events:none;' +
-    'background:radial-gradient(circle, rgba(79,227,208,.95) 0%, rgba(79,227,208,.45) 40%, rgba(79,227,208,0) 70%);' +
+    'background:radial-gradient(circle, rgba(230,204,126,.95) 0%, rgba(230,204,126,.45) 40%, rgba(230,204,126,0) 70%);' +
     'opacity:0;transform:translate(-50%,-50%);}' +
     '.g-on .g-eye{animation:gEye 1.6s ease-in-out infinite;}' +
     '.g-eye.e2{animation-delay:.8s;}' +
     '.g-mouth{position:absolute;width:16%;height:3.5%;border-radius:999px;pointer-events:none;' +
-    'background:radial-gradient(ellipse at center, rgba(79,227,208,.95) 0%, rgba(79,227,208,.4) 55%, rgba(79,227,208,0) 80%);' +
+    'background:radial-gradient(ellipse at center, rgba(230,204,126,.95) 0%, rgba(230,204,126,.4) 55%, rgba(230,204,126,0) 80%);' +
     'opacity:0;transform:translate(-50%,-50%) scaleY(.4);transition:opacity .3s ease;}';
   document.head.appendChild(css);
 
@@ -64,14 +64,14 @@
   var scan = document.createElement('div');
   scan.style.cssText = 'position:absolute;inset:0;pointer-events:none;opacity:0;' +
     'transition:opacity .4s ease;border-radius:inherit;mix-blend-mode:screen;' +
-    'background:repeating-linear-gradient(0deg, rgba(79,227,208,0) 0px, rgba(79,227,208,0) 3px, rgba(79,227,208,.28) 4px);';
+    'background:repeating-linear-gradient(0deg, rgba(230,204,126,0) 0px, rgba(230,204,126,0) 3px, rgba(230,204,126,.28) 4px);';
   portrait.appendChild(scan);
 
   var btn = document.createElement('button');
   btn.textContent = '\u25B8 Hear Guardian';
   btn.setAttribute('aria-label','Hear Guardian speak');
   btn.style.cssText = 'position:absolute;left:50%;bottom:10px;transform:translateX(-50%);' +
-    'z-index:3;font:500 12px Inter,system-ui,sans-serif;color:#07080b;background:#5fd0ff;' +
+    'z-index:3;font:500 12px Inter,system-ui,sans-serif;color:#0a0f0a;background:#d8bc66;' +
     'border:0;border-radius:999px;padding:8px 16px;cursor:pointer;white-space:nowrap;';
   portrait.appendChild(btn);
 

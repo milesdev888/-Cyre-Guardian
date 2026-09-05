@@ -21,7 +21,7 @@
       ]
     },
     {
-      "source": "/(homepage|theme-purple-deep).css",
+      "source": "/(homepage|theme-purple-deep|theme-guardian).css",
       "headers": [
         {
           "key": "Cache-Control",
@@ -30,7 +30,7 @@
       ]
     },
     {
-      "source": "/(vortex|hero-meteors|guardian-head|guardian-cortex|guardian-net).js",
+      "source": "/(vortex|hero-meteors|guardian-head|guardian-cortex|guardian-net|guardian-home-report).js",
       "headers": [
         {
           "key": "Cache-Control",
