@@ -9,20 +9,20 @@
 <link rel="icon" href="/cyre-token-icon-128.png" type="image/png">
 <link rel="apple-touch-icon" href="/cyre-token-icon-256.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#0a0b0d;--panel:#12151c;--line:#1e2330;--text:#ffffff;--dim:#8a919e;--gold:#0052ff;--cyan:#2667ff;--live:#0fae6e;--red:#ff4d5e;--amber:#ffbe50;--violet:#578bff}
+:root{--ink:#0a0f0a;--panel:#101710;--line:#1e2a1e;--text:#ede7d5;--dim:#97a08d;--gold:#d8bc66;--cyan:#e6cc7e;--live:#5fbf7a;--red:#d96a5e;--amber:#ffbe50;--violet:#e6cc7e}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--ink);color:var(--text);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 a{color:var(--gold);text-decoration:none}
 .wrap{max-width:980px;margin:0 auto;padding:0 20px}
 nav{display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid var(--line)}
-.logo{font-family:Sora,sans-serif;font-weight:700;font-size:18px;letter-spacing:.5px;color:var(--text);display:inline-flex;align-items:center;gap:8px}
-.logo img{width:22px;height:22px;border-radius:50%;display:block;box-shadow:0 0 12px rgba(0,82,255,.4);border:1px solid rgba(0,82,255,.28)}
+.logo{font-family:Cormorant Garamond,sans-serif;font-weight:700;font-size:18px;letter-spacing:.5px;color:var(--text);display:inline-flex;align-items:center;gap:8px}
+.logo img{width:22px;height:22px;border-radius:50%;display:block;box-shadow:0 0 12px rgba(216,188,102,.4);border:1px solid rgba(216,188,102,.28)}
 .logo span{color:var(--gold)}
 header{padding:44px 0 8px}
 .kicker{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--cyan);letter-spacing:.12em;margin-bottom:12px}
-h1{font-family:Sora,sans-serif;font-weight:700;font-size:clamp(26px,4.6vw,40px);line-height:1.22}
+h1{font-family:Cormorant Garamond,sans-serif;font-weight:700;font-size:clamp(26px,4.6vw,40px);line-height:1.22}
 h1 span{color:var(--gold)}
 .sub{color:var(--dim);font-size:16px;margin-top:12px;max-width:640px;line-height:1.65}
 .grid{display:grid;grid-template-columns:340px 1fr;gap:26px;align-items:center;margin:34px 0 8px}
@@ -33,7 +33,7 @@ h1 span{color:var(--gold)}
 .leg i{width:14px;height:14px;border-radius:4px;display:block}
 .leg b{font-size:14.5px;font-weight:600}
 .leg small{display:block;color:var(--dim);font-size:12.5px;margin-top:2px;line-height:1.45}
-.leg .pct{font-family:Sora,sans-serif;font-weight:700;font-size:18px}
+.leg .pct{font-family:Cormorant Garamond,sans-serif;font-weight:700;font-size:18px}
 .sec-label{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--dim);letter-spacing:.1em;margin:36px 0 12px}
 .locks{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
 .lock{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
@@ -42,12 +42,12 @@ h1 span{color:var(--gold)}
 .principles{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-top:10px}
 .principles li{list-style:none;font-size:14.5px;line-height:1.55;padding:7px 0 7px 26px;position:relative;color:#c6cdd9}
 .principles li::before{content:'✓';position:absolute;left:0;color:var(--live);font-weight:700}
-.ca{background:linear-gradient(180deg,rgba(0,82,255,.07),rgba(0,82,255,.02));border:1px solid rgba(0,82,255,.4);border-radius:12px;padding:20px 22px;margin-top:26px}
-.ca h2{font-family:Sora,sans-serif;font-size:17px;margin-bottom:8px}
+.ca{background:linear-gradient(180deg,rgba(216,188,102,.07),rgba(216,188,102,.02));border:1px solid rgba(216,188,102,.4);border-radius:12px;padding:20px 22px;margin-top:26px}
+.ca h2{font-family:Cormorant Garamond,sans-serif;font-size:17px;margin-bottom:8px}
 .ca p{font-size:14px;color:var(--dim);line-height:1.65}
 .ca code{font-family:'JetBrains Mono',monospace;color:var(--gold);font-size:14px}
 .ca-mint{display:block;width:100%;margin:10px 0 12px;padding:12px 14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gold);word-break:break-all;cursor:pointer;text-align:left;line-height:1.5}
-.ca-mint:hover{border-color:rgba(0,82,255,.55)}
+.ca-mint:hover{border-color:rgba(216,188,102,.55)}
 .ca-links{display:flex;flex-wrap:wrap;gap:14px;margin:0 0 12px;font-size:13.5px}
 .ca-status{font-size:13.5px;color:var(--live);line-height:1.55;margin-top:8px}
 .grad{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
@@ -62,13 +62,14 @@ h1 span{color:var(--gold)}
 .grad-row b{display:block;font-size:14.5px;font-weight:600;color:var(--text)}
 .grad-row small{display:block;color:var(--dim);font-size:12.5px;margin-top:4px;line-height:1.5}
 .grad-row code{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gold);word-break:break-all}
-.grad-row .amt{font-family:Sora,sans-serif;font-weight:700;font-size:15px;color:var(--gold);white-space:nowrap;text-align:right}
+.grad-row .amt{font-family:Cormorant Garamond,sans-serif;font-weight:700;font-size:15px;color:var(--gold);white-space:nowrap;text-align:right}
 @media(max-width:560px){
   .grad-row{grid-template-columns:1fr}
   .grad-row .amt{text-align:left;margin-top:6px}
 }
 footer{border-top:1px solid var(--line);padding:22px 0 44px;color:#6c7891;font-size:12.5px;line-height:1.65;margin-top:44px}
 </style>
+  <link rel="stylesheet" href="/theme-guardian.css?v=gf1">
 </head>
 <body>
 <div class="wrap">
@@ -87,21 +88,21 @@ footer{border-top:1px solid var(--line);padding:22px 0 44px;color:#6c7891;font-s
   <svg class="donut" viewBox="0 0 200 200" role="img" aria-label="Allocation donut: 60% treasury, 25% community, 10% team, 5% community and growth">
     <!-- circumference of r=70 ≈ 439.8 -->
     <circle cx="100" cy="100" r="70" fill="none" stroke="#12161f" stroke-width="34"/>
-    <circle cx="100" cy="100" r="70" fill="none" stroke="#5fd0ff" stroke-width="34"
+    <circle cx="100" cy="100" r="70" fill="none" stroke="#d8bc66" stroke-width="34"
       stroke-dasharray="109.95 329.85" stroke-dashoffset="0" transform="rotate(-90 100 100)"/>
     <circle cx="100" cy="100" r="70" fill="none" stroke="#9d8cff" stroke-width="34"
       stroke-dasharray="263.88 175.92" stroke-dashoffset="-109.95" transform="rotate(-90 100 100)"/>
-    <circle cx="100" cy="100" r="70" fill="none" stroke="#4fe3d0" stroke-width="34"
+    <circle cx="100" cy="100" r="70" fill="none" stroke="#b8a056" stroke-width="34"
       stroke-dasharray="43.98 395.84" stroke-dashoffset="-373.84" transform="rotate(-90 100 100)"/>
     <circle cx="100" cy="100" r="70" fill="none" stroke="#3ddc84" stroke-width="34"
       stroke-dasharray="21.99 417.83" stroke-dashoffset="-417.82" transform="rotate(-90 100 100)"/>
-    <text x="100" y="94" text-anchor="middle" fill="#e8ecf3" font-family="Sora,sans-serif" font-weight="700" font-size="22">100M</text>
+    <text x="100" y="94" text-anchor="middle" fill="#e8ecf3" font-family="Cormorant Garamond,sans-serif" font-weight="700" font-size="22">100M</text>
     <text x="100" y="114" text-anchor="middle" fill="#8892a4" font-family="Inter,sans-serif" font-size="10">FIXED SUPPLY</text>
   </svg>
 
   <div class="legend">
     <div class="leg"><i style="background:#9d8cff"></i><div><b>Development treasury</b><small>60,000,000 — locked in a 2-year <u>linear</u> on-chain vesting contract. No cliff bomb: tokens release gradually across 24 months, every unlock publicly visible.</small></div><span class="pct">60%</span></div>
-    <div class="leg"><i style="background:#5fd0ff"></i><div><b>Community float</b><small>25,000,000 — the only freely tradeable supply at launch. Sold on the bonding curve; seeds the graduated liquidity pool.</small></div><span class="pct">25%</span></div>
+    <div class="leg"><i style="background:#d8bc66"></i><div><b>Community float</b><small>25,000,000 — the only freely tradeable supply at launch. Sold on the bonding curve; seeds the graduated liquidity pool.</small></div><span class="pct">25%</span></div>
     <div class="leg"><i style="background:#4fe3d0"></i><div><b>Team</b><small>10,000,000 — 12-month on-chain vesting with a 6-month cliff. The team cannot sell a single token for six months, then daily release.</small></div><span class="pct">10%</span></div>
     <div class="leg"><i style="background:#3ddc84"></i><div><b>Community &amp; growth</b><small>5,000,000 — one flexible reserve covering airdrops, creator rewards, exchange listings and marketing. Deployed as needed; unused portion stays locked; every movement disclosed.</small></div><span class="pct">5%</span></div>
   </div>

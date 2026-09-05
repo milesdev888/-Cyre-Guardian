@@ -8,12 +8,12 @@
 <meta name="description" content="Portable RWA profile from measured on-chain patterns. Share or download a dossier. Patterns, not verdicts.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --ink:#0a0b0d; --panel:#12151c; --panel2:#161a22; --line:#1e2330;
-  --ice:#0052ff; --violet:#578bff; --cyan:#2667ff; --red:#ff4d5e; --green:#0fae6e; --amber:#ffb454;
-  --txt:#e8edf5; --dim:#8a919e;
+  --ink:#0a0f0a; --panel:#101710; --panel2:#0d130d; --line:#1e2a1e;
+  --ice:#d8bc66; --violet:#e6cc7e; --cyan:#e6cc7e; --red:#d96a5e; --green:#5fbf7a; --amber:#ffb454;
+  --txt:#e8edf5; --dim:#97a08d;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--ink);color:var(--txt);font-family:Inter,system-ui,sans-serif}
@@ -22,23 +22,23 @@ a{color:var(--ice)}
 .wrap{width:100%;max-width:560px}
 header{display:flex;align-items:center;gap:10px;margin-bottom:26px}
 header .dot{width:10px;height:10px;border-radius:50%;background:var(--ice);box-shadow:0 0 12px var(--ice)}
-header h1{font-family:Sora,sans-serif;font-size:17px;font-weight:800;letter-spacing:.06em}
-header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'IBM Plex Mono',monospace}
+header h1{font-family:Cormorant Garamond,sans-serif;font-size:17px;font-weight:800;letter-spacing:.06em}
+header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'JetBrains Mono',monospace}
 .hero{margin-bottom:22px}
-.hero h2{font-family:Sora,sans-serif;font-size:clamp(26px,7vw,34px);font-weight:800;line-height:1.12;letter-spacing:-.01em}
+.hero h2{font-family:Cormorant Garamond,sans-serif;font-size:clamp(26px,7vw,34px);font-weight:800;line-height:1.12;letter-spacing:-.01em}
 .hero h2 em{font-style:normal;color:var(--ice)}
 .hero p{color:var(--dim);font-size:14.5px;margin-top:10px;line-height:1.55;max-width:52ch}
-.disclaimer{display:inline-block;margin-top:12px;font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--violet);border:1px solid rgba(155,123,255,.35);border-radius:999px;padding:6px 12px}
+.disclaimer{display:inline-block;margin-top:12px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--violet);border:1px solid rgba(216,188,102,.35);border-radius:999px;padding:6px 12px}
 .bar{display:flex;gap:8px;margin-top:18px}
 .bar input{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;color:var(--txt);
-  font-family:'IBM Plex Mono',monospace;font-size:13.5px;padding:14px;outline:none;min-width:0}
+  font-family:'JetBrains Mono',monospace;font-size:13.5px;padding:14px;outline:none;min-width:0}
 .bar input:focus{border-color:var(--ice)}
-.bar button{background:var(--ice);color:#ffffff;border:0;border-radius:12px;font-family:Sora,sans-serif;
+.bar button{background:var(--ice);color:#ede7d5;border:0;border-radius:12px;font-family:Cormorant Garamond,sans-serif;
   font-weight:700;font-size:14px;padding:0 18px;cursor:pointer;white-space:nowrap}
 .bar button:disabled{opacity:.45;cursor:default}
 :focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .err{display:none;color:var(--red);font-size:13px;margin-top:10px;background:rgba(255,77,94,.07);border:1px solid rgba(255,77,94,.25);border-radius:11px;padding:12px 14px}
-.load{display:none;margin-top:26px;color:var(--dim);font-size:13.5px;font-family:'IBM Plex Mono',monospace}
+.load{display:none;margin-top:26px;color:var(--dim);font-size:13.5px;font-family:'JetBrains Mono',monospace}
 .load .scan{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--ice);margin-right:8px;animation:pulse 1s infinite}
 @keyframes pulse{0%,100%{opacity:.25}50%{opacity:1}}
 .result{display:none;margin-top:26px}
@@ -46,9 +46,9 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'IBM Pl
 .cardbox canvas{display:block;width:100%;height:auto}
 .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:14px}
 .fact{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px}
-.fact span{display:block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
-.fact b{display:block;font-family:Sora,sans-serif;font-size:18px;font-weight:700;margin-top:6px}
-.band{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em}
+.fact span{display:block;font-family:'JetBrains Mono',monospace;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+.fact b{display:block;font-family:Cormorant Garamond,sans-serif;font-size:18px;font-weight:700;margin-top:6px}
+.band{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em}
 .band.LOW{color:var(--green)}
 .band.MEDIUM{color:var(--amber)}
 .band.HIGH{color:var(--red)}
@@ -57,8 +57,8 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'IBM Pl
 .mark{width:16px;flex:none;text-align:center}
 .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
 .actions button,.actions a{flex:1 1 140px;text-align:center;text-decoration:none;border-radius:12px;padding:14px 10px;
-  font-family:Sora,sans-serif;font-weight:700;font-size:14px;cursor:pointer}
-#shareBtn{background:var(--ice);color:#ffffff;border:0}
+  font-family:Cormorant Garamond,sans-serif;font-weight:700;font-size:14px;cursor:pointer}
+#shareBtn{background:var(--ice);color:#ede7d5;border:0}
 #jsonBtn{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
 #xBtn{background:var(--panel2);color:var(--txt);border:1px solid var(--line)}
 .deep{display:block;text-align:center;margin-top:16px;font-size:13.5px;color:var(--dim)}
@@ -66,16 +66,17 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'IBM Pl
 .fine{margin-top:34px;color:var(--dim);font-size:12px;line-height:1.6;border-top:1px solid var(--line);padding-top:16px}
 
 .mintbox{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
-.mintbox .lab{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--dim);margin-bottom:10px;text-transform:uppercase}
+.mintbox .lab{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.14em;color:var(--dim);margin-bottom:10px;text-transform:uppercase}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
-.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:7px 12px;font-size:12px;border:1px solid var(--line);background:var(--panel2);font-family:'IBM Plex Mono',monospace}
-.chip b{font-family:Sora,sans-serif;font-size:12.5px;font-weight:700}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:7px 12px;font-size:12px;border:1px solid var(--line);background:var(--panel2);font-family:'JetBrains Mono',monospace}
+.chip b{font-family:Cormorant Garamond,sans-serif;font-size:12.5px;font-weight:700}
 .chip .tag{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
 .chip.hold{border-color:rgba(61,220,132,.45);color:var(--green)}
-.chip.touch{border-color:rgba(0,82,255,.4);color:var(--ice)}
+.chip.touch{border-color:rgba(216,188,102,.4);color:var(--ice)}
 .chip.none{opacity:.55;color:var(--dim)}
 @media (prefers-reduced-motion:reduce){.load .scan{animation:none}}
 </style>
+  <link rel="stylesheet" href="/theme-guardian.css?v=gf1">
 </head>
 <body>
 <div class="wrap">
@@ -118,9 +119,9 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'IBM Pl
   const $ = (id) => document.getElementById(id);
   const B58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
   const C = {
-    ink: '#07080b', panel: '#0d1017', panel2: '#12161f', line: '#1f2634',
-    ice: '#5fd0ff', violet: '#9b7bff', cyan: '#4fe3d0', red: '#ff4d5e',
-    green: '#3ddc84', amber: '#ffb454', txt: '#e8edf5', dim: '#8892a4'
+    ink: '#0a0f0a', panel: '#0d130d', panel2: '#101710', line: '#1e2a1e',
+    ice: '#d8bc66', violet: '#e6cc7e', cyan: '#b8a056', red: '#ff4d5e',
+    green: '#3ddc84', amber: '#ffb454', txt: '#ede7d5', dim: '#97a08d'
   };
 
   function short(a) { return a.slice(0, 4) + '\u2026' + a.slice(-4); }
@@ -174,29 +175,29 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'IBM Pl
     x.strokeStyle = 'rgba(0,82,255,.35)'; x.lineWidth = 1.5; x.strokeRect(42, 42, W - 84, H - 84);
 
     x.fillStyle = C.ice; x.beginPath(); x.arc(88, 112, 10, 0, 7); x.fill();
-    x.font = '800 40px Sora'; x.fillStyle = C.txt; x.textBaseline = 'middle';
+    x.font = '800 40px Cormorant Garamond'; x.fillStyle = C.txt; x.textBaseline = 'middle';
     x.fillText('CYRE GUARDIAN', 116, 114);
-    x.font = '600 26px "IBM Plex Mono"'; x.fillStyle = C.dim; x.textAlign = 'right';
+    x.font = '600 26px "JetBrains Mono"'; x.fillStyle = C.dim; x.textAlign = 'right';
     x.fillText('PASSPORT v1', W - 88, 114);
     x.textAlign = 'left';
 
-    x.font = '600 34px "IBM Plex Mono"'; x.fillStyle = C.cyan;
+    x.font = '600 34px "JetBrains Mono"'; x.fillStyle = C.cyan;
     x.fillText(short(data.address), 88, 196);
-    x.font = '500 24px "IBM Plex Mono"'; x.fillStyle = C.dim;
+    x.font = '500 24px "JetBrains Mono"'; x.fillStyle = C.dim;
     x.fillText((data.fetchedAt || '').slice(0, 10) || '—', 88, 238);
 
     x.textAlign = 'center';
-    x.font = '800 120px Sora'; x.fillStyle = C.txt;
+    x.font = '800 120px Cormorant Garamond'; x.fillStyle = C.txt;
     x.fillText(score, W / 2, 420);
-    x.font = '600 28px "IBM Plex Mono"'; x.fillStyle = C.dim;
+    x.font = '600 28px "JetBrains Mono"'; x.fillStyle = C.dim;
     x.fillText('MEASURED SCORE', W / 2, 490);
 
-    x.font = '800 56px Sora'; x.fillStyle = riskColor;
+    x.font = '800 56px Cormorant Garamond'; x.fillStyle = riskColor;
     x.fillText(risk, W / 2, 580);
-    x.font = '600 24px "IBM Plex Mono"'; x.fillStyle = C.dim;
+    x.font = '600 24px "JetBrains Mono"'; x.fillStyle = C.dim;
     x.fillText('RISK LEVEL', W / 2, 630);
 
-    x.font = '700 36px Sora'; x.fillStyle = C.violet;
+    x.font = '700 36px Cormorant Garamond'; x.fillStyle = C.violet;
     x.fillText('Patterns, not verdicts.', W / 2, 710);
 
     const stats = [
@@ -217,13 +218,13 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'IBM Pl
       const sy = 780 + row * 150;
       x.fillStyle = C.panel; x.strokeStyle = C.line; x.lineWidth = 2;
       rr(x, sx, sy, sw, 120, 14); x.fill(); x.stroke();
-      x.font = '600 20px "IBM Plex Mono"'; x.fillStyle = C.dim; x.textAlign = 'center';
+      x.font = '600 20px "JetBrains Mono"'; x.fillStyle = C.dim; x.textAlign = 'center';
       x.fillText(s[0], sx + sw / 2, sy + 40);
-      x.font = '700 28px Sora'; x.fillStyle = C.txt;
+      x.font = '700 28px Cormorant Garamond'; x.fillStyle = C.txt;
       x.fillText(s[1], sx + sw / 2, sy + 82);
     });
 
-    x.font = '600 28px "IBM Plex Mono"'; x.fillStyle = C.ice; x.textAlign = 'center';
+    x.font = '600 28px "JetBrains Mono"'; x.fillStyle = C.ice; x.textAlign = 'center';
     x.fillText('cyre.dev/passport', W / 2, 1220);
     x.font = '400 22px Inter'; x.fillStyle = C.dim;
     wrap(x, 'Measured fields only · same window as /api/address · no LLM', W / 2, 1264, 880, 30);
@@ -253,7 +254,7 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'IBM Pl
       return;
     }
     $('sigs').innerHTML =
-      '<div style="font-family:IBM Plex Mono,monospace;font-size:10px;letter-spacing:.14em;color:var(--dim);margin-bottom:6px">MEASURED SIGNALS</div>' +
+      '<div style="font-family:JetBrains Mono,monospace;font-size:10px;letter-spacing:.14em;color:var(--dim);margin-bottom:6px">MEASURED SIGNALS</div>' +
       sigs.map((s) =>
         '<div class="sig"><div class="mark">' + (s.triggered ? '●' : '○') + '</div><div><b>' + s.name +
         '</b><span style="display:block;color:var(--dim);font-size:12px">' + s.detail + '</span></div></div>'
@@ -302,8 +303,8 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'IBM Pl
       const d = await r.json();
       if (!d.ok) throw new Error(d.error || 'passport failed');
       lastPassport = d;
-      await document.fonts.load('800 120px Sora');
-      await document.fonts.load('600 26px "IBM Plex Mono"');
+      await document.fonts.load('800 120px Cormorant Garamond');
+      await document.fonts.load('600 26px "JetBrains Mono"');
       draw(d);
       renderFacts(d);
       renderSigs(d);

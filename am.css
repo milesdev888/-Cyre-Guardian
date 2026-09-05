@@ -1,15 +1,15 @@
 #am-root {
-  --bg: #0a0b0d;
-  --bg2: #12151c;
+  --bg: #0a0f0a;
+  --bg2: #101710;
   --panel: rgba(18, 21, 28, 0.86);
   --line: rgba(30, 35, 48, 0.95);
-  --text: #ffffff;
-  --muted: #8a919e;
-  --ice: #5fd0ff;
+  --text: #ede7d5;
+  --muted: #97a08d;
+  --ice: #d8bc66;
   --green: #3ddc84;
-  --display: 'Sora', system-ui, sans-serif;
+  --display: 'Cormorant Garamond', system-ui, sans-serif;
   --body: 'Inter', system-ui, sans-serif;
-  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
@@ -46,7 +46,7 @@
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: #2667ff;
+  color: #e6cc7e;
   margin-bottom: 8px;
 }
 
@@ -59,7 +59,7 @@
 }
 
 #am-root h1 span {
-  color: #2667ff;
+  color: #e6cc7e;
 }
 
 #am-root .am-sub {

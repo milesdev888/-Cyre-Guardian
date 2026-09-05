@@ -20,14 +20,14 @@
 
   var css = document.createElement('style');
   css.textContent =
-    '#cy-banner{position:relative;overflow:hidden;background:#07080b;border-top:1px solid #1f2634;border-bottom:1px solid #1f2634}' +
+    '#cy-banner{position:relative;overflow:hidden;background:#0a0f0a;border-top:1px solid #1f2634;border-bottom:1px solid #1f2634}' +
     '#cy-banner canvas{position:absolute;inset:0;width:100%;height:100%}' +
     '#cy-banner .cyb-veil{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(7,8,11,0) 0%,rgba(7,8,11,.78) 100%)}' +
     '#cy-banner .cyb-in{position:relative;z-index:2;max-width:1080px;margin:0 auto;padding:110px 24px;text-align:center}' +
-    '#cy-banner h2{font-family:Sora,system-ui,sans-serif;font-weight:700;font-size:clamp(26px,4.5vw,44px);color:#e8ecf3;margin:0 0 14px;letter-spacing:-.01em}' +
-    '#cy-banner h2 span{color:var(--gold,#5fd0ff)}' +
+    '#cy-banner h2{font-family:Cormorant Garamond,system-ui,sans-serif;font-weight:700;font-size:clamp(26px,4.5vw,44px);color:#ede7d5;margin:0 0 14px;letter-spacing:-.01em}' +
+    '#cy-banner h2 span{color:var(--gold,#d8bc66)}' +
     '#cy-banner p{color:#8892a4;font-size:clamp(14px,1.8vw,17px);max-width:560px;margin:0 auto 26px;line-height:1.7}' +
-    '#cy-banner .cyb-cta{display:inline-block;font:600 15px Inter,system-ui,sans-serif;color:#07080b;background:var(--gold,#5fd0ff);border-radius:8px;padding:13px 26px;text-decoration:none}' +
+    '#cy-banner .cyb-cta{display:inline-block;font:600 15px Inter,system-ui,sans-serif;color:#0a0f0a;background:var(--gold,#d8bc66);border-radius:8px;padding:13px 26px;text-decoration:none}' +
     '@media (max-width:640px){#cy-banner .cyb-in{padding:80px 20px}}';
   document.head.appendChild(css);
 
@@ -48,7 +48,7 @@
     tk.id = 'cy-nav-token';
     tk.href = '/tokenomics';
     tk.textContent = '$C7';
-    tk.style.cssText = 'color:var(--gold,#5fd0ff);font-weight:600';
+    tk.style.cssText = 'color:var(--gold,#d8bc66);font-weight:600';
     var rm = document.createElement('a');
     rm.href = '/roadmap';
     rm.textContent = 'Roadmap';
@@ -65,7 +65,7 @@
     wrapA.id = 'cy-hero-token';
     var btn = document.createElement('button');
     btn.className = 'btn b-ghost';
-    btn.style.cssText = 'color:var(--gold,#5fd0ff);border-color:rgba(95,208,255,.5);display:inline-flex;align-items:center;gap:9px';
+    btn.style.cssText = 'color:var(--gold,#d8bc66);border-color:rgba(216,188,102,.5);display:inline-flex;align-items:center;gap:9px';
     var lg = document.createElement('img');
     lg.src = '/cyre-token-ticker-128.png';
     lg.alt = '';
@@ -95,9 +95,9 @@
   var uc = document.createElement('a');
   uc.id = 'cy-usecase';
   uc.href = '/check';
-  uc.style.cssText = 'display:block;background:#0d1017;border-top:1px solid #1f2634;border-bottom:1px solid #1f2634;padding:18px 24px;text-align:center;text-decoration:none;font-family:Inter,system-ui,sans-serif;font-size:15px;color:#e8ecf3';
-  uc.innerHTML = '<span style="font-family:\'JetBrains Mono\',Menlo,monospace;font-size:12px;color:#4fe3d0;letter-spacing:.1em;margin-right:14px">GUARDIAN CHECK</span>' +
-    'Grade any Solana address free \u2014 patterns, not verdicts <span style="color:var(--gold,#5fd0ff)">\u2192</span>';
+  uc.style.cssText = 'display:block;background:#0d1017;border-top:1px solid #1f2634;border-bottom:1px solid #1f2634;padding:18px 24px;text-align:center;text-decoration:none;font-family:Inter,system-ui,sans-serif;font-size:15px;color:#ede7d5';
+  uc.innerHTML = '<span style="font-family:\'JetBrains Mono\',Menlo,monospace;font-size:12px;color:#e6cc7e;letter-spacing:.1em;margin-right:14px">GUARDIAN CHECK</span>' +
+    'Grade any Solana address free \u2014 patterns, not verdicts <span style="color:var(--gold,#d8bc66)">\u2192</span>';
 
   var anchor = document.getElementById('guardian') ||
                document.querySelector('#pricing, section.sec:last-of-type');
@@ -151,8 +151,8 @@
 
     var g = ctx.createRadialGradient(cx,cy,0,cx,cy,R*0.5);
     g.addColorStop(0,'rgba(238,250,255,.9)');
-    g.addColorStop(0.25,'rgba(95,208,255,.35)');
-    g.addColorStop(1,'rgba(95,208,255,0)');
+    g.addColorStop(0.25,'rgba(216,188,102,.35)');
+    g.addColorStop(1,'rgba(216,188,102,0)');
     ctx.fillStyle = g;
     ctx.fillRect(0,0,W,H);
 
@@ -167,9 +167,9 @@
       ctx.restore();
       ctx.beginPath();
       ctx.arc(cx,cy,pr,0,Math.PI*2);
-      ctx.strokeStyle = 'rgba(95,208,255,.85)';
+      ctx.strokeStyle = 'rgba(216,188,102,.85)';
       ctx.lineWidth = 2;
-      ctx.shadowColor = 'rgba(95,208,255,.9)';
+      ctx.shadowColor = 'rgba(216,188,102,.9)';
       ctx.shadowBlur = 18;
       ctx.stroke();
       ctx.shadowBlur = 0;

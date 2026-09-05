@@ -17,8 +17,9 @@
     s.defer = true;
     (document.body || document.documentElement).appendChild(s);
   }
-  onceLink('cy-ai-vibe', '/theme-ai-vibe.css');
-  onceLink('cy-purple-deep', '/theme-purple-deep.css');
+  onceLink('cy-guardian', '/theme-guardian.css?v=gf1');
+  onceLink('cy-ai-vibe', '/theme-ai-vibe.css?v=gf1');
+  onceLink('cy-purple-deep', '/theme-purple-deep.css?v=gf1');
   function boot() {
     // Core bolt-ons (may be missing after index restores)
     onceScript('cy-rwa-widget', '/rwa-widget.js');
