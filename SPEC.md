@@ -44,8 +44,9 @@ cyre.dev/tokenomics and @Cyredev888.
 
 | File | What it is |
 |---|---|
-| `index.html` | **Homepage redesign** (Aug 2026): self-contained cinematic AI page — headline "The chain has a witness.", eyebrow **Synthetic Intelligence · RWA fraud-watch**, cyan `#5fd0ff` + violet `#9b7bff` + sparse gold particle accents, **wireframe/particle Guardian head** (idle morph dust→mesh→photo→dust; soft eye bloom on mesh, no cartoon eyes), orbit rings, compact status chips LIVE / RISK LOW / WATCHING beside head, cyan-glow Check CTA + transparent outline Talk to Guardian, single nav (no duplicate Tools strip), Watchlist/Forensics/Passport/Signals cards, trust strip (no fake metrics). Hero morph may show `/guardian2.jpg` during photo phase; FAB/popout still uses `/guardian2.jpg`. Loads `homepage.css`, `vortex.js`, `guardian-head.js`, `guardian-popout.js`, `access-form.js`, `rwa-widget.js`, `ai-presence.js`, `footer-polish.js`. |
-| `index-legacy.html` | Pre-redesign CYRE 7 shell snapshot for rollback. Do not serve as `/`. |
+| `index.html` | **Guardian forest homepage** (Sep 2026): self-contained dark forest page — brand **Guardian** (eye-in-shield mark), headline "The chain has a witness.", gold `#D8BC66` + cream `#EDE7D5` on ink `#0A0F0A`, Cormorant + Inter + JetBrains Mono. Hero scan bar → `guardian-scan.onrender.com` (Base58=Solana, `0x`=EVM). Sections: SCAN/WATCH/SCORE/GATE grid, live `$C7` report card (`guardian-home-report.js` → `/api/token`), tokenomics CTA, request-access + Talk to Guardian. Loads `access-form.js`, `guardian-popout.js`, `guardian-home-report.js`. |
+| `index-legacy.html` | Previous cinematic homepage snapshot for rollback. Do not serve as `/`. |
+| `guardian-home-report.js` | Homepage `$C7` report card — GET `/api/token` for mint/freeze/LP/top-holder; falls back to "See live report". |
 | `theme-glass.css` | Crystal glassmorphism skin (loaded by launch-banner.js). Delete = revert skin. |
 | `theme-purple-deep.css` | Institutional Coinbase-blue mood overrides (filename kept for cache links): ink `#0a0b0d`, primary `#0052ff`, surfaces `#12151c`. Loaded by `index.html` (after homepage.css) + injected by `ai-vibe-loader.js`. |
 | `theme-blue.css` | Blue token overrides + avatar swap (`.portrait img` / `.g-av img` → /guardian2.jpg). |
