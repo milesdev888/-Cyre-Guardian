@@ -5,127 +5,204 @@
     {
       "source": "/",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/index.html",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/(homepage|theme-purple-deep).css",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/(vortex|hero-meteors|guardian-head|guardian-cortex|guardian-net).js",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/app",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/app.html",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/scan",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/scan.html",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/check",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/check.html",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/app-redirect.js",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/guardian-app.(js|css)",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/(scan-swap|swap-config|embed-mode).(js|css)",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/monitor",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/monitor.html",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/monitor.(css|js)",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/am",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/am.html",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/am.(css|js)",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     },
     {
       "source": "/(openapi.json|robots.txt)",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=3600" }
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600"
+        }
+      ]
+    },
+    {
+      "source": "/scan-evm.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
       ]
     }
   ],
   "redirects": [
-    { "source": "/apps", "destination": "/app", "permanent": true },
-    { "source": "/community", "destination": "/airdrop", "permanent": true },
+    {
+      "source": "/apps",
+      "destination": "/app",
+      "permanent": true
+    },
+    {
+      "source": "/community",
+      "destination": "/airdrop",
+      "permanent": true
+    },
     {
       "source": "/.well-known/agent-card.json",
       "destination": "https://cyre-fraud-prediction.onrender.com/.well-known/agent-card.json",
@@ -133,26 +210,93 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/passport/verify", "destination": "/api/passport-verify" },
-    { "source": "/api/receipt/verify", "destination": "/api/receipt-verify" },
-    { "source": "/api/policy/verify", "destination": "/api/policy-verify" },
-    { "source": "/api/policy/check", "destination": "/api/policy-check" },
-    { "source": "/api/intent/verify", "destination": "/api/intent-verify" },
-    { "source": "/api/cron-receipt/verify", "destination": "/api/cron-receipt-verify" },
-    { "source": "/api/lockbox/verify", "destination": "/api/lockbox-verify" },
-    { "source": "/api/lockbox/match", "destination": "/api/lockbox-match" },
-    { "source": "/api/stream/subscribe", "destination": "/api/stream-subscribe" },
-    { "source": "/api/stream/events", "destination": "/api/stream-events" },
-    { "source": "/api/stream/verify", "destination": "/api/stream-verify" },
-    { "source": "/api/exchange/post", "destination": "/api/exchange-post" },
-    { "source": "/api/exchange/match", "destination": "/api/exchange-match" },
-    { "source": "/api/exchange/feed", "destination": "/api/exchange-feed" },
-    { "source": "/api/exchange/verify", "destination": "/api/exchange-verify" },
-    { "source": "/api/circuit/seal", "destination": "/api/circuit-seal" },
-    { "source": "/api/circuit/heartbeat", "destination": "/api/circuit-heartbeat" },
-    { "source": "/api/circuit/check", "destination": "/api/circuit-check" },
-    { "source": "/api/circuit/verify", "destination": "/api/circuit-verify" },
-    { "source": "/api/monitor/feed", "destination": "/api/monitor-feed" },
-    { "source": "/api/am", "destination": "/api/am" }
+    {
+      "source": "/api/multichain-scan",
+      "destination": "https://guardian-scan.onrender.com/api/scan"
+    },
+    {
+      "source": "/api/passport/verify",
+      "destination": "/api/passport-verify"
+    },
+    {
+      "source": "/api/receipt/verify",
+      "destination": "/api/receipt-verify"
+    },
+    {
+      "source": "/api/policy/verify",
+      "destination": "/api/policy-verify"
+    },
+    {
+      "source": "/api/policy/check",
+      "destination": "/api/policy-check"
+    },
+    {
+      "source": "/api/intent/verify",
+      "destination": "/api/intent-verify"
+    },
+    {
+      "source": "/api/cron-receipt/verify",
+      "destination": "/api/cron-receipt-verify"
+    },
+    {
+      "source": "/api/lockbox/verify",
+      "destination": "/api/lockbox-verify"
+    },
+    {
+      "source": "/api/lockbox/match",
+      "destination": "/api/lockbox-match"
+    },
+    {
+      "source": "/api/stream/subscribe",
+      "destination": "/api/stream-subscribe"
+    },
+    {
+      "source": "/api/stream/events",
+      "destination": "/api/stream-events"
+    },
+    {
+      "source": "/api/stream/verify",
+      "destination": "/api/stream-verify"
+    },
+    {
+      "source": "/api/exchange/post",
+      "destination": "/api/exchange-post"
+    },
+    {
+      "source": "/api/exchange/match",
+      "destination": "/api/exchange-match"
+    },
+    {
+      "source": "/api/exchange/feed",
+      "destination": "/api/exchange-feed"
+    },
+    {
+      "source": "/api/exchange/verify",
+      "destination": "/api/exchange-verify"
+    },
+    {
+      "source": "/api/circuit/seal",
+      "destination": "/api/circuit-seal"
+    },
+    {
+      "source": "/api/circuit/heartbeat",
+      "destination": "/api/circuit-heartbeat"
+    },
+    {
+      "source": "/api/circuit/check",
+      "destination": "/api/circuit-check"
+    },
+    {
+      "source": "/api/circuit/verify",
+      "destination": "/api/circuit-verify"
+    },
+    {
+      "source": "/api/monitor/feed",
+      "destination": "/api/monitor-feed"
+    },
+    {
+      "source": "/api/am",
+      "destination": "/api/am"
+    }
   ]
 }
