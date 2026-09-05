@@ -5,7 +5,7 @@
 <script src="/app-redirect.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Guardian Token Scan — CYRE</title>
-<meta name="description" content="Before you trade: check the mint. Guardian shows mint and freeze authority status, supply, and holder concentration for any Solana token. Facts, not verdicts — you decide. Free.">
+<meta name="description" content="Before you trade: check the mint. Guardian grades Solana mints and EVM contracts (Ethereum, Base, Arbitrum, Robinhood Chain). Facts, not verdicts — you decide. Free.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
@@ -77,6 +77,12 @@ a{color:var(--ice)}
 .swap-panel{margin-top:28px;padding-top:22px;border-top:1px solid var(--line);display:none}
 .swap-panel h2{font-family:Sora,Inter,sans-serif;font-size:18px;font-weight:800;margin-bottom:8px}
 .swap-panel .swap-lede{color:var(--dim);font-size:13px;line-height:1.6;margin-bottom:16px}
+
+.chain-row{margin-bottom:14px}
+.chain-row small{display:block;color:var(--dim);font-size:11px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.chain-chips{display:flex;flex-wrap:wrap;gap:8px}
+.chain-chip{display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;border:1px solid rgba(0,82,255,.28);color:var(--dim);font-size:12px;font-family:'IBM Plex Mono',Menlo,monospace;text-decoration:none;background:rgba(13,16,23,.7)}
+.chain-chip.is-on{color:var(--text);border-color:var(--ice)}
 #jup{min-height:520px;height:520px;border-radius:16px;overflow:hidden}
 .proceed-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .proceed-actions a.btn-jup{display:inline-flex;align-items:center;padding:14px 26px;border-radius:999px;font-weight:700;font-size:15px;color:#ffffff;text-decoration:none;font-family:Sora,Inter,sans-serif;background:linear-gradient(90deg,#0052ff,#2667ff)}
@@ -115,10 +121,10 @@ a{color:var(--ice)}
   <a class="back" href="/">← cyre.dev</a>
   <div class="kicker">GUARDIAN TOKEN SCAN</div>
   <h1>Before you trade: check the <span>mint</span>.</h1>
-  <p class="sub">Guardian shows mint and freeze authority, LP lock/burn, deployer age, and holder concentration for any Solana token. Facts, not verdicts — you decide. Free scan; nothing to sign until you choose to swap.</p>
+  <p class="sub">Paste first — no chain dropdown. Base58 is Solana. 0x plus 40 hex is EVM (Ethereum, Base, Arbitrum, Robinhood Chain). Guardian grades patterns, not verdicts. Free scan; Solana swap still unlocks only after you read the report.</p>
 
   <div class="scanbox">
-    <input id="mint" placeholder="Token mint address…" autocomplete="off" spellcheck="false">
+    <input id="mint" placeholder="Solana mint or 0x contract…" autocomplete="off" spellcheck="false">
     <button id="go" onclick="scan()">Scan</button>
   </div>
   <div class="hint">Free scan · no wallet until you choose to swap · nothing to sign on scan</div>
@@ -129,7 +135,7 @@ a{color:var(--ice)}
     <h2>Step 2 — Protected swap</h2>
     <p>Jupiter swap unlocks here after you scan a token. Every other swap lets you buy blind — this one makes you look first.</p>
     <ol>
-      <li>Paste a token mint and tap <strong>Scan</strong></li>
+      <li>Paste a Solana mint or 0x contract and tap <strong>Scan</strong></li>
       <li>Read the signals (HIGH patterns need an extra click-through)</li>
       <li>Tap <strong>Swap on Jupiter ↗</strong> — works on every phone and browser</li>
       <li>Desktop with Phantom installed? Use <strong>Proceed to swap here</strong> for the embedded widget</li>
@@ -198,13 +204,27 @@ a{color:var(--ice)}
   </div>
 </div>
 
+<script src="/scan-evm.js?v=cb2"></script>
 <script>
 async function scan(){
   var m = document.getElementById('mint').value.trim();
   var err = document.getElementById('err'), rep = document.getElementById('report'), go = document.getElementById('go');
   err.style.display='none'; rep.style.display='none';
   if (window.CyreScanSwap) window.CyreScanSwap.onScanStart();
-  if(!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(m)){ err.textContent='That does not look like a Solana address.'; err.style.display='block'; return; }
+  var evm = window.CyreScanEvm && window.CyreScanEvm.isEvm(m);
+  if (evm) {
+    go.disabled = true; go.textContent = 'Scanning…';
+    try {
+      var params = new URLSearchParams(location.search);
+      await window.CyreScanEvm.scan(m, params.get('chain') || undefined);
+    } catch (e) {
+      err.textContent = e.message || 'Scan failed';
+      err.style.display = 'block';
+    }
+    go.disabled = false; go.textContent = 'Scan';
+    return;
+  }
+  if(!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(m)){ err.textContent='Paste a Solana mint or 0x contract.'; err.style.display='block'; return; }
   go.disabled = true; go.textContent = 'Scanning…';
   try{
     // Fire holders enrichment in parallel so CDN/RPC misses on the main
@@ -347,10 +367,10 @@ function scoreLine(d){
 document.getElementById('mint').addEventListener('keydown',function(e){ if(e.key==='Enter') scan(); });
 (function(){
   var p = new URLSearchParams(location.search);
-  var m = p.get('mint');
+  var m = p.get('mint') || p.get('address');
   if (!m) return;
   document.getElementById('mint').value = m;
-  if (p.get('embed') === '1') scan();
+  if (p.get('embed') === '1' || p.get('address') || p.get('mint')) scan();
 })();
 </script>
 </body>
