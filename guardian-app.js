@@ -6,7 +6,8 @@
 
   var VIEWS = {
     home: { title: 'Guardian Console', subtitle: 'All products in one workspace', frame: null },
-    scan: { title: 'Token Scan & Swap', subtitle: 'Look first, swap second', frame: '/scan?embed=1&v=cb2' },
+    scan: { title: 'Token Scan & Swap', subtitle: 'Look first, swap second', frame: '/scan?embed=1&v=cb1' },
+    cortex: { title: 'Neural Cortex', subtitle: 'Agent desks — watch only', frame: '/cortex?embed=1' },
     check: { title: 'Address Check', subtitle: 'Six explainable signals', frame: '/check?embed=1' },
     watch: { title: 'Watch', subtitle: 'Measured wallet alerts', frame: '/watch?embed=1' },
     score: { title: 'Wallet Score', subtitle: 'Shareable score card', frame: '/score?embed=1' },
@@ -16,12 +17,13 @@
     signals: { title: 'Signals', subtitle: 'Public pattern feed', frame: '/signals?embed=1' },
     tokenomics: { title: 'Tokenomics', subtitle: '$C7 supply & locks', frame: '/tokenomics?embed=1' },
     roadmap: { title: 'Roadmap', subtitle: 'Shipped · now · next', frame: '/roadmap?embed=1' },
-    airdrop: { title: 'Community', subtitle: '5M $C7 — locked pool', frame: '/airdrop?embed=1' },
+    airdrop: { title: 'Airdrop', subtitle: '3M $C7 community', frame: '/airdrop?embed=1' },
     guardian: { title: 'Talk to Guardian', subtitle: 'Patterns, not verdicts', frame: null, panel: 'guardian' },
   };
 
   var QUICK_CARDS = [
-    { id: 'scan', tag: 'Trade', title: 'Scan & Swap', desc: 'Solana or 0x — mint/proxy/tax/LP, then Jupiter on Solana.' },
+    { id: 'cortex', tag: 'Monitor', title: 'Neural Cortex', desc: 'Agent-fund desks live — research, signals, risk, paper execution.' },
+    { id: 'scan', tag: 'Trade', title: 'Scan & Swap', desc: 'Mint authority, freeze, holders — then Jupiter swap.' },
     { id: 'check', tag: 'Analyze', title: 'Check', desc: 'Paste an address for a measured risk band.' },
     { id: 'watch', tag: 'Monitor', title: 'Watch', desc: 'Up to 10 wallets — burst, dormant, failures.' },
     { id: 'oracle', tag: 'Monitor', title: 'Oracle Pulse', desc: 'RWA feed stale / spike / divergence.' },
@@ -32,9 +34,10 @@
   ];
 
   var MORE_ITEMS = [
+    { id: 'cortex', label: 'Neural Cortex', hint: 'Desks' },
     { id: 'tokenomics', label: 'Tokenomics', hint: '$C7' },
     { id: 'roadmap', label: 'Roadmap', hint: 'Plan' },
-    { id: 'airdrop', label: 'Community', hint: '5M' },
+    { id: 'airdrop', label: 'Airdrop', hint: '3M' },
     { id: 'guardian', label: 'Guardian Chat', hint: 'Ask' },
   ];
 
@@ -55,28 +58,22 @@
     try { sessionStorage.setItem(STORAGE_KEY, state.context); } catch (_) {}
   }
 
-  function isEvm(s) {
-    return /^0x[a-fA-F0-9]{40}$/.test(s);
-  }
-
   function isMint(s) {
     return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(s);
   }
 
   function isAddress(s) {
-    return isMint(s) || isEvm(s);
+    return isMint(s);
   }
 
   function frameUrl(id) {
     var base = VIEWS[id] && VIEWS[id].frame;
     if (!base) return null;
     var url = base;
-    if (state.context && id !== 'tokenomics' && id !== 'roadmap' && id !== 'airdrop' && id !== 'guardian') {
+    if (state.context && id !== 'tokenomics' && id !== 'roadmap' && id !== 'airdrop' && id !== 'guardian' && id !== 'cortex') {
       var sep = url.indexOf('?') >= 0 ? '&' : '?';
-      if (id === 'scan') {
-        var key = isEvm(state.context) ? 'address' : 'mint';
-        url += sep + key + '=' + encodeURIComponent(state.context);
-      } else url += sep + 'address=' + encodeURIComponent(state.context);
+      if (id === 'scan') url += sep + 'mint=' + encodeURIComponent(state.context);
+      else url += sep + 'address=' + encodeURIComponent(state.context);
     }
     return url;
   }
@@ -223,7 +220,7 @@
     var val = input.value.trim();
     if (!val) return;
     saveContext(val);
-    if (isEvm(val) || isMint(val)) {
+    if (isMint(val)) {
       navigate('scan', { scrollTop: true });
     } else {
       navigate('check', { scrollTop: true });
@@ -236,12 +233,12 @@
     if (!input || !hint) return;
     var val = input.value.trim();
     if (!val) {
-      hint.textContent = 'Paste a Solana mint or 0x contract — no chain dropdown first.';
+      hint.textContent = 'Paste a Solana address or token mint — Guardian routes you to the right tool.';
       return;
     }
-    if (isEvm(val)) hint.textContent = 'Looks like an EVM contract — will open Scan on Ethereum / Base / Arbitrum / Robinhood.';
-    else if (isMint(val)) hint.textContent = 'Looks like a Solana mint or address — will open Scan.';
-    else hint.textContent = 'Paste a Solana mint (base58) or 0x contract (40 hex).';
+    hint.textContent = isMint(val)
+      ? 'Looks like a mint or address — will open Scan (mint) or Check (wallet).'
+      : 'Enter a valid base58 Solana address (32–44 chars).';
   }
 
   function initFromHash() {
