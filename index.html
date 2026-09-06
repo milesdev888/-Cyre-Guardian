@@ -83,8 +83,9 @@ h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(2.6rem
   color:transparent;-webkit-text-fill-color:transparent;
 }
 .hero{padding:48px 0 52px;border-bottom:1px solid var(--line)}
-/* Permanent rule: text lockup is always present. Image is progressive enhancement.
-   If /brand/* 404/500s, the gold-gradient text remains — blank hero is impossible. */
+/* Text lockup is the durable fallback. Image is progressive enhancement.
+   If /brand/* 404/500s, gold text remains. When the image loads, hide the
+   visual lockup (keep h1 for a11y) so we never show a double wordmark. */
 .hero-wordmark{
   position:relative;
   display:flex;flex-direction:column;justify-content:center;align-items:center;
@@ -100,9 +101,14 @@ h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(2.6rem
   letter-spacing:-.02em;
   text-align:center;
 }
-.hero-wordmark img{
-  display:block;width:min(100%,720px);height:auto;margin-top:6px;
+.hero-wordmark.has-image .hero-lockup{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0;
 }
+.hero-wordmark img{
+  display:none;width:min(100%,720px);height:auto;margin-top:0;
+}
+.hero-wordmark.has-image img{display:block}
 .hero-wordmark img.is-broken{display:none!important}
 .lede{color:var(--muted);max-width:56ch;margin:18px 0 0;font-size:1.02rem}
 .lede b{color:var(--cream);font-weight:500}
@@ -211,10 +217,11 @@ footer a:hover{color:var(--cream)}
           src="/brand/guardian-wordmark.jpg"
           srcset="/brand/guardian-wordmark.jpg 1x, /brand/guardian-wordmark@2x.jpg 2x"
           sizes="(max-width: 720px) 100vw, 720px"
-          width="896" height="504"
+          width="560" height="144"
           alt=""
           decoding="async"
-          onerror="this.classList.add('is-broken');this.removeAttribute('srcset');this.removeAttribute('src');">
+          onload="this.closest('.hero-wordmark')?.classList.add('has-image')"
+          onerror="this.classList.add('is-broken');this.closest('.hero-wordmark')?.classList.remove('has-image');this.removeAttribute('srcset');this.removeAttribute('src');">
       </div>
       <p class="lede">Guardian watches contracts and the chains they live on — <b>patterns, not verdicts</b>. Paste any address and read what the chain already knows about it.</p>
 
