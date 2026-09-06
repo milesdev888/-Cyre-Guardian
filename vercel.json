@@ -212,7 +212,7 @@
   "rewrites": [
     {
       "source": "/api/multichain-scan",
-      "destination": "https://guardian-scan.onrender.com/api/scan"
+      "destination": "https://scan.cyre.dev/api/scan"
     },
     {
       "source": "/api/passport/verify",

@@ -44,7 +44,7 @@ cyre.dev/tokenomics and @Cyredev888.
 
 | File | What it is |
 |---|---|
-| `index.html` | **Guardian forest homepage** (Sep 2026): self-contained dark forest page — brand **Guardian** (eye-in-shield mark), headline "The chain has a witness.", gold `#D8BC66` + cream `#EDE7D5` on ink `#0A0F0A`, Cormorant + Inter + JetBrains Mono. Hero scan bar → `guardian-scan.onrender.com` (Base58=Solana, `0x`=EVM). Sections: SCAN/WATCH/SCORE/GATE grid, live `$C7` report card (`guardian-home-report.js` → `/api/token`), tokenomics CTA, request-access + Talk to Guardian. Loads `access-form.js`, `guardian-popout.js`, `guardian-home-report.js`. |
+| `index.html` | **Guardian forest homepage** (Sep 2026): self-contained dark forest page — brand **Guardian** (eye-in-shield mark), headline "The chain has a witness.", gold `#D8BC66` + cream `#EDE7D5` on ink `#0A0F0A`, Cormorant + Inter + JetBrains Mono. Hero scan bar → `scan.cyre.dev` (Base58=Solana, `0x`=EVM; `?q=` auto-runs). Sections: SCAN/WATCH/SCORE/GATE grid, live `$C7` report card (`guardian-home-report.js` → `/api/token`), tokenomics CTA, request-access + Talk to Guardian. Loads `access-form.js`, `guardian-popout.js`, `guardian-home-report.js`. |
 | `theme-guardian.css` | **Shared forest theme** for app + all secondary/tool pages. Remaps legacy blue tokens (`--cyan`, `--cb-blue`, `--ice`, `--ai-*`) to gold/cream/ink. Loaded by `/app`, Monitor, AM, Docs, product tools, and injected by `ai-vibe-loader.js`. |
 | `index-legacy.html` | Previous cinematic homepage snapshot for rollback. Do not serve as `/`. |
 | `guardian-home-report.js` | Homepage `$C7` report card — GET `/api/token` for mint/freeze/LP/top-holder; falls back to "See live report". |
