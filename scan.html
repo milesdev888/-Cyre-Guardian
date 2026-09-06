@@ -345,13 +345,19 @@ document.getElementById('mint').addEventListener('keydown',function(e){ if(e.key
 (function(){
   var p = new URLSearchParams(location.search);
   var m = (p.get('address') || p.get('mint') || p.get('q') || '').trim();
+  var embed = p.get('embed') === '1' || window.self !== window.top;
+  // Standalone landings always belong on the multichain console.
+  if (!embed) {
+    location.replace('https://scan.cyre.dev/app' + (m ? ('?address=' + encodeURIComponent(m)) : ''));
+    return;
+  }
   if (!m) return;
   document.getElementById('mint').value = m;
   if (/^0x[a-fA-F0-9]{40}$/.test(m)) {
     location.replace('https://scan.cyre.dev/app?address=' + encodeURIComponent(m));
     return;
   }
-  if (p.get('embed') === '1' || p.get('address') || p.get('mint') || p.get('q')) scan();
+  scan();
 })();
 </script>
 </body>
