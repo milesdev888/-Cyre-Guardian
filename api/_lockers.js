@@ -11,7 +11,10 @@ export const LOCKERS = {
   ],
   lockerPrograms: [
     { id: 'LocpQgucEQHbqNABEYvBvwoxCPsSbG91A1QaQhQQqjn', name: 'Jupiter Lock' },
-    { id: 'strmRqUCoQkeZbZyeFyBTvzmU9aNSv1VqdAdybM73Vv', name: 'Streamflow' },
+    { id: 'strmRqUCoQUgGUan5YhzUZa6KqdzwX5L6FpUxfmKg5m', name: 'Streamflow' },
+    { id: 'aSTRM2NKoKxNnkmLWk9sz3k74gKBk9t7bpPrTGxMszH', name: 'Streamflow Aligned' },
+    { id: 'strmRqUCoQkeZbZyeFyBTvzmU9aNSv1VqdAdybM73Vv', name: 'Streamflow (legacy index)' },
+    { id: 'GokivDYuQXPZCWRkwMhdH2h91KpDQXBEmpgBgs55bnpH', name: 'Goki Smart Wallet' },
     { id: '675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8', name: 'Raydium' },
     { id: 'CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK', name: 'Raydium CLMM' },
     { id: 'CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C', name: 'Raydium CPMM' },
@@ -22,6 +25,9 @@ export const LOCKERS = {
     jupiter_locker: 'Jupiter Lock',
     raydium_locker: 'Raydium',
     streamflow: 'Streamflow',
+    goki: 'Goki',
+    uncx: 'UNCX',
+    team_finance: 'Team Finance',
     meteora_locker: 'Meteora',
     orca_locker: 'Orca',
     bags_locker: 'Bags'

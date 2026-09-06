@@ -76,7 +76,9 @@ export const ROUTE_CATALOG = [
   { path: '/api/stream/verify', family: 'verify', paid: false, bazaarExt: false },
   { path: '/api/exchange/verify', family: 'verify', paid: false, bazaarExt: false },
   { path: '/api/circuit/verify', family: 'verify', paid: false, bazaarExt: false },
-  { path: '/api/cron-receipt/verify', family: 'verify', paid: false, bazaarExt: false }
+  { path: '/api/cron-receipt/verify', family: 'verify', paid: false, bazaarExt: false },
+  { path: '/api/badge/verify', family: 'verify', paid: false, bazaarExt: false },
+  { path: '/api/badge/register', family: 'identity', paid: false, bazaarExt: false }
 ];
 
 export const FAMILY_ORDER = [
