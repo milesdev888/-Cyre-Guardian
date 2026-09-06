@@ -194,6 +194,11 @@
   ],
   "redirects": [
     {
+      "source": "/verify/:serial",
+      "destination": "/verify?serial=:serial",
+      "permanent": false
+    },
+    {
       "source": "/scan",
       "missing": [
         {
@@ -272,10 +277,6 @@
     },
     {
       "source": "/verify",
-      "destination": "/verify.html"
-    },
-    {
-      "source": "/verify/:serial",
       "destination": "/verify.html"
     },
     {
