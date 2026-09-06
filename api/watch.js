@@ -314,7 +314,6 @@ export default async function handler(req, res) {
       noisyMarked: wallets.filter((w) => w.noisy).length
     };
 
-    res.setHeader('Cache-Control', 'no-store'); // fresh measured run only — never CDN-reuse counters/alerts
     return res.status(200).json({
       ok: true,
       disclaimer: 'Patterns, not verdicts. Counters are from this measured run only.',
