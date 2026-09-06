@@ -27,6 +27,9 @@ export const GENESIS_BADGE = {
   score: 91,
   lpTier: 'PERMANENT',
   qualifyPath: 'lifetime',
+  pathLabel: 'Lifetime',
+  pathFamily: 'secured',
+  status: 'VALID',
   lifetimeEligible: true,
   badgeEligible: true,
   issuedAt: '2026-09-06T22:00:00.000Z',
@@ -71,7 +74,8 @@ function emptyFileStore() {
   return {
     bySerial: { [GENESIS_SERIAL]: { ...GENESIS_BADGE } },
     byMint: { [GENESIS_CHAIN + ':' + GENESIS_MINT]: GENESIS_SERIAL },
-    counters: { '2026': 1 }
+    counters: { '2026': 1 },
+    revoked: {}
   };
 }
 
@@ -203,6 +207,9 @@ export async function registerBadge(input) {
     score: typeof input.score === 'number' ? input.score : null,
     lpTier: String(input.lpTier || 'UNVERIFIED'),
     qualifyPath: input.qualifyPath || (input.lifetimeEligible ? 'lifetime' : 'timed'),
+    pathLabel: input.pathLabel || undefined,
+    pathFamily: input.pathFamily || undefined,
+    status: 'VALID',
     lifetimeEligible: Boolean(input.lifetimeEligible),
     badgeEligible: true,
     issuedAt,
@@ -300,3 +307,59 @@ export async function getBadgeByMint(mint, chainId = 'solana') {
   const serial = store.byMint[chainId + ':' + m];
   return serial ? store.bySerial[serial] || null : null;
 }
+
+/**
+ * Persist REVOKED status (auto-revocation on failed live re-check).
+ * @param {string} serial
+ * @param {string} [reason]
+ */
+export async function revokeBadge(serial, reason = 'live re-check failed') {
+  const key = normalizeSerial(serial);
+  if (!key) return null;
+  const badge = await getBadgeBySerial(key);
+  if (!badge) return null;
+  const updated = {
+    ...badge,
+    status: 'REVOKED',
+    revokedAt: new Date().toISOString(),
+    revokeReason: reason,
+    pathLabel: badge.pathLabel || badge.qualifyPath || undefined
+  };
+
+  if (redisRestConfig()) {
+    await redisCommand(['SET', KEY_PREFIX + key, JSON.stringify(updated)]);
+    await redisCommand([
+      'SET',
+      'guardian:badge:revoked:' + badge.chainId + ':' + badge.mint,
+      key
+    ]);
+    return updated;
+  }
+
+  const store = readFileStore();
+  store.bySerial[key] = updated;
+  store.revoked = store.revoked || {};
+  store.revoked[badge.chainId + ':' + badge.mint] = key;
+  writeFileStore(store);
+  return updated;
+}
+
+/** True if this mint has any REVOKED serial in the registry. */
+export async function hasRevocationHistory(mint, chainId = 'solana') {
+  const m = String(mint || '').trim();
+  if (!m) return false;
+  if (redisRestConfig()) {
+    const row = await redisCommand(['GET', 'guardian:badge:revoked:' + chainId + ':' + m]);
+    return Boolean(row && row.result);
+  }
+  const store = readFileStore();
+  if (store.revoked && store.revoked[chainId + ':' + m]) return true;
+  // Also scan serials
+  for (const badge of Object.values(store.bySerial || {})) {
+    if (badge && badge.mint === m && badge.chainId === chainId && badge.status === 'REVOKED') {
+      return true;
+    }
+  }
+  return false;
+}
+
