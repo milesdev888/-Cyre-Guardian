@@ -272,6 +272,7 @@ function sleep(ms) {
 }
 
 export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store'); // fresh measured run only — never CDN-reuse counters/alerts
   const addresses = parseAddresses(req);
 
   if (!addresses.length) {
