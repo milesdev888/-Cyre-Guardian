@@ -1,16 +1,16 @@
 # B402 / BSC lane — Vercel env vars (values from owner — never commit secrets)
 
-Lane is **dormant** until `X402_PAY_TO_BSC` is set. Base and Solana lanes unchanged.
+Lane code is **already on `main`** (merged via PR #118). It stays **dormant** until `X402_PAY_TO_BSC` is set. Base and Solana lanes unchanged byte-for-byte when unset.
 
 B402 **secrets live on Render** (`cyre-fraud-prediction` relay). Vercel only talks to the relay with `X402_INTERNAL_KEY` (same value as Render `GUARDIAN_KEY`).
 
-Companion: https://github.com/milesdev888/cyre-fraud-prediction/pull/8 · `docs/B402-RELAY.md`
+Companion relay: https://github.com/milesdev888/cyre-fraud-prediction (see `docs/B402-RELAY.md`).
 
 ## Vercel (Guardian / cyre.dev)
 
 | Env | Purpose |
 |---|---|
-| `X402_PAY_TO_BSC` | Merchant treasury `0x…` on BNB Chain (arms the lane) |
+| `X402_PAY_TO_BSC` | Merchant treasury `0x…` on BNB Chain (**arms the lane** — leave unset until Sandbox credentials + Render B402 env are live) |
 | `X402_FACILITATOR_BSC` | Relay base URL — default `https://cyre-fraud-prediction.onrender.com/internal/b402` |
 | `X402_INTERNAL_KEY` | Already set — auth to `/internal/b402/*` (must match Render `GUARDIAN_KEY`) |
 
@@ -36,12 +36,15 @@ If `/supported` is unreachable **and** signer/spender fallbacks are unset, the B
 | `B402_RSA_PRIVATE_KEY` | PKCS#8 DER Base64 (from `node scripts/b402-keygen.js` in fraud-prediction) |
 | `GUARDIAN_KEY` | Already set |
 
-## Owner checklist
+Exact names + activation runbook: fraud-prediction `docs/B402-RELAY.md`.
 
-1. Generate RSA on your machine: `node scripts/b402-keygen.js` (fraud-prediction repo).  
-2. Apply Sandbox/Prod: https://forms.gle/aUQvxUETfGMzyTky5 — submit **public** key + Render **static outbound IPs**.  
-3. Enable Dedicated IPs: Dashboard → **Networking → Dedicated IPs**; copy from service **Connect → Outbound**.  
-4. Set Render B402 env vars; set Vercel `X402_PAY_TO_BSC` (+ optional network/asset).  
-5. Confirm `$0.005` offers show BSC `amount` as `5000000000000000` when the lane is armed.
+## Owner checklist (same-day activation — no code merge needed)
+
+1. Generate RSA on your machine: `node scripts/b402-keygen.js` (fraud-prediction repo). **Do not run in CI.**
+2. Apply Sandbox/Prod: https://forms.gle/aUQvxUETfGMzyTky5 — submit **public** key + Render **static outbound IPs**.
+3. Enable Dedicated IPs: Dashboard → **Networking → Dedicated IPs**; copy from service **Connect → Outbound**.
+4. Set Render `B402_*` env vars (per-key only — never bulk-replace).
+5. Set Vercel `X402_PAY_TO_BSC` (+ optional network/asset). **Do not set this until step 4 succeeds.**
+6. Confirm `$0.005` offers show BSC `amount` as `5000000000000000` when the lane is armed.
 
 See `docs/B402-RESEARCH.md` for Part 1 research.
