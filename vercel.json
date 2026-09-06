@@ -194,6 +194,30 @@
   ],
   "redirects": [
     {
+      "source": "/scan",
+      "missing": [
+        {
+          "type": "query",
+          "key": "embed",
+          "value": "1"
+        }
+      ],
+      "destination": "https://scan.cyre.dev/app",
+      "permanent": false
+    },
+    {
+      "source": "/scan.html",
+      "missing": [
+        {
+          "type": "query",
+          "key": "embed",
+          "value": "1"
+        }
+      ],
+      "destination": "https://scan.cyre.dev/app",
+      "permanent": false
+    },
+    {
       "source": "/apps",
       "destination": "/app",
       "permanent": true
