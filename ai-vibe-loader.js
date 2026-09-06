@@ -17,13 +17,12 @@
     s.defer = true;
     (document.body || document.documentElement).appendChild(s);
   }
-  onceLink('cy-guardian', '/theme-guardian.css?v=gf1');
-  onceLink('cy-ai-vibe', '/theme-ai-vibe.css?v=gf1');
-  onceLink('cy-purple-deep', '/theme-purple-deep.css?v=gf1');
+  onceLink('cy-ai-vibe', '/theme-ai-vibe.css');
+  onceLink('cy-purple-deep', '/theme-purple-deep.css');
   function boot() {
     // Core bolt-ons (may be missing after index restores)
     onceScript('cy-rwa-widget', '/rwa-widget.js');
-    onceScript('cy-vortex', '/hero-meteors.js?v=redeploy1');
+    onceScript('cy-vortex', '/vortex.js?v=restore-original');
     onceScript('cy-guardian-voice', '/guardian-voice.js');
     onceScript('cy-access-form', '/access-form.js');
     // AI vibe layer
