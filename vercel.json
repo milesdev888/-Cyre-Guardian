@@ -263,6 +263,22 @@
       "destination": "/api/passport-verify"
     },
     {
+      "source": "/api/badge/verify",
+      "destination": "/api/badge-verify"
+    },
+    {
+      "source": "/api/badge/register",
+      "destination": "/api/badge-register"
+    },
+    {
+      "source": "/verify",
+      "destination": "/verify.html"
+    },
+    {
+      "source": "/verify/:serial",
+      "destination": "/verify.html"
+    },
+    {
       "source": "/api/receipt/verify",
       "destination": "/api/receipt-verify"
     },
