@@ -8,7 +8,8 @@ import {
   isDurableBadgeStore,
   getBadgeByMint,
   GENESIS_SERIAL,
-  GENESIS_MINT
+  GENESIS_MINT,
+  hasRevocationHistory
 } from './_badge-registry.js';
 import { qualifyFromScan, QUALIFY_PATHS } from './_badge-qualify.js';
 import { isCyreSiteRequest } from './_x402.js';
@@ -112,7 +113,8 @@ export default async function handler(req, res) {
       };
     } else {
       const scan = await fetchScan(mint);
-      qualify = qualifyFromScan(scan);
+      const revokedHistory = await hasRevocationHistory(mint, body.chainId || 'solana');
+      qualify = qualifyFromScan(scan, { hasRevocationHistory: revokedHistory });
     }
 
     if (!qualify.eligible) {
@@ -134,6 +136,8 @@ export default async function handler(req, res) {
       score: qualify.score ?? body.score,
       lpTier: qualify.lpTier || body.lpTier,
       qualifyPath: qualify.path,
+      pathLabel: qualify.pathLabel,
+      pathFamily: qualify.pathFamily,
       lifetimeEligible: qualify.lifetimeEligible,
       badgeEligible: true,
       expiresAt: qualify.expiresAt || null,

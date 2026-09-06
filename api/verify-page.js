@@ -1,0 +1,231 @@
+// api/verify-page.js — server-rendered verify UI with twitter:card / og tags from LIVE check.
+// Rewritten from /verify so crawlers see OG without JS.
+
+import { getBadgeBySerial, normalizeSerial } from './_badge-registry.js';
+import { formatUtc } from './_badge-og-render.js';
+
+const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+export default async function handler(req, res) {
+  const serialRaw = String((req.query && req.query.serial) || '').trim();
+  const serial = normalizeSerial(serialRaw) || '';
+  const badge = serial ? await getBadgeBySerial(serial) : null;
+
+  const ogImage = serial
+    ? `${SITE}/api/badge/og?serial=${encodeURIComponent(serial)}`
+    : `${SITE}/brand/guardian-wordmark-og.jpg`;
+  const title = badge
+    ? `Guardian ${badge.pathLabel || badge.qualifyPath || 'Badge'} · ${badge.serial}`
+    : 'Guardian badge verify';
+  const desc = badge
+    ? `${badge.symbol ? '$' + badge.symbol + ' · ' : ''}Path ${badge.pathLabel || badge.qualifyPath || '—'} · issued ${badge.issuedAt ? formatUtc(badge.issuedAt) : ''} · live re-check on view`
+    : 'Look up a Guardian badge serial and run a live qualifying-path re-check.';
+
+  const canonical = serial ? `${SITE}/verify/${serial}` : `${SITE}/verify`;
+
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(desc)}">
+<link rel="canonical" href="${esc(canonical)}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Guardian">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:url" content="${esc(canonical)}">
+<meta property="og:image" content="${esc(ogImage)}">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="${esc(title)}">
+<meta name="twitter:description" content="${esc(desc)}">
+<meta name="twitter:image" content="${esc(ogImage)}">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/theme-guardian.css?v=gf1">
+<style>
+  :root {
+    --ink: #0b1210; --panel: #121a16; --line: #243028; --gold: #c9a227;
+    --live: #3ddc84; --bad: #d96a5e; --warn: #d4a017; --text: #e7efe8; --dim: #8a9a90;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    min-height: 100vh;
+    background:
+      radial-gradient(1200px 600px at 20% -10%, rgba(61, 220, 132, 0.12), transparent 55%),
+      radial-gradient(900px 500px at 90% 10%, rgba(201, 162, 39, 0.1), transparent 50%),
+      linear-gradient(160deg, #0b1210 0%, #101816 45%, #0c1411 100%);
+    color: var(--text);
+    font: 400 16px/1.55 "IBM Plex Sans", system-ui, sans-serif;
+    padding: 40px 20px 72px;
+  }
+  .wrap { max-width: 560px; margin: 0 auto; position: relative; }
+  .brand { font: 700 34px/1.1 "Cormorant Garamond", Georgia, serif; color: var(--gold); }
+  h1 { font: 600 22px/1.25 "Cormorant Garamond", Georgia, serif; margin: 18px 0 8px; }
+  .sub { color: var(--dim); margin-bottom: 28px; }
+  label { display: block; font-size: 13px; color: var(--dim); margin-bottom: 8px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  input {
+    flex: 1 1 220px; background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    font: 500 15px/1.4 "IBM Plex Mono", ui-monospace, monospace; padding: 12px 14px; border-radius: 8px;
+  }
+  button {
+    background: var(--gold); color: var(--ink); border: 0;
+    font: 600 14px/1 "IBM Plex Sans", system-ui, sans-serif; padding: 12px 18px; border-radius: 8px; cursor: pointer;
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .card { margin-top: 28px; padding: 20px 0 0; border-top: 1px solid var(--line); }
+  .status { font: 600 15px/1.3 "IBM Plex Sans", system-ui, sans-serif; }
+  .status.ok { color: var(--live); } .status.bad { color: var(--bad); } .status.warn { color: var(--warn); }
+  .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; word-break: break-all; }
+  .meta { margin-top: 14px; color: var(--dim); font-size: 14px; }
+  .meta div { margin: 6px 0; } .meta b { color: var(--text); font-weight: 600; }
+  .live-box {
+    margin-top: 18px; padding: 14px 16px; border: 1px solid var(--line);
+    border-radius: 10px; background: rgba(18, 26, 22, 0.85);
+  }
+  .live-box h2 { font: 600 14px/1.3 "IBM Plex Sans", system-ui, sans-serif; margin-bottom: 8px; }
+  .pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--live); margin-right: 8px; vertical-align: middle; animation: blink 1.2s ease-in-out infinite; }
+  .pulse.off { background: var(--dim); animation: none; } .pulse.bad { background: var(--bad); }
+  @keyframes blink { 50% { opacity: 0.35; } }
+  @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+  .seal {
+    position: absolute; right: -8px; top: 120px; width: 112px; height: 112px;
+    filter: drop-shadow(0 8px 18px rgba(0,0,0,.45));
+  }
+  .seal.revoked { filter: grayscale(1) drop-shadow(0 8px 18px rgba(0,0,0,.45)); opacity: .85; }
+  .path-pill {
+    display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--gold); color: var(--gold); font-size: 12px; font-weight: 600;
+  }
+  a { color: var(--gold); }
+  .tiny { margin-top: 36px; color: var(--dim); font-size: 13px; }
+  .stamp {
+    display: none; margin-top: 12px; padding: 8px 14px; background: rgba(180,40,40,.9);
+    color: #ffe8e4; font: 700 14px/1 "IBM Plex Sans", system-ui, sans-serif; letter-spacing: .08em;
+    transform: rotate(-6deg); width: fit-content;
+  }
+  .stamp.on { display: inline-block; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <img id="seal" class="seal" alt="" hidden />
+    <div class="brand">Guardian</div>
+    <h1>Badge verify</h1>
+    <p class="sub">Issued path + live qualifying-path re-check. Dates in UTC.</p>
+    <label for="serial">Serial</label>
+    <div class="row">
+      <input id="serial" name="serial" spellcheck="false" autocomplete="off" placeholder="GRD-2026-00001" value="${esc(serial)}" />
+      <button id="go" type="button">Verify</button>
+    </div>
+    <div class="card" id="out" hidden>
+      <div class="status" id="status"></div>
+      <div class="path-pill" id="pathPill" hidden></div>
+      <div class="stamp" id="stamp">REVOKED</div>
+      <div class="meta" id="meta"></div>
+      <div class="live-box" id="liveBox" hidden>
+        <h2><span class="pulse" id="livePulse"></span>Live re-check</h2>
+        <div class="meta" id="liveMeta"></div>
+      </div>
+    </div>
+    <p class="tiny">Paths: Lifetime · Timed · Established (≥2y, ≥3 pools, no majority, ≥$100K, no powers, no revocation). Age alone never qualifies.</p>
+  </div>
+<script>
+(function () {
+  var input = document.getElementById('serial');
+  var go = document.getElementById('go');
+  var out = document.getElementById('out');
+  var status = document.getElementById('status');
+  var meta = document.getElementById('meta');
+  var liveBox = document.getElementById('liveBox');
+  var liveMeta = document.getElementById('liveMeta');
+  var livePulse = document.getElementById('livePulse');
+  var pathPill = document.getElementById('pathPill');
+  var stamp = document.getElementById('stamp');
+  var seal = document.getElementById('seal');
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function setBusy(b) { go.disabled = b; go.textContent = b ? 'Checking…' : 'Verify'; }
+  async function verify(raw) {
+    var serial = String(raw || '').trim().toUpperCase();
+    if (!serial) return;
+    input.value = serial;
+    out.hidden = false; liveBox.hidden = true; stamp.classList.remove('on'); seal.hidden = true;
+    pathPill.hidden = true; status.className = 'status'; status.textContent = 'Looking up serial…';
+    meta.innerHTML = ''; liveMeta.innerHTML = ''; livePulse.className = 'pulse'; setBusy(true);
+    try {
+      var r = await fetch('/api/badge/verify?serial=' + encodeURIComponent(serial), { headers: { accept: 'application/json' }, cache: 'no-store' });
+      var j = await r.json();
+      if (!j.badge) {
+        status.className = 'status bad'; status.textContent = j.error || 'Serial not found'; livePulse.className = 'pulse bad'; return;
+      }
+      var b = j.badge;
+      var st = j.status || (j.valid ? 'VALID' : 'INVALID');
+      status.className = 'status ' + (st === 'VALID' ? 'ok' : 'bad');
+      status.textContent = st === 'VALID' ? 'Issued serial · VALID' : ('Issued serial · ' + st);
+      if (st === 'REVOKED') stamp.classList.add('on');
+      var pathText = b.pathLabel || b.qualifyPath || '—';
+      pathPill.hidden = false;
+      pathPill.textContent = 'Path earned: ' + pathText + (b.pathFamily === 'secured' ? ' (Secured)' : b.pathFamily === 'established' ? ' (Established)' : '');
+      seal.hidden = false;
+      seal.src = j.sealUrl || (st === 'VALID' ? '/brand/seals/guardian-seal-valid.png' : '/brand/seals/guardian-seal-revoked.png');
+      seal.className = 'seal' + (st === 'VALID' ? '' : ' revoked');
+      meta.innerHTML =
+        '<div><b>Serial</b> <span class="mono">' + esc(b.serial) + '</span></div>' +
+        '<div><b>Mint</b> <span class="mono">' + esc(b.mint) + '</span></div>' +
+        '<div><b>Path</b> ' + esc(pathText) + '</div>' +
+        '<div><b>Grade at issue</b> ' + esc(b.grade || '—') + (b.score != null ? ' · ' + esc(b.score) : '') + '</div>' +
+        '<div><b>LP tier at issue</b> ' + esc(b.lpTier || '—') + '</div>' +
+        '<div><b>Issued (UTC)</b> ' + esc(b.issuedAtUtc || b.issuedAt || '—') + '</div>' +
+        (b.expiresAt ? '<div><b>Expires (UTC)</b> ' + esc(b.expiresAt) + '</div>' : '') +
+        (b.scanUrl ? '<div><a href="' + esc(b.scanUrl) + '">Open scan</a></div>' : '');
+      liveBox.hidden = false;
+      var live = j.live;
+      if (!live) { livePulse.className = 'pulse off'; liveMeta.innerHTML = '<div>Live re-check skipped.</div>'; return; }
+      if (!live.ok) { livePulse.className = 'pulse bad'; liveMeta.innerHTML = '<div class="status bad">Re-check failed — ' + esc(live.error || 'error') + '</div>'; return; }
+      if (live.eligible) {
+        livePulse.className = 'pulse';
+        liveMeta.innerHTML =
+          '<div class="status ok">Still qualifies · ' + esc(live.pathLabel || live.path) + ' path</div>' +
+          '<div><b>Live grade</b> ' + esc(live.grade || '—') + (live.score != null ? ' · ' + esc(live.score) : '') + '</div>' +
+          '<div><b>Live LP</b> ' + esc(live.lpTier || '—') + '</div>' +
+          '<div><b>Checked (UTC)</b> ' + esc(live.scannedAtUtc || live.scannedAt || '—') + '</div>' +
+          '<div><b>Reason</b> ' + esc(live.reason || '') + '</div>' +
+          (live.scanUrl ? '<div><a href="' + esc(live.scanUrl) + '">Fresh scan</a></div>' : '');
+      } else {
+        livePulse.className = 'pulse bad';
+        liveMeta.innerHTML =
+          '<div class="status warn">No longer qualifies — badge REVOKED</div>' +
+          '<div><b>Reason</b> ' + esc(live.reason || 'not eligible') + '</div>' +
+          '<div><b>Checked (UTC)</b> ' + esc(live.scannedAtUtc || live.scannedAt || '—') + '</div>' +
+          (live.scanUrl ? '<div><a href="' + esc(live.scanUrl) + '">Fresh scan</a></div>' : '');
+      }
+    } catch (e) {
+      status.className = 'status bad'; status.textContent = 'Verify failed'; livePulse.className = 'pulse bad';
+    } finally { setBusy(false); }
+  }
+  go.addEventListener('click', function () { verify(input.value); });
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') verify(input.value); });
+  if (input.value) verify(input.value);
+})();
+</script>
+</body>
+</html>`;
+
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  return res.status(200).end(html);
+}

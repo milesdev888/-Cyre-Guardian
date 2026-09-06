@@ -1,19 +1,28 @@
-// api/badge-verify.js — Phase 2 step 2: free public verify + live re-check.
-// GET /api/badge/verify?serial=GRD-2026-00001
-//   → { ok, valid, badge, live: { eligible, path, grade, … } }
+// api/badge-verify.js — verify + live re-check; auto-REVOKED when live path fails.
+// GET ?serial= | ?mint=  → { ok, valid, status, badge, live, stillQualifies }
 
-import { getBadgeBySerial, normalizeSerial, isDurableBadgeStore } from './_badge-registry.js';
-import { qualifyFromScan, QUALIFY_PATHS } from './_badge-qualify.js';
+import {
+  getBadgeBySerial,
+  getBadgeByMint,
+  normalizeSerial,
+  isDurableBadgeStore,
+  revokeBadge,
+  hasRevocationHistory
+} from './_badge-registry.js';
+import { qualifyFromScan, QUALIFY_PATHS, pathLabel, pathFamily } from './_badge-qualify.js';
+import { formatUtc } from './_badge-og-render.js';
 import { recordVerifyHit } from './_traffic.js';
 
 const DISCLAIMER =
-  'Patterns, not verdicts. Issued serial + live re-check. Live status can change without revoking the serial.';
+  'Patterns, not verdicts. Issued serial + live re-check. Failed live checks mark the badge REVOKED.';
 const SCAN_BASE = process.env.GUARDIAN_SCAN_URL || 'https://guardian-scan.onrender.com';
+const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
 
 async function liveRecheck(badge) {
   if (!badge || !badge.mint) {
     return { ok: false, error: 'no mint on badge', eligible: false, path: 'none' };
   }
+  const revokedHistory = await hasRevocationHistory(badge.mint, badge.chainId || 'solana');
   const url = `${SCAN_BASE}/api/scan?address=${encodeURIComponent(badge.mint)}`;
   try {
     const r = await fetch(url, {
@@ -30,11 +39,13 @@ async function liveRecheck(badge) {
       };
     }
     const payload = await r.json();
-    const q = qualifyFromScan(payload);
+    const q = qualifyFromScan(payload, { hasRevocationHistory: revokedHistory });
     return {
       ok: true,
       eligible: q.eligible,
       path: q.path,
+      pathLabel: q.pathLabel,
+      pathFamily: q.pathFamily,
       reason: q.reason,
       lpTier: q.lpTier,
       grade: q.grade,
@@ -43,7 +54,9 @@ async function liveRecheck(badge) {
       badgeEligible: q.badgeEligible,
       unlockAt: q.unlockAt,
       expiresAt: q.expiresAt,
+      established: q.established || null,
       scannedAt: payload?.reports?.[0]?.scannedAt || payload?.scannedAt || new Date().toISOString(),
+      scannedAtUtc: null,
       scanUrl: `${SCAN_BASE}/?address=${encodeURIComponent(badge.mint)}`,
       paths: QUALIFY_PATHS
     };
@@ -69,47 +82,93 @@ export default async function handler(req, res) {
     return res.status(405).json({ ok: false, error: 'method not allowed' });
   }
 
-  const raw = String((req.query && (req.query.serial || req.query.id)) || '').trim();
+  const rawSerial = String((req.query && (req.query.serial || req.query.id)) || '').trim();
+  const rawMint = String((req.query && req.query.mint) || '').trim();
   const skipLive = String((req.query && req.query.live) || '') === '0';
 
-  if (!raw) {
+  if (!rawSerial && !rawMint) {
     return res.status(200).json({
       ok: true,
-      howTo: 'GET /api/badge/verify?serial=GRD-2026-00001',
+      howTo: 'GET /api/badge/verify?serial=GRD-2026-00001 or ?mint=<address>',
       paths: QUALIFY_PATHS,
       durable: isDurableBadgeStore(),
       disclaimer: DISCLAIMER
     });
   }
 
-  const serial = normalizeSerial(raw);
-  if (!serial) {
-    return res.status(400).json({ ok: false, valid: false, error: 'invalid serial format' });
+  let badge = null;
+  if (rawSerial) {
+    const serial = normalizeSerial(rawSerial);
+    if (!serial) {
+      return res.status(400).json({ ok: false, valid: false, error: 'invalid serial format' });
+    }
+    badge = await getBadgeBySerial(serial);
+  } else {
+    badge = await getBadgeByMint(rawMint, String((req.query && req.query.chainId) || 'solana'));
   }
 
-  const badge = await getBadgeBySerial(serial);
   if (!badge) {
     return res.status(404).json({
       ok: true,
       valid: false,
-      serial,
+      status: 'MISSING',
+      serial: rawSerial || null,
       error: 'serial not found',
       durable: isDurableBadgeStore(),
       disclaimer: DISCLAIMER
     });
   }
 
+  // Normalize display fields on older records
+  badge = {
+    ...badge,
+    pathLabel: badge.pathLabel || pathLabel(badge.qualifyPath),
+    pathFamily: badge.pathFamily || pathFamily(badge.qualifyPath),
+    status: badge.status || 'VALID'
+  };
+
+  let status = badge.status;
   const expired = badge.expiresAt ? Date.parse(badge.expiresAt) <= Date.now() : false;
+  if (expired) status = 'EXPIRED';
+
   const live = skipLive ? null : await liveRecheck(badge);
-  const liveEligible = live ? Boolean(live.ok && live.eligible) : null;
+  if (live && live.ok) {
+    live.scannedAtUtc = live.scannedAt ? formatUtc(live.scannedAt) : null;
+  }
+
+  if (live && live.ok && !live.eligible && status !== 'EXPIRED') {
+    // Auto-revocation on view when live path fails
+    const revoked = await revokeBadge(badge.serial, live.reason || 'live re-check failed');
+    if (revoked) badge = { ...badge, ...revoked };
+    status = 'REVOKED';
+  } else if (live && live.ok && live.eligible && status !== 'EXPIRED' && status !== 'REVOKED') {
+    status = 'VALID';
+  }
+
+  const stillQualifies = live ? Boolean(live.ok && live.eligible) : null;
+  const valid = status === 'VALID';
 
   return res.status(200).json({
     ok: true,
-    valid: !expired,
-    expired,
-    badge,
+    valid,
+    status,
+    expired: status === 'EXPIRED',
+    revoked: status === 'REVOKED',
+    badge: {
+      ...badge,
+      status,
+      pathLabel: badge.pathLabel,
+      pathFamily: badge.pathFamily,
+      issuedAtUtc: badge.issuedAt ? formatUtc(badge.issuedAt) : null
+    },
     live,
-    stillQualifies: liveEligible,
+    stillQualifies,
+    verifyUrl: `${SITE}/verify/${badge.serial}`,
+    ogImage: `${SITE}/api/badge/og?serial=${encodeURIComponent(badge.serial)}`,
+    sealUrl:
+      status === 'VALID'
+        ? `${SITE}/brand/seals/guardian-seal-valid.png`
+        : `${SITE}/brand/seals/guardian-seal-revoked.png`,
     durable: isDurableBadgeStore(),
     paths: QUALIFY_PATHS,
     disclaimer: DISCLAIMER

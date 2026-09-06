@@ -276,8 +276,12 @@
       "destination": "/api/badge-register"
     },
     {
+      "source": "/api/badge/og",
+      "destination": "/api/badge-og"
+    },
+    {
       "source": "/verify",
-      "destination": "/verify.html"
+      "destination": "/api/verify-page"
     },
     {
       "source": "/api/receipt/verify",
