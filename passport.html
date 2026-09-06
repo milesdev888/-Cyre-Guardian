@@ -160,9 +160,9 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'JetBra
   function draw(data) {
     const cv = $('card'), x = cv.getContext('2d'), W = 1080, H = 1350;
     const p = data.profile || {};
-    const riskColor = data.riskLevel === 'HIGH' ? C.red : data.riskLevel === 'MEDIUM' ? C.amber : C.green;
-    const score = data.score == null ? '—' : String(data.score);
     const risk = data.riskLevel || '—';
+    const riskColor = risk === 'HIGH' ? C.red : risk === 'MEDIUM' ? C.amber : risk === 'LOW' ? C.green : C.dim;
+    const score = data.score == null ? '—' : String(data.score);
 
     x.fillStyle = C.ink; x.fillRect(0, 0, W, H);
     let rg = x.createRadialGradient(W / 2, 280, 40, W / 2, 280, 720);
@@ -301,7 +301,7 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'JetBra
     try {
       const r = await fetch('/api/passport?address=' + encodeURIComponent(a), { cache: 'no-store' });
       const d = await r.json();
-      if (!d.ok) throw new Error(d.error || 'passport failed');
+      if (!r.ok || !d.ok) throw new Error(d.error || d.message || `passport failed (${r.status})`);
       lastPassport = d;
       await document.fonts.load('800 120px Cormorant Garamond');
       await document.fonts.load('600 26px "JetBrains Mono"');
