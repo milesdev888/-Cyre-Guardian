@@ -1,0 +1,113 @@
+/* theme-purple-deep.css — forest mood (filename kept for existing cache links) */
+@import url("/theme-guardian.css?v=gf1");
+
+:root {
+  --ai-ink: #0a0f0a !important;
+  --ai-ink-2: #0d130d !important;
+  --ai-panel: rgba(16, 23, 16, 0.88) !important;
+  --ai-panel-2: rgba(16, 23, 16, 0.94) !important;
+  --ai-line: rgba(216, 188, 102, 0.22) !important;
+  --ai-violet: #e6cc7e !important;
+  --ai-cyan: #d8bc66 !important;
+  --ai-glow: 0 0 28px rgba(216, 188, 102, 0.18), 0 0 48px rgba(216, 188, 102, 0.08) !important;
+  --ai-glow-sm: 0 0 14px rgba(216, 188, 102, 0.16) !important;
+
+  --bg: #0a0f0a;
+  --bg2: #101710;
+  --panel: rgba(16, 23, 16, 0.86);
+  --panel-strong: rgba(16, 23, 16, 0.94);
+  --line: rgba(30, 42, 30, 0.95);
+  --text: #ede7d5;
+  --muted: #97a08d;
+  --violet: #e6cc7e;
+  --cyan: #d8bc66;
+  --teal: #b8a056;
+  --green: #5fbf7a;
+  --cb-blue: #d8bc66;
+}
+
+body {
+  color: var(--text) !important;
+  background:
+    radial-gradient(ellipse 70% 40% at 85% -5%, rgba(216, 188, 102, 0.07), transparent 55%),
+    linear-gradient(180deg, #0a0f0a 0%, #0a0f0a 100%) !important;
+}
+body::before {
+  background: radial-gradient(circle, rgba(216, 188, 102, 0.06) 0%, transparent 70%) !important;
+}
+body::after {
+  background: transparent !important;
+}
+
+.bg-grid::before {
+  background: radial-gradient(circle, rgba(216, 188, 102, 0.14), transparent 68%);
+}
+.bg-grid::after {
+  background: radial-gradient(circle, rgba(95, 191, 122, 0.08), transparent 70%);
+}
+
+.glow {
+  display: none !important;
+}
+
+.head-wrap {
+  border-color: rgba(216, 188, 102, 0.28);
+  box-shadow: none !important;
+  background: rgba(10, 15, 10, 0.55) !important;
+  filter: none !important;
+}
+.head-wrap.portrait {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 50% !important;
+}
+
+.orbit-ring.r1 {
+  inset: auto !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 84% !important;
+  height: 84% !important;
+  border-radius: 50% !important;
+  border-color: rgba(216, 188, 102, 0.85) !important;
+  box-shadow:
+    0 0 14px rgba(216, 188, 102, 0.45),
+    0 0 34px rgba(216, 188, 102, 0.22),
+    inset 0 0 16px rgba(230, 204, 126, 0.2) !important;
+  filter: none !important;
+}
+.orbit-ring.r2,
+.orbit-ring.r3 {
+  display: none !important;
+}
+
+.brand-orb,
+.pill .brand-orb {
+  border-color: rgba(216, 188, 102, 0.45) !important;
+  box-shadow: 0 0 16px rgba(216, 188, 102, 0.35) !important;
+}
+
+.req,
+.b-main,
+.btn.b-main,
+.nav-app {
+  background: #d8bc66 !important;
+  color: #0a0f0a !important;
+  box-shadow: none !important;
+}
+.req:hover,
+.b-main:hover {
+  background: #e6cc7e !important;
+}
+
+.nav a:hover,
+.nav-monitor:hover,
+.nav-am:hover {
+  color: #ede7d5 !important;
+}
+
+.status-chip.live,
+.chip.live {
+  border-color: rgba(95, 191, 122, 0.4) !important;
+}
