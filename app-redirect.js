@@ -1,14 +1,25 @@
-/* app-redirect.js — send standalone product URLs to Guardian App (keeps ?embed=1 for iframes).
+/* app-redirect.js — product URLs → Guardian App, scan funnel → console.
  *
- * /check and /scan stay standalone on purpose: X/product ads land there and must not
- * open the Guardian App chrome (Tokenomics / Airdrop / $C7). App iframes still use
- * ?embed=1 on those pages.
+ * Canonical scanner is https://scan.cyre.dev/app (dark gold, multichain, auto-run).
+ * Standalone /scan (ads, old links, homepage leftovers) redirect there with ?address=.
+ * ?embed=1 (and iframe contexts) stay on-page so /app Scan & Swap keeps the
+ * protected Jupiter flow.
  */
 (function () {
   'use strict';
 
-  if (new URLSearchParams(location.search).get('embed') === '1') return;
+  var params = new URLSearchParams(location.search);
+  if (params.get('embed') === '1') return;
   if (window.self !== window.top) return;
+
+  var path = location.pathname.replace(/\.html$/i, '').replace(/\/$/, '') || '/';
+
+  if (path === '/scan') {
+    var addr = (params.get('address') || params.get('mint') || params.get('q') || '').trim();
+    var target = 'https://scan.cyre.dev/app' + (addr ? ('?address=' + encodeURIComponent(addr)) : '');
+    location.replace(target);
+    return;
+  }
 
   var PATH_TO_VIEW = {
     '/watch': 'watch',
@@ -23,12 +34,11 @@
     '/apps': 'home',
   };
 
-  var path = location.pathname.replace(/\.html$/i, '').replace(/\/$/, '') || '/';
   if (path === '/app' || path === '/' || path === '/index-legacy') return;
 
   var view = PATH_TO_VIEW[path];
   if (!view) return;
 
-  var target = '/app' + (view === 'home' ? '' : '#' + view) + (location.search || '');
-  location.replace(target);
+  var dest = '/app' + (view === 'home' ? '' : '#' + view) + (location.search || '');
+  location.replace(dest);
 })();

@@ -44,7 +44,7 @@ cyre.dev/tokenomics and @Cyredev888.
 
 | File | What it is |
 |---|---|
-| `index.html` | **Guardian forest homepage** (Sep 2026): self-contained dark forest page — brand **Guardian** (eye-in-shield mark), headline "The chain has a witness.", gold `#D8BC66` + cream `#EDE7D5` on ink `#0A0F0A`, Cormorant + Inter + JetBrains Mono. Hero scan bar → `/scan` (same-origin; auto-runs on `?address=` / `?mint=`; Base58=Solana, `0x`=EVM). Sections: SCAN/WATCH/SCORE/GATE grid, live `$C7` report card (`guardian-home-report.js` → `/api/token`), tokenomics CTA, request-access + Talk to Guardian. Loads `access-form.js`, `guardian-popout.js`, `guardian-home-report.js`. |
+| `index.html` | **Guardian forest homepage** (Sep 2026): self-contained dark forest page — brand **Guardian** (eye-in-shield mark), headline "The chain has a witness.", gold `#D8BC66` + cream `#EDE7D5` on ink `#0A0F0A`, Cormorant + Inter + JetBrains Mono. Hero scan bar → `https://scan.cyre.dev/app` (Guardian console; auto-runs on `?address=`; Base58=Solana, `0x`=EVM multichain). Sections: SCAN/WATCH/SCORE/GATE grid, live `$C7` report card (`guardian-home-report.js` → `/api/token`), tokenomics CTA, request-access + Talk to Guardian. Loads `access-form.js`, `guardian-popout.js`, `guardian-home-report.js`. |
 | `theme-guardian.css` | **Shared forest theme** for app + all secondary/tool pages. Remaps legacy blue tokens (`--cyan`, `--cb-blue`, `--ice`, `--ai-*`) to gold/cream/ink. Loaded by `/app`, Monitor, AM, Docs, product tools, and injected by `ai-vibe-loader.js`. |
 | `index-legacy.html` | Previous cinematic homepage snapshot for rollback. Do not serve as `/`. |
 | `guardian-home-report.js` | Homepage `$C7` report card — GET `/api/token` for mint/freeze/LP/top-holder; falls back to "See live report". |
@@ -68,7 +68,7 @@ cyre.dev/tokenomics and @Cyredev888.
 | `rwa-widget.js` | Live RWA market strip under hero (pinned CoinGecko ids; keep "Data by CoinGecko"). Styled by AI-vibe theme. **Skips mount on `/check` and `/scan`** (ad landings). |
 | `watch.html` | Watch v1 — real-time wallet monitor + measured alerts board → cyre.dev/watch. Default list empty; quiet wallets only. No CDN cache on `/api/watch` (fresh measured run). |
 | `passport.html` | Passport v1 — portable RWA profile from measured address signals → cyre.dev/passport. Share/download PNG dossier + JSON. Visible disclaimer: Patterns, not verdicts. No CDN cache on `/api/passport`. |
-| `check.html` | Free Solana address checker → cyre.dev/check. **Ad-safe standalone landing** (no app redirect, no ai-vibe-loader / RWA price strip). |
+| `check.html` | Guardian-branded address check (gold/dark, Cormorant wordmark). Multichain copy; Solana wallet signals via `/api/address`; `0x` → console. Ad-safe (no $C7 chrome). |
 | `score.html` | Wallet Score Card — canvas dossier PNG + share loop → cyre.dev/score. |
 | `tokenomics.html` | Donut + locks + CA box ("TBA — only here and @Cyredev888"). |
 | `roadmap.html` | 4 phases: Shipped / Now / Next / Exploring (agent-economy items = research framing). |
@@ -81,11 +81,11 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/chain-pulse.js` | GET `/api/chain-pulse` — one cached `getSlot` / 30s (`CHAIN_PULSE_CACHE_SEC`). Light UI pulse; **not** the Render watcher cron. |
 | `apps.html` | Redirects to `/app` (legacy hub URL). |
 | `app.html` | **Guardian Console** — single entry for all products → cyre.dev/app. |
-| `app-redirect.js` | Standalone product URLs redirect to `/app#view` (skipped when `?embed=1` for iframes). **`/check` and `/scan` do not redirect** — they stay standalone for ad landings (no $C7 app chrome). `/check` also skips `ai-vibe-loader.js`; `rwa-widget.js` no-ops on `/check` and `/scan` so live crypto prices never appear on those URLs. |
+| `app-redirect.js` | Standalone product URLs redirect to `/app#view` (skipped when `?embed=1` for iframes). **`/scan` (non-embed) redirects to the Guardian console** (`scan.cyre.dev/app?address=`). `/check` stays a Guardian-branded ad landing (gold/dark); `0x` pastes open the console. `/scan?embed=1` stays for App Scan & Swap (protected Jupiter). `rwa-widget.js` no-ops on `/check` and `/scan`. |
 | `guardian-app.js` | Console routing, quick lookup, iframe loader, session context for address/mint. |
 | `guardian-app.css` | Console shell styles (sidebar, dashboard, bottom nav) — forest palette matching homepage. |
 | `embed-mode.js` / `embed-mode.css` | Hides page chrome when tools run inside Guardian App iframes (`?embed=1`). |
-| `scan.html` | Guardian Token Scan + Protected Swap (phase 2) — paste mint → cyre.dev/scan. Scan via `/api/token`; swap via Jupiter Plugin after gate. See `SWAP-SPEC.md`. |
+| `scan.html` | Guardian-branded Scan & Protected Swap (embed / legacy). Standalone `/scan` redirects to `scan.cyre.dev/app`. Embed keeps Jupiter gate. See `SWAP-SPEC.md`. |
 | `scan-swap.js` | Scan-before-swap gate state machine (SWAP-SPEC §6). |
 | `swap-config.js` | Jupiter referral pubkey + 50 bps fee config (fill after referral.jup.ag setup). |
 | `SWAP-SPEC.md` | Guardian Protected Swap constitution + build order. |

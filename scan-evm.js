@@ -51,7 +51,7 @@
           return '<span class="chain-chip">' + label + "</span>";
         }
         return (
-          '<a class="chain-chip is-on" href="/scan?address=' +
+          '<a class="chain-chip is-on" href="https://scan.cyre.dev/app?address=' +
           encodeURIComponent(address) +
           "&chain=" +
           encodeURIComponent(p.chainId) +

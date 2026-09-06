@@ -58,12 +58,21 @@
     try { sessionStorage.setItem(STORAGE_KEY, state.context); } catch (_) {}
   }
 
+  function isEvm(s) {
+    return /^0x[a-fA-F0-9]{40}$/.test(s || '');
+  }
+
   function isMint(s) {
-    return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(s);
+    return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(s || '');
   }
 
   function isAddress(s) {
-    return isMint(s);
+    return isMint(s) || isEvm(s);
+  }
+
+  function openConsole(addr) {
+    var url = 'https://scan.cyre.dev/app' + (addr ? ('?address=' + encodeURIComponent(addr)) : '');
+    window.open(url, '_blank', 'noopener');
   }
 
   function frameUrl(id) {
@@ -220,11 +229,17 @@
     var val = input.value.trim();
     if (!val) return;
     saveContext(val);
-    if (isMint(val)) {
-      navigate('scan', { scrollTop: true });
-    } else {
-      navigate('check', { scrollTop: true });
+    // Multichain console is canonical for token scans (esp. 0x). Solana
+    // wallet checks stay in-app; Solana mints can use Scan & Swap embed.
+    if (isEvm(val)) {
+      openConsole(val);
+      return;
     }
+    if (isMint(val)) {
+      openConsole(val);
+      return;
+    }
+    navigate('check', { scrollTop: true });
   }
 
   function detectQuickType() {
@@ -233,12 +248,18 @@
     if (!input || !hint) return;
     var val = input.value.trim();
     if (!val) {
-      hint.textContent = 'Paste a Solana address or token mint — Guardian routes you to the right tool.';
+      hint.textContent = 'Paste any address — Solana, Ethereum, Base, Arbitrum, Robinhood Chain. Opens the Guardian console.';
       return;
     }
-    hint.textContent = isMint(val)
-      ? 'Looks like a mint or address — will open Scan (mint) or Check (wallet).'
-      : 'Enter a valid base58 Solana address (32–44 chars).';
+    if (isEvm(val)) {
+      hint.textContent = 'EVM contract — opens the multichain Guardian console.';
+      return;
+    }
+    if (isMint(val)) {
+      hint.textContent = 'Solana mint — opens the Guardian console (patterns, not verdicts).';
+      return;
+    }
+    hint.textContent = 'Paste a Solana mint/wallet or a 0x contract address.';
   }
 
   function initFromHash() {
