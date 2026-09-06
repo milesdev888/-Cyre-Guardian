@@ -9,14 +9,14 @@
 <meta property="og:url" content="https://cyre.dev/">
 <meta property="og:title" content="Guardian — The chain has a witness">
 <meta property="og:description" content="Guardian is Synthetic Intelligence that watches contracts and chains — patterns, not verdicts. Scan Solana mints and EVM contracts.">
-<meta property="og:image" content="https://cyre.dev/brand/guardian-wordmark-og.jpg">
+<meta property="og:image" content="https://cyre.dev/guardian-c7-cobra-512.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Guardian">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@Cyredev888">
 <meta name="twitter:title" content="Guardian — The chain has a witness">
-<meta name="twitter:image" content="https://cyre.dev/brand/guardian-wordmark-og.jpg">
+<meta name="twitter:image" content="https://cyre.dev/guardian-c7-cobra-512.png">
 <meta name="twitter:image:alt" content="Guardian">
 <link rel="icon" href="/cyre-token-icon-128.png" type="image/png">
 <link rel="apple-touch-icon" href="/cyre-token-icon-256.png">
@@ -83,30 +83,27 @@ h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(2.6rem
   color:transparent;-webkit-text-fill-color:transparent;
 }
 .hero{padding:48px 0 52px;border-bottom:1px solid var(--line)}
+/* Permanent rule: text lockup is always present. Image is progressive enhancement.
+   If /brand/* 404/500s, the gold-gradient text remains — blank hero is impossible. */
 .hero-wordmark{
   position:relative;
-  display:flex;justify-content:center;align-items:center;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;
   width:100%;max-width:760px;margin:0 auto 8px;
-  /* Sampled from the asset's actual corner pixels (~rgb(11,11,11)). */
-  background:#0B0B0B;
-  isolation:isolate;
+  min-height:0;
+  background:transparent;
+}
+.hero-wordmark .hero-lockup{
+  margin:0;
+  max-width:none;
+  font-size:clamp(3.4rem,11vw,6.6rem);
+  line-height:1;
+  letter-spacing:-.02em;
+  text-align:center;
 }
 .hero-wordmark img{
-  display:block;width:min(100%,720px);height:auto;position:relative;z-index:0;
+  display:block;width:min(100%,720px);height:auto;margin-top:6px;
 }
-.hero-wordmark::after{
-  content:"";position:absolute;inset:-2px;pointer-events:none;z-index:1;
-  background:
-    radial-gradient(ellipse 72% 58% at 50% 48%,
-      rgba(10,15,10,0) 0%,
-      rgba(10,15,10,0) 46%,
-      rgba(10,15,10,.14) 68%,
-      rgba(10,15,10,.48) 84%,
-      rgba(10,15,10,.88) 94%,
-      #0A0F0A 100%),
-    linear-gradient(90deg, #0A0F0A 0%, rgba(10,15,10,.7) 5%, rgba(10,15,10,0) 16%, rgba(10,15,10,0) 84%, rgba(10,15,10,.7) 95%, #0A0F0A 100%),
-    linear-gradient(180deg, #0A0F0A 0%, rgba(10,15,10,.55) 7%, rgba(10,15,10,0) 20%, rgba(10,15,10,0) 80%, rgba(10,15,10,.55) 93%, #0A0F0A 100%);
-}
+.hero-wordmark img.is-broken{display:none!important}
 .lede{color:var(--muted);max-width:56ch;margin:18px 0 0;font-size:1.02rem}
 .lede b{color:var(--cream);font-weight:500}
 
@@ -209,14 +206,15 @@ footer a:hover{color:var(--cream)}
     <div class="shell">
       <div class="kicker">Synthetic Intelligence · Fraud-watch</div>
       <div class="hero-wordmark">
-        <h1 class="visually-hidden">Guardian</h1>
+        <h1 class="guardian-wordmark hero-lockup">Guardian</h1>
         <img
           src="/brand/guardian-wordmark.jpg"
           srcset="/brand/guardian-wordmark.jpg 1x, /brand/guardian-wordmark@2x.jpg 2x"
           sizes="(max-width: 720px) 100vw, 720px"
           width="896" height="504"
-          alt="Guardian"
-          decoding="async">
+          alt=""
+          decoding="async"
+          onerror="this.classList.add('is-broken');this.removeAttribute('srcset');this.removeAttribute('src');">
       </div>
       <p class="lede">Guardian watches contracts and the chains they live on — <b>patterns, not verdicts</b>. Paste any address and read what the chain already knows about it.</p>
 
