@@ -75,6 +75,9 @@ body.ga-app {
   font: 800 15px/1 var(--ga-display);
   letter-spacing: 0.12em;
 }
+.ga-brand strong.guardian-wordmark {
+  letter-spacing: 0.08em;
+}
 .ga-brand small {
   display: block;
   font: 500 10px/1.3 var(--ga-mono);

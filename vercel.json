@@ -211,6 +211,26 @@
   ],
   "rewrites": [
     {
+      "source": "/brand/guardian-wordmark.jpg",
+      "destination": "/api/brand-asset?file=guardian-wordmark.jpg"
+    },
+    {
+      "source": "/brand/guardian-wordmark@2x.jpg",
+      "destination": "/api/brand-asset?file=guardian-wordmark@2x.jpg"
+    },
+    {
+      "source": "/brand/guardian-wordmark-og.jpg",
+      "destination": "/api/brand-asset?file=guardian-wordmark-og.jpg"
+    },
+    {
+      "source": "/brand/guardian-x-banner.jpg",
+      "destination": "/api/brand-asset?file=guardian-x-banner.jpg"
+    },
+    {
+      "source": "/brand/guardian-x-banner@2x.jpg",
+      "destination": "/api/brand-asset?file=guardian-x-banner@2x.jpg"
+    },
+    {
       "source": "/api/multichain-scan",
       "destination": "https://scan.cyre.dev/api/scan"
     },
