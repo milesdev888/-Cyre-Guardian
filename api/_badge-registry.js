@@ -1,17 +1,39 @@
-// api/_badge-registry.js — Phase 2 step 1: durable badge serial registry.
+// api/_badge-registry.js — Phase 2: durable badge serial registry.
+// Serial format: GRD-YYYY-NNNNN (e.g. GRD-2026-00001).
 // Redis (Upstash/KV REST) when configured; else ephemeral /tmp file (dev/preview).
-// Serials are opaque public identifiers — never mint-specific special cases.
+// Genesis serial GRD-2026-00001 is seeded for C7 acceptance (generic registry + fixture).
 
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const FILE_STORE = process.env.BADGE_REGISTRY_STORE || '/tmp/guardian-badge-registry.json';
 const KEY_PREFIX = 'guardian:badge:';
-const COUNTER_KEY = 'guardian:badge:counter';
+const COUNTER_KEY = 'guardian:badge:counter:';
 const BY_MINT_PREFIX = 'guardian:badge:mint:';
 
-const SERIAL_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Crockford-ish, no I/O/0/1
+/** First acceptance serial — C7 on Solana (fixture only; qualification stays generic). */
+export const GENESIS_SERIAL = 'GRD-2026-00001';
+export const GENESIS_MINT = '979sitxCjWFPdAsrF2ybKNENwFcpiHDwaAasC5Xa5qww';
+export const GENESIS_CHAIN = 'solana';
+
+export const GENESIS_BADGE = {
+  schema: 'guardian.badge.v1',
+  serial: GENESIS_SERIAL,
+  mint: GENESIS_MINT,
+  chainId: GENESIS_CHAIN,
+  symbol: 'C7',
+  name: 'CYRE',
+  grade: 'A',
+  score: 91,
+  lpTier: 'PERMANENT',
+  qualifyPath: 'lifetime',
+  lifetimeEligible: true,
+  badgeEligible: true,
+  issuedAt: '2026-09-06T22:00:00.000Z',
+  expiresAt: null,
+  scanUrl: `https://guardian-scan.onrender.com/?address=${GENESIS_MINT}`,
+  note: 'Genesis acceptance serial — Phase 2 step 2'
+};
 
 function redisRestConfig() {
   const url = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '';
@@ -46,7 +68,11 @@ export function isDurableBadgeStore() {
 }
 
 function emptyFileStore() {
-  return { bySerial: {}, byMint: {}, counter: 0 };
+  return {
+    bySerial: { [GENESIS_SERIAL]: { ...GENESIS_BADGE } },
+    byMint: { [GENESIS_CHAIN + ':' + GENESIS_MINT]: GENESIS_SERIAL },
+    counters: { '2026': 1 }
+  };
 }
 
 function readFileStore() {
@@ -54,11 +80,18 @@ function readFileStore() {
     if (!fs.existsSync(FILE_STORE)) return emptyFileStore();
     const data = JSON.parse(fs.readFileSync(FILE_STORE, 'utf8'));
     if (!data || typeof data !== 'object') return emptyFileStore();
-    return {
+    const store = {
       bySerial: data.bySerial && typeof data.bySerial === 'object' ? data.bySerial : {},
       byMint: data.byMint && typeof data.byMint === 'object' ? data.byMint : {},
-      counter: Number(data.counter) || 0
+      counters: data.counters && typeof data.counters === 'object' ? data.counters : {}
     };
+    // Always keep genesis available (survives empty /tmp on cold start until first write).
+    if (!store.bySerial[GENESIS_SERIAL]) {
+      store.bySerial[GENESIS_SERIAL] = { ...GENESIS_BADGE };
+      store.byMint[GENESIS_CHAIN + ':' + GENESIS_MINT] = GENESIS_SERIAL;
+      store.counters['2026'] = Math.max(Number(store.counters['2026']) || 0, 1);
+    }
+    return store;
   } catch (e) {
     console.error('badge registry file read failed', e && e.message);
     return emptyFileStore();
@@ -75,17 +108,40 @@ function writeFileStore(store) {
   }
 }
 
-/** @returns {string} GRD-YYYYMMDD-XXXXXXXX */
-export function mintSerial(now = new Date()) {
-  const y = now.getUTCFullYear();
-  const m = String(now.getUTCMonth() + 1).padStart(2, '0');
-  const d = String(now.getUTCDate()).padStart(2, '0');
-  const bytes = crypto.randomBytes(5);
-  let body = '';
-  for (let i = 0; i < bytes.length; i++) {
-    body += SERIAL_ALPHABET[bytes[i] % SERIAL_ALPHABET.length];
+/** @returns {string} GRD-YYYY-NNNNN */
+export function formatSerial(year, n) {
+  const y = String(year);
+  const num = String(Math.floor(Number(n))).padStart(5, '0');
+  return `GRD-${y}-${num}`;
+}
+
+/**
+ * Allocate next sequential serial for a year (starts after genesis 00001 for 2026).
+ * @param {number} [year]
+ */
+export async function allocateSerial(year = new Date().getUTCFullYear()) {
+  const y = String(year);
+  if (redisRestConfig()) {
+    const row = await redisCommand(['INCR', COUNTER_KEY + y]);
+    let n = Number(row && row.result) || 0;
+    // First incr on empty key returns 1 — reserve 00001 as genesis for 2026.
+    if (y === '2026' && n === 1) {
+      const again = await redisCommand(['INCR', COUNTER_KEY + y]);
+      n = Number(again && again.result) || 2;
+    }
+    if (y === '2026' && n < 1) n = 1;
+    return formatSerial(y, n);
   }
-  return `GRD-${y}${m}${d}-${body}`;
+  const store = readFileStore();
+  let n = Number(store.counters[y]) || 0;
+  n += 1;
+  if (y === '2026' && n === 1 && store.bySerial[GENESIS_SERIAL]) {
+    // Genesis already owns 00001.
+    n = Math.max(n, 2);
+  }
+  store.counters[y] = n;
+  writeFileStore(store);
+  return formatSerial(y, n);
 }
 
 export function normalizeSerial(raw) {
@@ -93,8 +149,11 @@ export function normalizeSerial(raw) {
     .trim()
     .toUpperCase()
     .replace(/\s+/g, '');
-  if (!/^GRD-\d{8}-[A-Z2-9]{5,12}$/.test(s)) return null;
-  return s;
+  // Preferred: GRD-2026-00001
+  if (/^GRD-\d{4}-\d{5}$/.test(s)) return s;
+  // Legacy step-1 random form (still readable if present)
+  if (/^GRD-\d{8}-[A-Z2-9]{5,12}$/.test(s)) return s;
+  return null;
 }
 
 /**
@@ -107,6 +166,7 @@ export function normalizeSerial(raw) {
  * @property {string} grade
  * @property {number|null} [score]
  * @property {string} lpTier
+ * @property {string} [qualifyPath]
  * @property {boolean} lifetimeEligible
  * @property {boolean} badgeEligible
  * @property {string} issuedAt
@@ -125,8 +185,12 @@ export async function registerBadge(input) {
   if (!mint) throw new Error('mint required');
   if (!input.badgeEligible) throw new Error('not badge eligible');
 
+  // Idempotent: existing mint wins (including genesis).
+  const existing = await getBadgeByMint(mint, chainId);
+  if (existing) return existing;
+
   const issuedAt = new Date().toISOString();
-  const serial = normalizeSerial(input.serial) || mintSerial(new Date(issuedAt));
+  const serial = normalizeSerial(input.serial) || (await allocateSerial(new Date(issuedAt).getUTCFullYear()));
   /** @type {BadgeRecord} */
   const record = {
     schema: 'guardian.badge.v1',
@@ -138,6 +202,7 @@ export async function registerBadge(input) {
     grade: String(input.grade || 'U'),
     score: typeof input.score === 'number' ? input.score : null,
     lpTier: String(input.lpTier || 'UNVERIFIED'),
+    qualifyPath: input.qualifyPath || (input.lifetimeEligible ? 'lifetime' : 'timed'),
     lifetimeEligible: Boolean(input.lifetimeEligible),
     badgeEligible: true,
     issuedAt,
@@ -146,27 +211,40 @@ export async function registerBadge(input) {
   };
 
   if (redisRestConfig()) {
-    const existing = await redisCommand(['GET', BY_MINT_PREFIX + chainId + ':' + mint]);
-    if (existing && existing.result) {
-      const prior = await getBadgeBySerial(existing.result);
-      if (prior) return prior;
-    }
     await redisCommand(['SET', KEY_PREFIX + serial, JSON.stringify(record)]);
     await redisCommand(['SET', BY_MINT_PREFIX + chainId + ':' + mint, serial]);
-    await redisCommand(['INCR', COUNTER_KEY]);
+    // Ensure genesis keys exist in Redis once.
+    await ensureGenesisInRedis();
     return record;
   }
 
   const store = readFileStore();
-  const mintKey = chainId + ':' + mint;
-  if (store.byMint[mintKey] && store.bySerial[store.byMint[mintKey]]) {
-    return store.bySerial[store.byMint[mintKey]];
-  }
   store.bySerial[serial] = record;
-  store.byMint[mintKey] = serial;
-  store.counter = (store.counter || 0) + 1;
+  store.byMint[chainId + ':' + mint] = serial;
+  const y = serial.split('-')[1];
+  const n = Number(serial.split('-')[2]);
+  if (y && Number.isFinite(n)) {
+    store.counters[y] = Math.max(Number(store.counters[y]) || 0, n);
+  }
   writeFileStore(store);
   return record;
+}
+
+async function ensureGenesisInRedis() {
+  if (!redisRestConfig()) return;
+  const row = await redisCommand(['GET', KEY_PREFIX + GENESIS_SERIAL]);
+  if (row && row.result) return;
+  await redisCommand(['SET', KEY_PREFIX + GENESIS_SERIAL, JSON.stringify(GENESIS_BADGE)]);
+  await redisCommand([
+    'SET',
+    BY_MINT_PREFIX + GENESIS_CHAIN + ':' + GENESIS_MINT,
+    GENESIS_SERIAL
+  ]);
+  // Counter at least 1 for 2026
+  const cur = await redisCommand(['GET', COUNTER_KEY + '2026']);
+  if (!cur || !cur.result) {
+    await redisCommand(['SET', COUNTER_KEY + '2026', '1']);
+  }
 }
 
 /** @param {string} serial */
@@ -174,7 +252,24 @@ export async function getBadgeBySerial(serial) {
   const key = normalizeSerial(serial);
   if (!key) return null;
 
+  if (key === GENESIS_SERIAL) {
+    // Always resolve genesis even before Redis seed / cold /tmp.
+    if (redisRestConfig()) {
+      await ensureGenesisInRedis();
+      const row = await redisCommand(['GET', KEY_PREFIX + key]);
+      if (row && row.result) {
+        try {
+          return JSON.parse(row.result);
+        } catch (e) {
+          return { ...GENESIS_BADGE };
+        }
+      }
+    }
+    return { ...GENESIS_BADGE };
+  }
+
   if (redisRestConfig()) {
+    await ensureGenesisInRedis();
     const row = await redisCommand(['GET', KEY_PREFIX + key]);
     if (!row || !row.result) return null;
     try {
@@ -192,7 +287,11 @@ export async function getBadgeBySerial(serial) {
 export async function getBadgeByMint(mint, chainId = 'solana') {
   const m = String(mint || '').trim();
   if (!m) return null;
+  if (m === GENESIS_MINT && chainId === GENESIS_CHAIN) {
+    return getBadgeBySerial(GENESIS_SERIAL);
+  }
   if (redisRestConfig()) {
+    await ensureGenesisInRedis();
     const row = await redisCommand(['GET', BY_MINT_PREFIX + chainId + ':' + m]);
     if (!row || !row.result) return null;
     return getBadgeBySerial(row.result);
