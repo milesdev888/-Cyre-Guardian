@@ -1,21 +1,21 @@
 // watcher.js — CYRE Guardian on-chain watcher
-// Runs on a schedule (Render Cron). Scans a watchlist of Solana addresses,
+// Runs on a schedule (Render Cron or GitHub Actions). Scans a watchlist of Solana addresses,
 // detects anomalies with the same signal philosophy as api/address.js,
 // and drafts a neutral observation tweet for each fresh anomaly.
 //
 // DRY_RUN=true (default): tweets are LOGGED ONLY, never posted.
-// DRY_RUN=false + X keys set: posts via X API v2.
+// DRY_RUN=false + BRIDGE_URL or X keys set: posts live via bridge (preferred) or direct X API.
 //
 // Env vars:
-//   WATCHLIST   comma-separated Solana addresses (required)
+//   WATCHLIST   comma-separated Solana addresses (required for work)
 //   RPC         Solana RPC url (default: public mainnet)
-//   INTERVAL_MIN  how often this cron runs, in minutes (default 15) —
-//                 anomalies only fire if the triggering tx landed inside
-//                 this window, so the same event never tweets twice
+//   INTERVAL_MIN  how often this cron runs, in minutes (default 15)
 //   DRY_RUN     "true" (default) or "false"
-//   X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET  (only for live mode)
+//   BRIDGE_URL  preferred — posts via cyre-x-bridge (same as mention-grader)
+//   X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET  (fallback if no bridge)
 
 const crypto = require('crypto');
+const { postTweet: bridgePostTweet, bridgeConfigured } = require('./bot-bridge.js');
 
 const RPC = process.env.RPC || 'https://api.mainnet-beta.solana.com';
 const WATCHLIST = (process.env.WATCHLIST || '').split(',').map(s => s.trim()).filter(Boolean);
@@ -87,11 +87,11 @@ function detect(address, sigs, now) {
   return out;
 }
 
-// ---- X API v2 posting with OAuth 1.0a (no dependencies) ----
+// ---- X API v2 posting with OAuth 1.0a (fallback when BRIDGE_URL unset) ----
 function pctEnc(s) {
   return encodeURIComponent(s).replace(/[!*'()]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase());
 }
-async function postTweet(text) {
+async function postTweetDirect(text) {
   const url = 'https://api.twitter.com/2/tweets';
   const oauth = {
     oauth_consumer_key: process.env.X_API_KEY,
@@ -117,10 +117,26 @@ async function postTweet(text) {
   return body?.data?.id;
 }
 
+async function publishTweet(text) {
+  if (bridgeConfigured()) {
+    const out = await bridgePostTweet(text);
+    const s = typeof out === 'string' ? out : JSON.stringify(out);
+    const m = s.match(/Tweet id:\s*(\d+)/i);
+    return m ? m[1] : s;
+  }
+  return postTweetDirect(text);
+}
+
+function postingReady() {
+  if (bridgeConfigured()) return true;
+  return !['X_API_KEY','X_API_SECRET','X_ACCESS_TOKEN','X_ACCESS_SECRET'].some(k => !process.env[k]);
+}
+
 // ---- main ----
 (async () => {
   const now = Math.floor(Date.now() / 1000);
-  console.log(`[guardian-watcher] ${new Date().toISOString()} — mode=${DRY_RUN ? 'DRY RUN (log only)' : 'LIVE (posting)'} — watching ${WATCHLIST.length} address(es), window ${INTERVAL / 60}min`);
+  const via = bridgeConfigured() ? 'bridge' : 'x-api';
+  console.log(`[guardian-watcher] ${new Date().toISOString()} — mode=${DRY_RUN ? 'DRY RUN (log only)' : 'LIVE (posting via ' + via + ')'} — watching ${WATCHLIST.length} address(es), window ${INTERVAL / 60}min`);
 
   if (!WATCHLIST.length) { console.log('WATCHLIST is empty — nothing to do.'); return; }
 
@@ -137,11 +153,13 @@ async function postTweet(text) {
         drafts++;
         console.log(`\n===== GUARDIAN DRAFT #${drafts} =====\n${text}\n===============================\n`);
         if (!DRY_RUN) {
-          const missing = ['X_API_KEY','X_API_SECRET','X_ACCESS_TOKEN','X_ACCESS_SECRET'].filter(k => !process.env[k]);
-          if (missing.length) { console.log(`  LIVE mode but missing env: ${missing.join(', ')} — not posting.`); continue; }
+          if (!postingReady()) {
+            console.log('  LIVE mode but missing BRIDGE_URL and X API env — not posting.');
+            continue;
+          }
           try {
-            const id = await postTweet(text);
-            console.log(`  POSTED — tweet id ${id}`);
+            const id = await publishTweet(text);
+            console.log(`  POSTED — ${id}`);
           } catch (e) {
             console.error(`  POST FAILED: ${e.message}`);
           }
