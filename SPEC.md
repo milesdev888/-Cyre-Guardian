@@ -44,7 +44,7 @@ cyre.dev/tokenomics and @Cyredev888.
 
 | File | What it is |
 |---|---|
-| `index.html` | **Guardian forest homepage** (Sep 2026): self-contained dark forest page — brand **Guardian** (eye-in-shield mark), headline "The chain has a witness.", gold `#D8BC66` + cream `#EDE7D5` on ink `#0A0F0A`, Cormorant + Inter + JetBrains Mono. Hero scan bar → `scan.cyre.dev` (Base58=Solana, `0x`=EVM; `?q=` auto-runs). Sections: SCAN/WATCH/SCORE/GATE grid, live `$C7` report card (`guardian-home-report.js` → `/api/token`), tokenomics CTA, request-access + Talk to Guardian. Loads `access-form.js`, `guardian-popout.js`, `guardian-home-report.js`. |
+| `index.html` | **Guardian forest homepage** (Sep 2026): self-contained dark forest page — brand **Guardian** (eye-in-shield mark), headline "The chain has a witness.", gold `#D8BC66` + cream `#EDE7D5` on ink `#0A0F0A`, Cormorant + Inter + JetBrains Mono. Hero scan bar → `/scan` (same-origin; auto-runs on `?address=` / `?mint=`; Base58=Solana, `0x`=EVM). Sections: SCAN/WATCH/SCORE/GATE grid, live `$C7` report card (`guardian-home-report.js` → `/api/token`), tokenomics CTA, request-access + Talk to Guardian. Loads `access-form.js`, `guardian-popout.js`, `guardian-home-report.js`. |
 | `theme-guardian.css` | **Shared forest theme** for app + all secondary/tool pages. Remaps legacy blue tokens (`--cyan`, `--cb-blue`, `--ice`, `--ai-*`) to gold/cream/ink. Loaded by `/app`, Monitor, AM, Docs, product tools, and injected by `ai-vibe-loader.js`. |
 | `index-legacy.html` | Previous cinematic homepage snapshot for rollback. Do not serve as `/`. |
 | `guardian-home-report.js` | Homepage `$C7` report card — GET `/api/token` for mint/freeze/LP/top-holder; falls back to "See live report". |
@@ -95,15 +95,11 @@ cyre.dev/tokenomics and @Cyredev888.
 | `api/chat.js` | Guardian chat (Anthropic). HARDENED: origin-locked to cyre.dev, role-sanitized, haiku model, daily cap. Keep all guardrails. |
 | `api/address.js` | GET /api/address — 1,000-sig window, 6 explainable signals, LOW/MED/HIGH. Env `SOLANA_RPC`. (Live file; SPEC formerly said `.mjs`.) |
 | `api/watch.js` | GET /api/watch — `?address=` and optional `?list=` (≤10). Reuses address signals; fresh-window alerts; counters from this measured run only; `Cache-Control: no-store` (no CDN reuse). Marks noisy if last24h ≥ 200. No LLM. Env `SOLANA_RPC`. |
-<<<<<<< HEAD
 | `api/_attest.js` | Ed25519 attestation (`PASSPORT_SIGNING_KEY`). Kinds: passport, decision-receipt, spend-policy, intent-seal, intent-lockbox, cron-attestation. `attest` / `attestReceipt` / `attestPolicy` / `attestIntent` / `attestLockbox` / `attestCron` / `verifyToken({ kinds, allowExpired })`. |
-=======
-| `api/_attest.js` | Ed25519 passport + decision-receipt attestation (`PASSPORT_SIGNING_KEY`). `attest` / `attestReceipt` / `verifyToken({ kinds, allowExpired })`. |
 | `api/_x402.js` | Shared x402 v2 gate (Solana + Base + dormant BNB Chain/B402). BSC lane arms only when `X402_PAY_TO_BSC` is set; see `docs/B402-RESEARCH.md` / `docs/B402-ENV.md`. XRPL inputs get a free `400` **external referral** to cloudpayX (cloudpayX schema) **before** any 402 (no charge). Pricing, site-origin bypass, validate-before-settle unchanged. |
 | `lib/peers.js` | External network referrals + `detectNetwork` / `xrplHandoffBody` (cloudpayX schema: `status`, `supported_network`, `requested_network`, `recommended_provider`). Guardian refers, does not assess or vouch. |
 | `docs/B402-RESEARCH.md` | Part 1 research: Binance B402 onboarding, Tesla RSA auth, wire shape, BSC assets/decimals, sandbox. |
 | `docs/B402-ENV.md` | Vercel env checklist for dormant B402/BSC lane (no secrets). |
->>>>>>> b604214 (Add dormant BNB Chain (B402) payment lane to x402 gate)
 | `api/passport.js` | GET /api/passport — `?address=`. Stable Passport JSON + Ed25519 attestation. Same 1k-sig window as `/api/address`; seed-mint `mintAffinity`; x402; `Cache-Control: no-store`. No LLM. |
 | `api/_grade.js` | Shared Solana graders — `gradeAddress`, `mintAuthorityFacts`, `programNovelty`, seed `mintAffinity`. Used by handshake/preflight/delta/batch/program/alerts. |
 | `api/handshake.js` | GET/POST `/api/handshake` — bilateral Passport Handshake. Preferred `tokenA`+`tokenB` (verify before settle); fallback `addressA`+`addressB` (measure both). Returns `kind:'cyre-handshake'`, `delta`, `brief`. x402 default $0.01 (`X402_PRICE_HANDSHAKE`). `Cache-Control: no-store`. No LLM. |
