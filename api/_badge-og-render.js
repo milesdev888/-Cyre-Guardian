@@ -12,12 +12,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
-import { fileURLToPath } from 'node:url';
 
 const W = 1200;
 const H = 630;
 const SEAL_DISPLAY = 300; // on-card diameter
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function crc32(buf) {
   let c = ~0;
@@ -354,11 +352,16 @@ function resolveSealPath(revoked) {
   const name = revoked ? 'guardian-seal-revoked.png' : 'guardian-seal-valid.png';
   const candidates = [
     path.join(process.cwd(), 'brand', 'seals', name),
-    path.join(__dirname, '..', 'brand', 'seals', name),
-    path.join('/var/task', 'brand', 'seals', name)
+    path.join(process.cwd(), '..', 'brand', 'seals', name),
+    path.join('/var/task', 'brand', 'seals', name),
+    path.join('/var/task/brand/seals', name)
   ];
   for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
+    try {
+      if (fs.existsSync(p)) return p;
+    } catch {
+      /* ignore */
+    }
   }
   return null;
 }
