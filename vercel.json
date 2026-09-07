@@ -1,6 +1,17 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "functions": {
+    "api/badge-og.js": {
+      "includeFiles": "brand/seals/**"
+    },
+    "api/verify-page.js": {
+      "includeFiles": "brand/seals/**"
+    },
+    "api/badge-verify.js": {
+      "includeFiles": "brand/seals/**"
+    }
+  },
   "headers": [
     {
       "source": "/",

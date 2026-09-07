@@ -14,7 +14,7 @@ import {
   hasRevocationHistory
 } from './_badge-registry.js';
 import { qualifyFromScan, evaluateEstablished, analyzePools } from './_badge-qualify.js';
-import { renderBadgeOg, encodePng } from './_badge-og-render.js';
+import { renderBadgeOg, encodePng, decodePng, loadSealImage, blitImage } from './_badge-og-render.js';
 
 process.env.BADGE_REGISTRY_STORE = '/tmp/guardian-badge-registry-test-step2b.json';
 
@@ -113,6 +113,15 @@ const revokedPng = renderBadgeOg({
   checkedAt: new Date().toISOString()
 });
 assert.equal(revokedPng[0], 137);
+
+// Ornate seal PNG must decode with transparent corners (blit root-cause fix)
+const sealImg = loadSealImage(false);
+assert.ok(sealImg, 'valid seal asset missing');
+assert.ok(sealImg.width >= 512, 'seal should be ≥2× card display');
+assert.equal(sealImg.rgba[3], 0, 'seal corner alpha must be 0');
+const revSeal = loadSealImage(true);
+assert.ok(revSeal);
+assert.equal(revSeal.rgba[3], 0, 'revoked seal corner alpha must be 0');
 
 // Revocation history
 const other = await registerBadge({
