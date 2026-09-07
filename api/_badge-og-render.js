@@ -98,11 +98,42 @@ export function encodePngRgb(rgbOrRgba, width, height, hasAlpha = true) {
 }
 
 function encodePngInternal(rgba, width, height, colorType) {
-  const stride = width * 4;
+  const bpp = colorType === 2 ? 3 : 4;
+  const stride = width * bpp;
   const raw = Buffer.alloc((stride + 1) * height);
+  let prev = Buffer.alloc(stride, 0);
   for (let y = 0; y < height; y++) {
-    raw[y * (stride + 1)] = 0;
-    rgba.copy(raw, y * (stride + 1) + 1, y * stride, y * stride + stride);
+    const row = Buffer.alloc(stride);
+    if (bpp === 4) {
+      rgba.copy(row, 0, y * stride, y * stride + stride);
+    } else {
+      for (let x = 0; x < width; x++) {
+        const si = (y * width + x) * 4;
+        const di = x * 3;
+        row[di] = rgba[si];
+        row[di + 1] = rgba[si + 1];
+        row[di + 2] = rgba[si + 2];
+      }
+    }
+    // Paeth filter (type 4) — much smaller for photographic medallion + sparse alpha
+    const filtered = Buffer.alloc(stride);
+    for (let i = 0; i < stride; i++) {
+      const a = i >= bpp ? row[i - bpp] : 0;
+      const b = prev[i];
+      const c = i >= bpp ? prev[i - bpp] : 0;
+      const p = a + b - c;
+      const pa = Math.abs(p - a);
+      const pb = Math.abs(p - b);
+      const pc = Math.abs(p - c);
+      let pr;
+      if (pa <= pb && pa <= pc) pr = a;
+      else if (pb <= pc) pr = b;
+      else pr = c;
+      filtered[i] = (row[i] - pr) & 255;
+    }
+    raw[y * (stride + 1)] = 4;
+    filtered.copy(raw, y * (stride + 1) + 1);
+    prev = row;
   }
   const compressed = zlib.deflateSync(raw, { level: 9 });
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
