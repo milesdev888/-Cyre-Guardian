@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   const badge = serial ? await getBadgeBySerial(serial) : null;
 
   const ogImage = serial
-    ? `${SITE}/api/badge/og?serial=${encodeURIComponent(serial)}`
+    ? `${SITE}/api/badge/og?serial=${encodeURIComponent(serial)}&v=2`
     : `${SITE}/brand/guardian-wordmark-og.jpg`;
   const title = badge
     ? `Guardian ${badge.pathLabel || badge.qualifyPath || 'Badge'} · ${badge.serial}`
