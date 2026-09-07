@@ -162,13 +162,18 @@ function drawSeal(rgba, cx, cy, radius, revoked) {
   const inner = revoked ? [70, 70, 70] : [120, 90, 20];
   const iris = revoked ? [90, 90, 90] : [61, 220, 132];
   const eye = [20, 28, 22];
+  const hi = revoked ? [190, 190, 190] : [255, 236, 170];
+  const lo = revoked ? [55, 55, 55] : [90, 65, 12];
 
-  // Coin body
+  // Embossed coin body + rim shadow
+  fillCircle(rgba, cx + 3, cy + 4, radius + 2, lo[0], lo[1], lo[2], 180);
   fillCircle(rgba, cx, cy, radius, mid[0], mid[1], mid[2], 255);
+  // Specular crescent (upper-left emboss)
+  fillCircle(rgba, cx - radius * 0.22, cy - radius * 0.28, radius * 0.72, hi[0], hi[1], hi[2], 70);
   // Rings
-  for (let i = 0; i < 4; i++) {
-    const rr = radius - 4 - i * 5;
-    for (let a = 0; a < 360; a += 2) {
+  for (let i = 0; i < 5; i++) {
+    const rr = radius - 3 - i * 5;
+    for (let a = 0; a < 360; a += 1) {
       const rad = (a * Math.PI) / 180;
       const x = Math.round(cx + rr * Math.cos(rad));
       const y = Math.round(cy + rr * Math.sin(rad));
@@ -182,11 +187,11 @@ function drawSeal(rgba, cx, cy, radius, revoked) {
     }
   }
   fillCircle(rgba, cx, cy, radius * 0.62, inner[0], inner[1], inner[2], 255);
-  // Eye almond approx as ellipse
-  fillCircle(rgba, cx, cy, radius * 0.34, eye[0], eye[1], eye[2], 255);
-  fillCircle(rgba, cx, cy, radius * 0.2, iris[0], iris[1], iris[2], 255);
-  fillCircle(rgba, cx, cy, radius * 0.09, 10, 12, 10, 255);
-  fillCircle(rgba, cx - radius * 0.06, cy - radius * 0.08, radius * 0.04, 255, 240, 180, 220);
+  // Engraved eye
+  fillCircle(rgba, cx, cy, radius * 0.36, eye[0], eye[1], eye[2], 255);
+  fillCircle(rgba, cx, cy - 1, radius * 0.22, iris[0], iris[1], iris[2], 255);
+  fillCircle(rgba, cx, cy, radius * 0.1, 10, 12, 10, 255);
+  fillCircle(rgba, cx - radius * 0.07, cy - radius * 0.09, radius * 0.045, 255, 240, 180, 230);
 
   if (revoked) {
     // Crack lines
