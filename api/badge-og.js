@@ -6,7 +6,14 @@ import { qualifyFromScan, pathLabel } from './_badge-qualify.js';
 import { renderBadgeOg, formatUtc } from './_badge-og-render.js';
 
 const SCAN_BASE = process.env.GUARDIAN_SCAN_URL || 'https://guardian-scan.onrender.com';
-const LIVE_TIMEOUT_MS = Number(process.env.BADGE_OG_LIVE_TIMEOUT_MS || 2500);
+const LIVE_TIMEOUT_MS = Number(process.env.BADGE_OG_LIVE_TIMEOUT_MS || 1800);
+
+function isCrawler(req) {
+  const ua = String((req.headers && (req.headers['user-agent'] || req.headers['User-Agent'])) || '');
+  return /Twitterbot|facebookexternalhit|LinkedInBot|Slackbot|Discordbot|WhatsApp|TelegramBot|OpenGraph|embedly|quora link preview|Googlebot|bingbot|Applebot/i.test(
+    ua
+  );
+}
 
 async function liveRecheck(badge, timeoutMs) {
   const url = `${SCAN_BASE}/api/scan?address=${encodeURIComponent(badge.mint)}`;
@@ -54,19 +61,28 @@ export default async function handler(req, res) {
   let status = badge.status || 'VALID';
   let livePath = pathLabel(badge.qualifyPath) || badge.pathLabel || 'None';
   let liveGrade = badge.grade;
-  let checkedAt = new Date().toISOString();
+  let checkedAt = badge.issuedAt || new Date().toISOString();
 
-  try {
-    const { q, scannedAt } = await liveRecheck(badge, LIVE_TIMEOUT_MS);
-    checkedAt = scannedAt;
-    livePath = q.pathLabel || pathLabel(q.path);
-    liveGrade = q.grade || badge.grade;
+  // Crawlers (X/Twitter etc.) need a sub-second image — skip live scan; use registry status
+  // (auto-revoked on verify views). Humans still get a bounded live re-check.
+  const crawler = isCrawler(req);
+  if (!crawler) {
+    try {
+      const { q, scannedAt } = await liveRecheck(badge, LIVE_TIMEOUT_MS);
+      checkedAt = scannedAt;
+      livePath = q.pathLabel || pathLabel(q.path);
+      liveGrade = q.grade || badge.grade;
+      if (badge.expiresAt && Date.parse(badge.expiresAt) <= Date.now()) status = 'EXPIRED';
+      else if (!q.eligible) status = 'REVOKED';
+      else status = 'VALID';
+    } catch {
+      // Timeout / scan miss: still render from issued record.
+      if (badge.expiresAt && Date.parse(badge.expiresAt) <= Date.now()) status = 'EXPIRED';
+      checkedAt = new Date().toISOString();
+    }
+  } else {
     if (badge.expiresAt && Date.parse(badge.expiresAt) <= Date.now()) status = 'EXPIRED';
-    else if (!q.eligible) status = 'REVOKED';
-    else status = 'VALID';
-  } catch {
-    // Timeout / scan miss: still render from issued record so crawlers get a fast card.
-    if (badge.expiresAt && Date.parse(badge.expiresAt) <= Date.now()) status = 'EXPIRED';
+    checkedAt = new Date().toISOString();
   }
 
   const png = renderBadgeOg({
