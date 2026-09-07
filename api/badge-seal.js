@@ -60,7 +60,8 @@ export default async function handler(req, res) {
     status,
     pathFamily: family,
     pathMark: pathMark(family || badge.qualifyPath),
-    qualifyPath: badge.qualifyPath
+    qualifyPath: badge.qualifyPath,
+    grade: badge.grade || null
   };
   const png = og ? await renderOfficialSealOg(input) : await renderOfficialSeal(input);
 

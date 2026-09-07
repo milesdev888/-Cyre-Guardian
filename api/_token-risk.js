@@ -94,7 +94,7 @@ export function extractLiquidity(report) {
   let lockedOnly = lockedFromHolders;
 
   // When RugCheck reports aggregate lock % but holder breakdown is thin,
-  // treat lpLockedPct as locked+burned secured liquidity.
+  // treat lpLockedPct as locked+burned liquidity.
   if (lockedPct != null && burnedPct + lockedOnly < lockedPct * 0.5) {
     // Aggregate lock % is authoritative when holder breakdown under-counts.
     lockedOnly = Math.max(lockedOnly, lockedPct - burnedPct);
@@ -113,10 +113,10 @@ export function extractLiquidity(report) {
   freePct = Math.min(100, Math.max(0, +freePct.toFixed(2)));
 
   // If aggregate says nearly all locked but our split under-counts, trust aggregate for UI %.
-  const secured = lockedPct + burnedPct;
+  const lockedBurned = lockedPct + burnedPct;
   const aggregate = Number(lp.lpLockedPct);
-  if (Number.isFinite(aggregate) && aggregate > secured + 5) {
-    const gap = aggregate - secured;
+  if (Number.isFinite(aggregate) && aggregate > lockedBurned + 5) {
+    const gap = aggregate - lockedBurned;
     lockedPct = Math.min(100, +(lockedPct + gap).toFixed(2));
   }
 
@@ -239,7 +239,7 @@ export function buildRiskV2({ mintAuthority, freezeAuthority, liquidity, holders
       signals.push({
         level: 'good',
         id: 'lp_lock',
-        text: 'LP largely secured (' + label + ')' +
+        text: 'LP largely locked (' + label + ')' +
           (liquidity.lockerName ? ' via ' + liquidity.lockerName : '') + '.'
       });
     } else if (secured >= 50) {
@@ -247,7 +247,7 @@ export function buildRiskV2({ mintAuthority, freezeAuthority, liquidity, holders
       signals.push({
         level: 'med',
         id: 'lp_lock',
-        text: 'LP partially secured (' + secured.toFixed(0) + '% locked/burned, ' + free.toFixed(0) + '% free).'
+        text: 'LP partially locked (' + secured.toFixed(0) + '% locked/burned, ' + free.toFixed(0) + '% free).'
       });
     } else {
       parts.lock = 30;
