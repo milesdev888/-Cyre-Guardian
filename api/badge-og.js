@@ -4,6 +4,7 @@
 import { getBadgeBySerial, normalizeSerial } from './_badge-registry.js';
 import { qualifyFromScan, pathLabel } from './_badge-qualify.js';
 import { renderBadgeOg, formatUtc } from './_badge-og-render.js';
+import { renderOfficialSeal } from './_badge-seal-render.js';
 
 const SCAN_BASE = process.env.GUARDIAN_SCAN_URL || 'https://guardian-scan.onrender.com';
 const LIVE_TIMEOUT_MS = Number(process.env.BADGE_OG_LIVE_TIMEOUT_MS || 1800);
@@ -85,6 +86,17 @@ export default async function handler(req, res) {
     checkedAt = new Date().toISOString();
   }
 
+  let sealPng = null;
+  try {
+    sealPng = await renderOfficialSeal({
+      serial: badge.serial,
+      ca: badge.mint,
+      status
+    });
+  } catch {
+    sealPng = null;
+  }
+
   const png = renderBadgeOg({
     serial: badge.serial,
     symbol: badge.symbol,
@@ -98,7 +110,8 @@ export default async function handler(req, res) {
     issuedAt: badge.issuedAt,
     liveGrade,
     livePath,
-    checkedAt
+    checkedAt,
+    sealPng
   });
 
   res.setHeader('Content-Type', 'image/png');

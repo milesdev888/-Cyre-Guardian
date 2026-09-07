@@ -38,6 +38,66 @@ function chunk(type, data) {
 
 /** @param {Buffer} rgba width*height*4 */
 export function encodePng(rgba, width, height) {
+  return encodePngInternal(rgba, width, height, 6);
+}
+
+/** Opaque RGB PNG (smaller) — for fully-opaque canvases like /api/seal */
+export function encodePngRgb(rgbOrRgba, width, height, hasAlpha = true) {
+  const stride = width * 3;
+  const raw = Buffer.alloc((stride + 1) * height);
+  let prev = Buffer.alloc(stride, 0);
+  for (let y = 0; y < height; y++) {
+    const row = Buffer.alloc(stride);
+    for (let x = 0; x < width; x++) {
+      const di = x * 3;
+      if (hasAlpha) {
+        const si = (y * width + x) * 4;
+        row[di] = rgbOrRgba[si];
+        row[di + 1] = rgbOrRgba[si + 1];
+        row[di + 2] = rgbOrRgba[si + 2];
+      } else {
+        const si = (y * width + x) * 3;
+        row[di] = rgbOrRgba[si];
+        row[di + 1] = rgbOrRgba[si + 1];
+        row[di + 2] = rgbOrRgba[si + 2];
+      }
+    }
+    // Paeth filter (type 4) — far smaller for photographic medallion content
+    const filtered = Buffer.alloc(stride);
+    for (let i = 0; i < stride; i++) {
+      const a = i >= 3 ? row[i - 3] : 0;
+      const b = prev[i];
+      const c = i >= 3 ? prev[i - 3] : 0;
+      const p = a + b - c;
+      const pa = Math.abs(p - a);
+      const pb = Math.abs(p - b);
+      const pc = Math.abs(p - c);
+      let pr;
+      if (pa <= pb && pa <= pc) pr = a;
+      else if (pb <= pc) pr = b;
+      else pr = c;
+      filtered[i] = (row[i] - pr) & 255;
+    }
+    raw[y * (stride + 1)] = 4;
+    filtered.copy(raw, y * (stride + 1) + 1);
+    prev = row;
+  }
+  const compressed = zlib.deflateSync(raw, { level: 9 });
+  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 2; // RGB
+  return Buffer.concat([
+    signature,
+    chunk('IHDR', ihdr),
+    chunk('IDAT', compressed),
+    chunk('IEND', Buffer.alloc(0))
+  ]);
+}
+
+function encodePngInternal(rgba, width, height, colorType) {
   const stride = width * 4;
   const raw = Buffer.alloc((stride + 1) * height);
   for (let y = 0; y < height; y++) {
@@ -50,7 +110,7 @@ export function encodePng(rgba, width, height) {
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
   ihdr[8] = 8;
-  ihdr[9] = 6;
+  ihdr[9] = colorType;
   ihdr[10] = 0;
   ihdr[11] = 0;
   ihdr[12] = 0;
@@ -252,11 +312,12 @@ function sampleBilinear(src, sw, sh, fx, fy) {
 
 /**
  * Straight-alpha over-composite of src image onto dst canvas, scaled to dw×dh
- * and centered at (cx,cy). This is the blit path that failed when the source
- * had opaque off-circle pixels or no decoder.
+ * and centered at (cx,cy).
+ * @param {{ keyBlack?: boolean }} [opts] keyBlack treats near-black src as transparent (for seal-on-OG)
  */
-export function blitImage(dst, srcImg, cx, cy, dw, dh) {
+export function blitImage(dst, srcImg, cx, cy, dw, dh, opts = {}) {
   const { rgba: src, width: sw, height: sh } = srcImg;
+  const keyBlack = Boolean(opts.keyBlack);
   const x0 = Math.round(cx - dw / 2);
   const y0 = Math.round(cy - dh / 2);
   for (let y = 0; y < dh; y++) {
@@ -269,6 +330,7 @@ export function blitImage(dst, srcImg, cx, cy, dw, dh) {
       const fy = ((y + 0.5) * sh) / dh - 0.5;
       const [sr, sg, sb, sa] = sampleBilinear(src, sw, sh, fx, fy);
       if (sa < 1) continue;
+      if (keyBlack && sr < 18 && sg < 18 && sb < 18) continue;
       // Safety: never blit opaque near-white fringe (legacy asset failure mode)
       if (sa > 200 && sr > 230 && sg > 230 && sb > 230) continue;
       const i = (dy * W + dx) * 4;
@@ -440,13 +502,20 @@ export function renderBadgeOg(input) {
   const sealSize = SEAL_DISPLAY;
   const sealX = Math.round(W * 0.74);
   const sealY = Math.round(H / 2);
-  const sealImg = loadSealImage(revoked || expired);
-  if (sealImg) {
-    blitImage(rgba, sealImg, sealX, sealY, sealSize, sealSize);
+  if (input.sealPng) {
+    try {
+      const sealImg = decodePng(input.sealPng);
+      blitImage(rgba, sealImg, sealX, sealY, sealSize, sealSize, { keyBlack: true });
+    } catch {
+      const sealImg = loadSealImage(revoked || expired);
+      if (sealImg) blitImage(rgba, sealImg, sealX, sealY, sealSize, sealSize);
+    }
+  } else {
+    const sealImg = loadSealImage(revoked || expired);
+    if (sealImg) blitImage(rgba, sealImg, sealX, sealY, sealSize, sealSize);
+    // Legacy fallback only when static asset has no registry band
+    drawCurvedSerial(rgba, input.serial || '', sealX, sealY, sealSize * 0.29, 3);
   }
-  // Procedural uniqueness: serial on the inner gold ring (between text band and shield)
-  // so it doesn't fight "OFFICIAL SEAL / OF AUTHORITY" on the outer arc.
-  drawCurvedSerial(rgba, input.serial || '', sealX, sealY, sealSize * 0.29, 3);
 
   if (revoked) {
     fillRect(rgba, 70, 540, 420, 48, 180, 40, 40, 220);

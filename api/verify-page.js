@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   const badge = serial ? await getBadgeBySerial(serial) : null;
 
   const ogImage = serial
-    ? `${SITE}/api/badge/og?serial=${encodeURIComponent(serial)}&v=3`
+    ? `${SITE}/api/badge/og?serial=${encodeURIComponent(serial)}&v=4`
     : `${SITE}/brand/guardian-wordmark-og.jpg`;
   const title = badge
     ? `Guardian ${badge.pathLabel || badge.qualifyPath || 'Badge'} · ${badge.serial}`
@@ -181,7 +181,7 @@ export default async function handler(req, res) {
       pathPill.hidden = false;
       pathPill.textContent = 'Path earned: ' + pathText + (b.pathFamily === 'secured' ? ' (Secured)' : b.pathFamily === 'established' ? ' (Established)' : '');
       seal.hidden = false;
-      seal.src = j.sealUrl || (st === 'VALID' ? '/brand/seals/guardian-seal-valid-128.png' : '/brand/seals/guardian-seal-revoked-128.png');
+      seal.src = j.sealUrl || `/api/seal/${encodeURIComponent(b.serial)}.png`;
       seal.className = 'seal' + (st === 'VALID' ? '' : ' revoked');
       meta.innerHTML =
         '<div><b>Serial</b> <span class="mono">' + esc(b.serial) + '</span></div>' +
