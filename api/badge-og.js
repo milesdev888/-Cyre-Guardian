@@ -2,7 +2,7 @@
 // Crawler-friendly: supports HEAD, short live-scan timeout, longer CDN cache.
 
 import { getBadgeBySerial, normalizeSerial } from './_badge-registry.js';
-import { qualifyFromScan, pathLabel } from './_badge-qualify.js';
+import { recheckIssuedPath, pathLabel, pathFamily, pathMark } from './_badge-qualify.js';
 import { renderBadgeOg, formatUtc } from './_badge-og-render.js';
 import { renderOfficialSeal } from './_badge-seal-render.js';
 
@@ -28,7 +28,12 @@ async function liveRecheck(badge, timeoutMs) {
     });
     if (!r.ok) throw new Error(`scan HTTP ${r.status}`);
     const payload = await r.json();
-    const q = qualifyFromScan(payload, { hasRevocationHistory: badge.status === 'REVOKED' });
+    const family = badge.pathFamily || pathFamily(badge.qualifyPath);
+    const q = recheckIssuedPath(payload, {
+      pathFamily: family,
+      qualifyPath: badge.qualifyPath,
+      hasRevocationHistory: badge.status === 'REVOKED'
+    });
     return {
       q,
       scannedAt: payload?.reports?.[0]?.scannedAt || payload?.scannedAt || new Date().toISOString()
@@ -59,10 +64,15 @@ export default async function handler(req, res) {
     return res.end('not found');
   }
 
+  const family = badge.pathFamily || pathFamily(badge.qualifyPath);
+  const isEstablished = family === 'established';
   let status = badge.status || 'VALID';
   let livePath = pathLabel(badge.qualifyPath) || badge.pathLabel || 'None';
   let liveGrade = badge.grade;
   let checkedAt = badge.issuedAt || new Date().toISOString();
+
+  const pastExpiry =
+    !isEstablished && badge.expiresAt ? Date.parse(badge.expiresAt) <= Date.now() : false;
 
   // Crawlers (X/Twitter etc.) need a sub-second image — skip live scan; use registry status
   // (auto-revoked on verify views). Humans still get a bounded live re-check.
@@ -73,16 +83,16 @@ export default async function handler(req, res) {
       checkedAt = scannedAt;
       livePath = q.pathLabel || pathLabel(q.path);
       liveGrade = q.grade || badge.grade;
-      if (badge.expiresAt && Date.parse(badge.expiresAt) <= Date.now()) status = 'EXPIRED';
+      if (pastExpiry) status = 'EXPIRED';
       else if (!q.eligible) status = 'REVOKED';
       else status = 'VALID';
     } catch {
       // Timeout / scan miss: still render from issued record.
-      if (badge.expiresAt && Date.parse(badge.expiresAt) <= Date.now()) status = 'EXPIRED';
+      if (pastExpiry) status = 'EXPIRED';
       checkedAt = new Date().toISOString();
     }
   } else {
-    if (badge.expiresAt && Date.parse(badge.expiresAt) <= Date.now()) status = 'EXPIRED';
+    if (pastExpiry) status = 'EXPIRED';
     checkedAt = new Date().toISOString();
   }
 
@@ -91,7 +101,10 @@ export default async function handler(req, res) {
     sealPng = await renderOfficialSeal({
       serial: badge.serial,
       ca: badge.mint,
-      status
+      status,
+      pathFamily: family,
+      pathMark: pathMark(family || badge.qualifyPath),
+      qualifyPath: badge.qualifyPath
     });
   } catch {
     sealPng = null;
@@ -102,10 +115,10 @@ export default async function handler(req, res) {
     symbol: badge.symbol,
     name: badge.name,
     pathLabel: badge.pathLabel || pathLabel(badge.qualifyPath),
-    pathFamily: badge.pathFamily,
+    pathFamily: family,
     grade: badge.grade,
     score: badge.score,
-    lpTier: badge.lpTier,
+    lpTier: isEstablished ? null : badge.lpTier,
     status,
     issuedAt: badge.issuedAt,
     liveGrade,

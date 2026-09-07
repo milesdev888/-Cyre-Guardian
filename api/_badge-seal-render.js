@@ -1,5 +1,5 @@
 // api/_badge-seal-render.js — Seal Pass 2: 1800×1800 official medallion + engraved band + QR.
-// Band from registry only: ✦ {serial} ✦ {ca}
+// Band from registry only: ✦ {serial} ✦ {PATH} ✦ {ca}  PATH ∈ SECURED | ESTABLISHED
 // Pure Node (+ qrcode). Medallion + glyph atlas from /brand/seals.
 
 import fs from 'node:fs';
@@ -363,13 +363,25 @@ function applyRevoked(rgba, W, H) {
 }
 
 /**
- * @param {{ serial: string, ca: string, status?: string }} input
+ * @param {{ serial: string, ca: string, status?: string, pathFamily?: string, pathMark?: string, qualifyPath?: string }} input
  * @returns {Promise<Buffer>} PNG 1800×1800
  */
 export async function renderOfficialSeal(input) {
   const serial = String(input.serial || '').trim().toUpperCase();
   const ca = String(input.ca || '').trim();
   const status = String(input.status || 'VALID').toUpperCase();
+  const mark = String(
+    input.pathMark ||
+      (String(input.pathFamily || '').toLowerCase() === 'established'
+        ? 'ESTABLISHED'
+        : String(input.pathFamily || '').toLowerCase() === 'secured' ||
+            String(input.qualifyPath || '').toLowerCase() === 'lifetime' ||
+            String(input.qualifyPath || '').toLowerCase() === 'timed'
+          ? 'SECURED'
+          : '')
+  )
+    .trim()
+    .toUpperCase();
   const W = SEAL_CANVAS;
   const H = SEAL_CANVAS;
   const rgba = Buffer.alloc(W * H * 4, 0);
@@ -390,7 +402,8 @@ export async function renderOfficialSeal(input) {
   drawGuideRing(rgba, W, H, cx, cy, GUIDE_OUTER, GOLD_LO[0], GOLD_LO[1], GOLD_LO[2], 160);
 
   const atlas = loadAtlas();
-  const band = `✦ ${serial} ✦ ${ca} `;
+  // Band: ✦ {serial} ✦ {PATH} ✦ {ca}  — PATH ∈ SECURED | ESTABLISHED
+  const band = mark ? `✦ ${serial} ✦ ${mark} ✦ ${ca} ` : `✦ ${serial} ✦ ${ca} `;
   drawBandText(rgba, W, H, cx, cy, BAND_R, band, atlas);
 
   await drawQr(rgba, W, H, `${SITE}/verify/${serial}`);

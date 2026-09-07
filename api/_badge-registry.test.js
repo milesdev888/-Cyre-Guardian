@@ -13,8 +13,9 @@ import {
   revokeBadge,
   hasRevocationHistory
 } from './_badge-registry.js';
-import { qualifyFromScan, evaluateEstablished, analyzePools } from './_badge-qualify.js';
+import { qualifyFromScan, evaluateEstablished, analyzePools, pathMark, recheckIssuedPath } from './_badge-qualify.js';
 import { renderBadgeOg, encodePng, decodePng, loadSealImage, blitImage } from './_badge-og-render.js';
+import { renderOfficialSeal } from './_badge-seal-render.js';
 
 process.env.BADGE_REGISTRY_STORE = '/tmp/guardian-badge-registry-test-step2b.json';
 
@@ -73,6 +74,47 @@ assert.equal(qEst.eligible, true);
 assert.equal(qEst.path, 'established');
 assert.equal(qEst.pathLabel, 'Established');
 assert.equal(qEst.pathFamily, 'established');
+assert.equal(qEst.expiresAt, null);
+assert.equal(pathMark('established'), 'ESTABLISHED');
+assert.equal(pathMark('secured'), 'SECURED');
+assert.equal(pathMark('lifetime'), 'SECURED');
+
+// Path B re-check — Established badge never judged on LP unlock wording
+const estPass = recheckIssuedPath(estReport, { pathFamily: 'established' });
+assert.equal(estPass.eligible, true);
+assert.equal(estPass.pathFamily, 'established');
+assert.match(estPass.reason, /Established/i);
+
+const estFail = recheckIssuedPath(
+  {
+    ...estReport,
+    pools: [
+      { dex: 'raydium', pairAddress: 'poolA', liquidityUsd: 90000, createdAt: old },
+      { dex: 'orca', pairAddress: 'poolB', liquidityUsd: 5000, createdAt: old },
+      { dex: 'meteora', pairAddress: 'poolC', liquidityUsd: 5000, createdAt: old }
+    ]
+  },
+  { pathFamily: 'established' }
+);
+assert.equal(estFail.eligible, false);
+assert.match(estFail.reason, /liquidity concentration/i);
+assert.doesNotMatch(estFail.reason, /unlock|expired|missing lock/i);
+
+// Seal band includes path mark
+const sealSecured = await renderOfficialSeal({
+  serial: GENESIS_SERIAL,
+  ca: GENESIS_MINT,
+  status: 'VALID',
+  pathMark: 'SECURED'
+});
+assert.equal(sealSecured[0], 137);
+const sealEst = await renderOfficialSeal({
+  serial: 'GRD-2026-00099',
+  ca: 'EstMint111111111111111111111111111111111',
+  status: 'VALID',
+  pathMark: 'ESTABLISHED'
+});
+assert.equal(sealEst[0], 137);
 
 // Majority fails established
 const majorityFail = qualifyFromScan({

@@ -106,6 +106,17 @@ export function pathFamily(path) {
   return 'none';
 }
 
+/** Seal / presentation mark: SECURED | ESTABLISHED (equal prestige). */
+export function pathMark(familyOrPath) {
+  const raw = String(familyOrPath || '').toLowerCase();
+  if (raw === 'established') return 'ESTABLISHED';
+  if (raw === 'secured' || raw === 'lifetime' || raw === 'timed') return 'SECURED';
+  const fam = pathFamily(raw);
+  if (fam === 'established') return 'ESTABLISHED';
+  if (fam === 'secured') return 'SECURED';
+  return null;
+}
+
 /**
  * Extract the first Guardian report from a scan API payload or a bare report.
  * @param {any} payload
@@ -207,19 +218,110 @@ export function evaluateEstablished(report, opts = {}) {
   const eligible =
     ageOk && poolsOk && liqOk && majorityOk && authoritiesClean && revocationOk;
 
+  // Path B fail copy — never "LP unlocked" / lock-centric wording
   let reason = 'established path';
   if (!eligible) {
-    const missing = [];
-    if (!ageOk) missing.push(`age ${ageDays == null ? 'unknown' : Math.floor(ageDays) + 'd'} (need ≥${ESTABLISHED_MIN_AGE_DAYS}d)`);
-    if (!poolsOk) missing.push(`${pools.poolCount} pools (need ≥${ESTABLISHED_MIN_POOLS})`);
-    if (!liqOk) missing.push(`liquidity $${Math.round(pools.totalLiquidityUsd)} (need ≥$${ESTABLISHED_MIN_LIQUIDITY_USD})`);
-    if (!majorityOk) missing.push(`single-pool share ${Math.round(pools.maxPoolShare * 100)}% (need ≤50%)`);
-    if (!authoritiesClean) missing.push('mint/freeze/owner powers live');
-    if (!revocationOk) missing.push('revocation history');
-    reason = `established incomplete — ${missing.join('; ')}`;
+    if (!majorityOk) reason = 'liquidity concentration exceeded threshold';
+    else if (!liqOk) reason = `total liquidity below $${ESTABLISHED_MIN_LIQUIDITY_USD.toLocaleString('en-US')}`;
+    else if (!poolsOk) reason = `fewer than ${ESTABLISHED_MIN_POOLS} independent pools`;
+    else if (!authoritiesClean) reason = 'mint or freeze authority restored';
+    else if (!revocationOk) reason = 'revocation history on record';
+    else if (!ageOk)
+      reason = `on-chain age below ${ESTABLISHED_MIN_AGE_DAYS} days`;
+    else reason = 'established path criteria not met';
   }
 
   return { eligible, reason, checks, pools };
+}
+
+/**
+ * Live re-check for an already-issued badge — tests THAT path's bars only.
+ * Established badges never fall through Path A (lock) criteria.
+ * @param {any} reportOrPayload
+ * @param {{ pathFamily?: string, qualifyPath?: string, hasRevocationHistory?: boolean }} [opts]
+ */
+export function recheckIssuedPath(reportOrPayload, opts = {}) {
+  const family = String(opts.pathFamily || pathFamily(opts.qualifyPath) || '').toLowerCase();
+  const report = extractScanReport(reportOrPayload) || reportOrPayload;
+  if (!report || typeof report !== 'object') {
+    return FAIL({ reason: 'no scan report' });
+  }
+
+  if (family === 'established') {
+    const mint = report.token?.address || null;
+    const chainId = report.chain?.id || 'solana';
+    const symbol = report.token?.symbol || null;
+    const name = report.token?.name || null;
+    const grade = report.grade || null;
+    const score = typeof report.score === 'number' ? report.score : null;
+    const lp = report.lp || {};
+
+    // Fraud flags — Path B live bars
+    const checks = report.checks || [];
+    const honeypot = checks.find((c) => c && c.id === 'honeypot_simulation');
+    const holders = checks.find((c) => c && c.id === 'holder_concentration');
+    if (honeypot && honeypot.status === 'flag') {
+      return FAIL({
+        reason: 'new fraud flag on record (honeypot pattern)',
+        grade,
+        score,
+        symbol,
+        name,
+        mint,
+        chainId,
+        lpTier: lp.tier || null
+      });
+    }
+    if (holders && holders.status === 'flag') {
+      return FAIL({
+        reason: 'new fraud flag on record (holder concentration)',
+        grade,
+        score,
+        symbol,
+        name,
+        mint,
+        chainId,
+        lpTier: lp.tier || null
+      });
+    }
+
+    const est = evaluateEstablished(report, opts);
+    if (est.eligible) {
+      return {
+        eligible: true,
+        path: 'established',
+        pathLabel: 'Established',
+        pathFamily: 'established',
+        reason: 'Still qualifies · Established path',
+        lpTier: lp.tier || null,
+        lifetimeEligible: false,
+        badgeEligible: true,
+        unlockAt: null,
+        expiresAt: null,
+        grade,
+        score,
+        symbol,
+        name,
+        mint,
+        chainId,
+        established: est.checks
+      };
+    }
+    return FAIL({
+      reason: est.reason,
+      grade,
+      score,
+      symbol,
+      name,
+      mint,
+      chainId,
+      lpTier: lp.tier || null,
+      established: est.checks
+    });
+  }
+
+  // Secured (and unknown) — full path ladder
+  return qualifyFromScan(reportOrPayload, opts);
 }
 
 /**

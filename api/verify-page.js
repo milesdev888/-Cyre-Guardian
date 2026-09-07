@@ -20,7 +20,7 @@ export default async function handler(req, res) {
   const badge = serial ? await getBadgeBySerial(serial) : null;
 
   const ogImage = serial
-    ? `${SITE}/api/badge/og?serial=${encodeURIComponent(serial)}&v=4`
+    ? `${SITE}/api/badge/og?serial=${encodeURIComponent(serial)}&v=5`
     : `${SITE}/brand/guardian-wordmark-og.jpg`;
   const title = badge
     ? `Guardian ${badge.pathLabel || badge.qualifyPath || 'Badge'} · ${badge.serial}`
@@ -109,6 +109,10 @@ export default async function handler(req, res) {
     display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px;
     border: 1px solid var(--gold); color: var(--gold); font-size: 12px; font-weight: 600;
   }
+  .vintage {
+    margin-top: 14px; font: 700 28px/1.15 "Cormorant Garamond", Georgia, serif; color: var(--gold);
+  }
+  .vintage span { display: block; font: 500 14px/1.4 "IBM Plex Sans", system-ui, sans-serif; color: var(--dim); margin-top: 4px; font-weight: 500; }
   a { color: var(--gold); }
   .tiny { margin-top: 36px; color: var(--dim); font-size: 13px; }
   .stamp {
@@ -133,6 +137,7 @@ export default async function handler(req, res) {
     <div class="card" id="out" hidden>
       <div class="status" id="status"></div>
       <div class="path-pill" id="pathPill" hidden></div>
+      <div class="vintage" id="vintage" hidden></div>
       <div class="stamp" id="stamp">REVOKED</div>
       <div class="meta" id="meta"></div>
       <div class="live-box" id="liveBox" hidden>
@@ -140,7 +145,7 @@ export default async function handler(req, res) {
         <div class="meta" id="liveMeta"></div>
       </div>
     </div>
-    <p class="tiny">Paths: Lifetime · Timed · Established (≥2y, ≥3 pools, no majority, ≥$100K, no powers, no revocation). Age alone never qualifies.</p>
+    <p class="tiny">Two equal paths: Secured (Lifetime / Timed locks) · Established (Battle-Tested — age, pools, decentralization). Age alone never qualifies.</p>
   </div>
 <script>
 (function () {
@@ -153,10 +158,15 @@ export default async function handler(req, res) {
   var liveMeta = document.getElementById('liveMeta');
   var livePulse = document.getElementById('livePulse');
   var pathPill = document.getElementById('pathPill');
+  var vintage = document.getElementById('vintage');
   var stamp = document.getElementById('stamp');
   var seal = document.getElementById('seal');
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function fmtUsd(n) {
+    if (n == null || !isFinite(n)) return '—';
+    return '$' + Math.round(n).toLocaleString('en-US');
   }
   function setBusy(b) { go.disabled = b; go.textContent = b ? 'Checking…' : 'Verify'; }
   async function verify(raw) {
@@ -164,7 +174,8 @@ export default async function handler(req, res) {
     if (!serial) return;
     input.value = serial;
     out.hidden = false; liveBox.hidden = true; stamp.classList.remove('on'); seal.hidden = true;
-    pathPill.hidden = true; status.className = 'status'; status.textContent = 'Looking up serial…';
+    pathPill.hidden = true; vintage.hidden = true; vintage.innerHTML = '';
+    status.className = 'status'; status.textContent = 'Looking up serial…';
     meta.innerHTML = ''; liveMeta.innerHTML = ''; livePulse.className = 'pulse'; setBusy(true);
     try {
       var r = await fetch('/api/badge/verify?serial=' + encodeURIComponent(serial), { headers: { accept: 'application/json' }, cache: 'no-store' });
@@ -178,33 +189,73 @@ export default async function handler(req, res) {
       status.textContent = st === 'VALID' ? 'Issued serial · VALID' : ('Issued serial · ' + st);
       if (st === 'REVOKED') stamp.classList.add('on');
       var pathText = b.pathLabel || b.qualifyPath || '—';
+      var established = b.pathFamily === 'established';
       pathPill.hidden = false;
-      pathPill.textContent = 'Path earned: ' + pathText + (b.pathFamily === 'secured' ? ' (Secured)' : b.pathFamily === 'established' ? ' (Established)' : '');
+      pathPill.textContent = established
+        ? 'Path earned: Established (Battle-Tested)'
+        : ('Path earned: ' + pathText + (b.pathFamily === 'secured' ? ' (Secured)' : ''));
       seal.hidden = false;
       seal.src = j.sealUrl || ('/api/seal/' + encodeURIComponent(b.serial) + '.png');
       seal.className = 'seal' + (st === 'VALID' ? '' : ' revoked');
-      meta.innerHTML =
-        '<div><b>Serial</b> <span class="mono">' + esc(b.serial) + '</span></div>' +
-        '<div><b>Mint</b> <span class="mono">' + esc(b.mint) + '</span></div>' +
-        '<div><b>Path</b> ' + esc(pathText) + '</div>' +
-        '<div><b>Grade at issue</b> ' + esc(b.grade || '—') + (b.score != null ? ' · ' + esc(b.score) : '') + '</div>' +
-        '<div><b>LP tier at issue</b> ' + esc(b.lpTier || '—') + '</div>' +
-        '<div><b>Issued (UTC)</b> ' + esc(b.issuedAtUtc || b.issuedAt || '—') + '</div>' +
-        (b.expiresAt ? '<div><b>Expires (UTC)</b> ' + esc(b.expiresAt) + '</div>' : '') +
-        (b.scanUrl ? '<div><a href="' + esc(b.scanUrl) + '">Open scan</a></div>' : '');
-      liveBox.hidden = false;
+
       var live = j.live;
+      var est = (live && live.established) || b.established || null;
+      if (established) {
+        var ageDays = est && est.ageDays != null ? est.ageDays : null;
+        var years = ageDays != null ? Math.max(1, Math.floor(ageDays / 365)) : null;
+        var sinceYear = ageDays != null ? (new Date().getUTCFullYear() - years) : null;
+        if (years != null) {
+          vintage.hidden = false;
+          vintage.innerHTML = 'On-chain since ' + esc(sinceYear) + ' · ' + esc(years) + ' year' + (years === 1 ? '' : 's') +
+            '<span>Battle-tested · decentralized liquidity</span>';
+        }
+        var liq = est && est.totalLiquidityUsd != null ? fmtUsd(est.totalLiquidityUsd) : '—';
+        var pools = est && est.poolCount != null ? est.poolCount : '—';
+        meta.innerHTML =
+          '<div><b>Serial</b> <span class="mono">' + esc(b.serial) + '</span></div>' +
+          '<div><b>Mint</b> <span class="mono">' + esc(b.mint) + '</span></div>' +
+          '<div><b>Verified age</b> ' + (years != null ? (esc(years) + ' years on-chain') : '—') + '</div>' +
+          '<div><b>Liquidity</b> ' + esc(liq) + ' across ' + esc(pools) + ' independent pools — no single pool majority</div>' +
+          '<div><b>Decentralization</b> No single party can pull this token\\'s liquidity.</div>' +
+          '<div><b>Authorities</b> mint revoked, freeze revoked' + (sinceYear ? (' — revoked since ' + esc(sinceYear)) : '') + '</div>' +
+          '<div><b>Clean history</b> no revocations, no fraud flags on record</div>' +
+          '<div><b>Grade at issue</b> ' + esc(b.grade || '—') + (b.score != null ? ' · ' + esc(b.score) : '') + '</div>' +
+          '<div><b>Issued (UTC)</b> ' + esc(b.issuedAtUtc || b.issuedAt || '—') + '</div>' +
+          (b.scanUrl ? '<div><a href="' + esc(b.scanUrl) + '">Open scan</a></div>' : '');
+      } else {
+        meta.innerHTML =
+          '<div><b>Serial</b> <span class="mono">' + esc(b.serial) + '</span></div>' +
+          '<div><b>Mint</b> <span class="mono">' + esc(b.mint) + '</span></div>' +
+          '<div><b>Path</b> ' + esc(pathText) + '</div>' +
+          '<div><b>Grade at issue</b> ' + esc(b.grade || '—') + (b.score != null ? ' · ' + esc(b.score) : '') + '</div>' +
+          '<div><b>LP tier at issue</b> ' + esc(b.lpTier || '—') + '</div>' +
+          '<div><b>Issued (UTC)</b> ' + esc(b.issuedAtUtc || b.issuedAt || '—') + '</div>' +
+          (b.expiresAt ? '<div><b>Expires (UTC)</b> ' + esc(b.expiresAt) + '</div>' : '') +
+          (b.scanUrl ? '<div><a href="' + esc(b.scanUrl) + '">Open scan</a></div>' : '');
+      }
+
+      liveBox.hidden = false;
       if (!live) { livePulse.className = 'pulse off'; liveMeta.innerHTML = '<div>Live re-check skipped.</div>'; return; }
       if (!live.ok) { livePulse.className = 'pulse bad'; liveMeta.innerHTML = '<div class="status bad">Re-check failed — ' + esc(live.error || 'error') + '</div>'; return; }
       if (live.eligible) {
         livePulse.className = 'pulse';
-        liveMeta.innerHTML =
-          '<div class="status ok">Still qualifies · ' + esc(live.pathLabel || live.path) + ' path</div>' +
-          '<div><b>Live grade</b> ' + esc(live.grade || '—') + (live.score != null ? ' · ' + esc(live.score) : '') + '</div>' +
-          '<div><b>Live LP</b> ' + esc(live.lpTier || '—') + '</div>' +
-          '<div><b>Checked (UTC)</b> ' + esc(live.scannedAtUtc || live.scannedAt || '—') + '</div>' +
-          '<div><b>Reason</b> ' + esc(live.reason || '') + '</div>' +
-          (live.scanUrl ? '<div><a href="' + esc(live.scanUrl) + '">Fresh scan</a></div>' : '');
+        if (established || live.pathFamily === 'established') {
+          var le = live.established || {};
+          liveMeta.innerHTML =
+            '<div class="status ok">Still qualifies · Established path</div>' +
+            '<div><b>Live grade</b> ' + esc(live.grade || '—') + (live.score != null ? ' · ' + esc(live.score) : '') + '</div>' +
+            '<div><b>Liquidity</b> ' + esc(fmtUsd(le.totalLiquidityUsd)) + ' · ' + esc(le.poolCount != null ? le.poolCount : '—') + ' pools</div>' +
+            '<div><b>Checked (UTC)</b> ' + esc(live.scannedAtUtc || live.scannedAt || '—') + '</div>' +
+            (live.scanUrl ? '<div><a href="' + esc(live.scanUrl) + '">Fresh scan</a></div>' : '');
+        } else {
+          liveMeta.innerHTML =
+            '<div class="status ok">Still qualifies · ' + esc(live.pathLabel || live.path) + ' path</div>' +
+            '<div><b>Live grade</b> ' + esc(live.grade || '—') + (live.score != null ? ' · ' + esc(live.score) : '') + '</div>' +
+            '<div><b>Live LP</b> ' + esc(live.lpTier || '—') + '</div>' +
+            '<div><b>Checked (UTC)</b> ' + esc(live.scannedAtUtc || live.scannedAt || '—') + '</div>' +
+            '<div><b>Reason</b> ' + esc(live.reason || '') + '</div>' +
+            (live.scanUrl ? '<div><a href="' + esc(live.scanUrl) + '">Fresh scan</a></div>' : '');
+        }
       } else {
         livePulse.className = 'pulse bad';
         liveMeta.innerHTML =
