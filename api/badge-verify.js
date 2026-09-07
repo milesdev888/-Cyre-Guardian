@@ -167,8 +167,8 @@ export default async function handler(req, res) {
     ogImage: `${SITE}/api/badge/og?serial=${encodeURIComponent(badge.serial)}`,
     sealUrl:
       status === 'VALID'
-        ? `${SITE}/brand/seals/guardian-seal-valid.png`
-        : `${SITE}/brand/seals/guardian-seal-revoked.png`,
+        ? `${SITE}/brand/seals/guardian-seal-valid-128.png`
+        : `${SITE}/brand/seals/guardian-seal-revoked-128.png`,
     durable: isDurableBadgeStore(),
     paths: QUALIFY_PATHS,
     disclaimer: DISCLAIMER

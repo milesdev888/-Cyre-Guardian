@@ -181,7 +181,7 @@ export default async function handler(req, res) {
       pathPill.hidden = false;
       pathPill.textContent = 'Path earned: ' + pathText + (b.pathFamily === 'secured' ? ' (Secured)' : b.pathFamily === 'established' ? ' (Established)' : '');
       seal.hidden = false;
-      seal.src = j.sealUrl || (st === 'VALID' ? '/brand/seals/guardian-seal-valid.png' : '/brand/seals/guardian-seal-revoked.png');
+      seal.src = j.sealUrl || (st === 'VALID' ? '/brand/seals/guardian-seal-valid-128.png' : '/brand/seals/guardian-seal-revoked-128.png');
       seal.className = 'seal' + (st === 'VALID' ? '' : ' revoked');
       meta.innerHTML =
         '<div><b>Serial</b> <span class="mono">' + esc(b.serial) + '</span></div>' +
