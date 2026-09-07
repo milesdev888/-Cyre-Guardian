@@ -41,7 +41,7 @@ export function encodePng(rgba, width, height) {
   return encodePngInternal(rgba, width, height, 6);
 }
 
-/** Opaque RGB PNG (smaller) — for fully-opaque canvases like /api/seal */
+/** Opaque RGB PNG (smaller) — for fully-opaque canvases (e.g. missing-seal placeholder). Official seals use encodePng (RGBA) so corners stay transparent. */
 export function encodePngRgb(rgbOrRgba, width, height, hasAlpha = true) {
   const stride = width * 3;
   const raw = Buffer.alloc((stride + 1) * height);

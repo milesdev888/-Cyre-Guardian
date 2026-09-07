@@ -108,6 +108,10 @@ const sealSecured = await renderOfficialSeal({
   pathMark: 'SECURED'
 });
 assert.equal(sealSecured[0], 137);
+{
+  const decoded = decodePng(sealSecured);
+  assert.equal(decoded.rgba[3], 0, 'rendered seal corner alpha must be 0 (no black square)');
+}
 const sealEst = await renderOfficialSeal({
   serial: 'GRD-2026-00099',
   ca: 'EstMint111111111111111111111111111111111',

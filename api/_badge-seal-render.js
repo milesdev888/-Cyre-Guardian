@@ -7,6 +7,8 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import QRCode from 'qrcode';
 import { decodePng, encodePng, encodePngRgb } from './_badge-og-render.js';
+// encodePng (RGBA) for official seals — corners must stay transparent on /verify.
+// encodePngRgb kept for opaque missing-seal placeholder.
 
 export const SEAL_CANVAS = 1800;
 const BAND_R = 790;
@@ -384,11 +386,8 @@ export async function renderOfficialSeal(input) {
     .toUpperCase();
   const W = SEAL_CANVAS;
   const H = SEAL_CANVAS;
+  // Transparent canvas — opaque black square overlapped the Verify CTA on mobile.
   const rgba = Buffer.alloc(W * H * 4, 0);
-  // black bg
-  for (let i = 0; i < rgba.length; i += 4) {
-    rgba[i + 3] = 255;
-  }
 
   const med = loadMedallion();
   const target = GUIDE_INNER * 2 - 8;
@@ -410,7 +409,7 @@ export async function renderOfficialSeal(input) {
 
   if (status === 'REVOKED') applyRevoked(rgba, W, H);
 
-  return encodePngRgb(rgba, W, H, true);
+  return encodePng(rgba, W, H);
 }
 
 export function renderMissingSealPng() {

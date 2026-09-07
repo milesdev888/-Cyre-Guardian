@@ -105,6 +105,15 @@ export default async function handler(req, res) {
     filter: drop-shadow(0 8px 18px rgba(0,0,0,.45));
   }
   .seal.revoked { filter: grayscale(1) drop-shadow(0 8px 18px rgba(0,0,0,.45)); opacity: .85; }
+  /* Phone: seal below serial row so it never covers the gold Verify button */
+  @media (max-width: 719px) {
+    .seal:not([hidden]) {
+      position: static;
+      display: block;
+      width: 128px; height: 128px;
+      margin: 22px auto 0;
+    }
+  }
   .path-pill {
     display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px;
     border: 1px solid var(--gold); color: var(--gold); font-size: 12px; font-weight: 600;
@@ -125,7 +134,6 @@ export default async function handler(req, res) {
 </head>
 <body>
   <div class="wrap">
-    <img id="seal" class="seal" alt="" hidden />
     <div class="brand">Guardian</div>
     <h1>Badge verify</h1>
     <p class="sub">Issued path + live qualifying-path re-check. Dates in UTC.</p>
@@ -134,6 +142,7 @@ export default async function handler(req, res) {
       <input id="serial" name="serial" spellcheck="false" autocomplete="off" placeholder="GRD-2026-00001" value="${esc(serial)}" />
       <button id="go" type="button">Verify</button>
     </div>
+    <img id="seal" class="seal" alt="" hidden />
     <div class="card" id="out" hidden>
       <div class="status" id="status"></div>
       <div class="path-pill" id="pathPill" hidden></div>
