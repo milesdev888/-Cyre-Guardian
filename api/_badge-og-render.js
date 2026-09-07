@@ -41,6 +41,170 @@ export function encodePng(rgba, width, height) {
   return encodePngInternal(rgba, width, height, 6);
 }
 
+/**
+ * Bilinear downscale of an RGBA buffer.
+ * @param {Buffer} src
+ * @param {number} sw
+ * @param {number} sh
+ * @param {number} tw
+ * @param {number} th
+ * @returns {Buffer}
+ */
+export function downscaleRgba(src, sw, sh, tw, th) {
+  const out = Buffer.alloc(tw * th * 4);
+  for (let y = 0; y < th; y++) {
+    const sy = ((y + 0.5) * sh) / th - 0.5;
+    const y0 = Math.max(0, Math.min(sh - 1, Math.floor(sy)));
+    const y1 = Math.max(0, Math.min(sh - 1, y0 + 1));
+    const ty = sy - y0;
+    for (let x = 0; x < tw; x++) {
+      const sx = ((x + 0.5) * sw) / tw - 0.5;
+      const x0 = Math.max(0, Math.min(sw - 1, Math.floor(sx)));
+      const x1 = Math.max(0, Math.min(sw - 1, x0 + 1));
+      const tx = sx - x0;
+      const i00 = (y0 * sw + x0) * 4;
+      const i10 = (y0 * sw + x1) * 4;
+      const i01 = (y1 * sw + x0) * 4;
+      const i11 = (y1 * sw + x1) * 4;
+      const o = (y * tw + x) * 4;
+      for (let c = 0; c < 4; c++) {
+        out[o + c] = Math.round(
+          (src[i00 + c] * (1 - tx) + src[i10 + c] * tx) * (1 - ty) +
+            (src[i01 + c] * (1 - tx) + src[i11 + c] * tx) * ty
+        );
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Indexed-color PNG (≤256) with optional Floyd–Steinberg dither.
+ * Targets OG crawlers — photographic seals need palette compression to stay under ~300KB.
+ * @param {Buffer} rgba
+ * @param {number} width
+ * @param {number} height
+ * @param {number} [maxColors=96]
+ * @returns {Buffer}
+ */
+export function encodeIndexedPng(rgba, width, height, maxColors = 96) {
+  const buckets = new Map();
+  for (let i = 0; i < rgba.length; i += 4) {
+    const r = rgba[i] >> 3;
+    const g = rgba[i + 1] >> 3;
+    const b = rgba[i + 2] >> 3;
+    const key = (r << 10) | (g << 5) | b;
+    let e = buckets.get(key);
+    if (!e) {
+      e = { n: 0, rs: 0, gs: 0, bs: 0 };
+      buckets.set(key, e);
+    }
+    e.n += 1;
+    e.rs += rgba[i];
+    e.gs += rgba[i + 1];
+    e.bs += rgba[i + 2];
+  }
+  const sorted = [...buckets.values()].sort((a, b) => b.n - a.n).slice(0, Math.max(2, maxColors));
+  const palette = sorted.map((e) => [
+    Math.round(e.rs / e.n),
+    Math.round(e.gs / e.n),
+    Math.round(e.bs / e.n)
+  ]);
+  if (!palette.some((p) => p[0] + p[1] + p[2] < 8)) {
+    palette[0] = [0, 0, 0];
+  }
+
+  const work = new Float32Array(width * height * 3);
+  for (let i = 0, p = 0; i < rgba.length; i += 4, p += 3) {
+    work[p] = rgba[i];
+    work[p + 1] = rgba[i + 1];
+    work[p + 2] = rgba[i + 2];
+  }
+  const index = Buffer.alloc(width * height);
+  const nearest = (r, g, b) => {
+    let best = 0;
+    let bd = 1e15;
+    for (let j = 0; j < palette.length; j++) {
+      const dr = r - palette[j][0];
+      const dg = g - palette[j][1];
+      const db = b - palette[j][2];
+      const d = dr * dr + dg * dg + db * db;
+      if (d < bd) {
+        bd = d;
+        best = j;
+        if (d === 0) break;
+      }
+    }
+    return best;
+  };
+  const diffuse = (x, y, er, eg, eb, f) => {
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+    const q = (y * width + x) * 3;
+    work[q] += er * f;
+    work[q + 1] += eg * f;
+    work[q + 2] += eb * f;
+  };
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const p = (y * width + x) * 3;
+      const r = work[p];
+      const g = work[p + 1];
+      const b = work[p + 2];
+      const bi = nearest(r, g, b);
+      index[y * width + x] = bi;
+      const er = r - palette[bi][0];
+      const eg = g - palette[bi][1];
+      const eb = b - palette[bi][2];
+      diffuse(x + 1, y, er, eg, eb, 7 / 16);
+      diffuse(x - 1, y + 1, er, eg, eb, 3 / 16);
+      diffuse(x, y + 1, er, eg, eb, 5 / 16);
+      diffuse(x + 1, y + 1, er, eg, eb, 1 / 16);
+    }
+  }
+
+  const plte = Buffer.alloc(palette.length * 3);
+  for (let i = 0; i < palette.length; i++) {
+    plte[i * 3] = palette[i][0];
+    plte[i * 3 + 1] = palette[i][1];
+    plte[i * 3 + 2] = palette[i][2];
+  }
+  const raw = Buffer.alloc((width + 1) * height);
+  for (let y = 0; y < height; y++) {
+    raw[y * (width + 1)] = 0;
+    index.copy(raw, y * (width + 1) + 1, y * width, y * width + width);
+  }
+  const compressed = zlib.deflateSync(raw, { level: 9 });
+  const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0);
+  ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8;
+  ihdr[9] = 3; // indexed
+  return Buffer.concat([
+    signature,
+    chunk('IHDR', ihdr),
+    chunk('PLTE', plte),
+    chunk('IDAT', compressed),
+    chunk('IEND', Buffer.alloc(0))
+  ]);
+}
+
+/**
+ * Downscale RGBA → indexed PNG for social OG unfurls (target ~1024px, &lt;300KB).
+ * @param {Buffer} rgba
+ * @param {number} width
+ * @param {number} height
+ * @param {{ size?: number, colors?: number }} [opts]
+ */
+export function encodeOgPng(rgba, width, height, opts = {}) {
+  const size = Math.max(64, Math.round(opts.size || 1024));
+  const colors = Math.max(16, Math.min(256, opts.colors || 96));
+  const tw = width === height ? size : Math.round((size * width) / Math.max(width, height));
+  const th = width === height ? size : Math.round((size * height) / Math.max(width, height));
+  const small = width === tw && height === th ? rgba : downscaleRgba(rgba, width, height, tw, th);
+  return encodeIndexedPng(small, tw, th, colors);
+}
+
 /** Opaque RGB PNG (smaller) — for fully-opaque canvases like /api/seal */
 export function encodePngRgb(rgbOrRgba, width, height, hasAlpha = true) {
   const stride = width * 3;

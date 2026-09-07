@@ -6,14 +6,20 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import QRCode from 'qrcode';
-import { decodePng, encodePng, encodePngRgb } from './_badge-og-render.js';
+import { decodePng, encodePng, encodePngRgb, encodeOgPng } from './_badge-og-render.js';
 
 export const SEAL_CANVAS = 1800;
+/** Compressed OG unfurl size — ~1024px square, palette PNG under 300KB. */
+export const SEAL_OG_SIZE = 1024;
+export const SEAL_OG_COLORS = 80;
 const BAND_R = 790;
 const GUIDE_INNER = 728;
 const GUIDE_OUTER = 852;
 const GOLD_HI = [240, 214, 140];
 const GOLD_LO = [196, 152, 62];
+/** Platinum cool sheen for AA path words on the seal band. */
+const PLAT_HI = [247, 248, 250];
+const PLAT_LO = [184, 190, 200];
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
 
 function assetPath(...parts) {
@@ -237,19 +243,44 @@ function rotateGlyph(glyph, deg) {
   return { rgba: out, width: dw, height: dh };
 }
 
-function drawBandText(rgba, W, H, cx, cy, radius, text, atlas) {
+/**
+ * @param {Buffer} rgba
+ * @param {number} W
+ * @param {number} H
+ * @param {number} cx
+ * @param {number} cy
+ * @param {number} radius
+ * @param {string} text
+ * @param {{ img: any, meta: any }} atlas
+ * @param {{ pathMark?: string, pathPlatinum?: boolean }} [opts]
+ */
+function drawBandText(rgba, W, H, cx, cy, radius, text, atlas, opts = {}) {
+  const pathMark = String(opts.pathMark || '')
+    .trim()
+    .toUpperCase();
+  const pathPlatinum = Boolean(opts.pathPlatinum) && Boolean(pathMark);
   const targetPx = 62;
   const atlasH = atlas.meta.height || atlas.img.height || 139;
   const scale = targetPx / atlasH;
   const glyphs = [];
   let total = 0;
+  // Track whether the current character falls inside the PATH word (SECURED|ESTABLISHED).
+  const pathStart = pathMark ? text.toUpperCase().indexOf(pathMark) : -1;
+  const pathEnd = pathStart >= 0 ? pathStart + pathMark.length : -1;
+  let idx = 0;
   for (const ch of text) {
     const raw = sampleAtlasGlyph(atlas, ch);
-    if (!raw) continue;
-    const tinted = tintGlyph(raw, GOLD_HI);
+    if (!raw) {
+      idx += 1;
+      continue;
+    }
+    const inPath = pathPlatinum && pathStart >= 0 && idx >= pathStart && idx < pathEnd;
+    const hiRgb = inPath ? PLAT_HI : GOLD_HI;
+    const loRgb = inPath ? PLAT_LO : GOLD_LO;
     const adv = raw.adv * scale;
-    glyphs.push({ ...tinted, adv, scale });
+    glyphs.push({ raw, hiRgb, loRgb, adv, scale });
     total += adv;
+    idx += 1;
   }
   let track = 1;
   if (total / radius > Math.PI * 2 * 0.98) {
@@ -259,15 +290,16 @@ function drawBandText(rgba, W, H, cx, cy, radius, text, atlas) {
   for (const g of glyphs) {
     const mid = theta + (g.adv * track) / (2 * radius);
     const deg = (mid * 180) / Math.PI + 90;
-    // darker under-pass first (two-tone #C4983E under #F0D68C)
-    const lo = tintGlyph(g, GOLD_LO);
+    // darker under-pass first (two-tone)
+    const lo = tintGlyph(g.raw, g.loRgb);
     const rotLo = rotateGlyph(lo, deg);
     const tw = Math.max(1, Math.round(rotLo.width * g.scale));
     const th = Math.max(1, Math.round(rotLo.height * g.scale));
     const px = Math.round(cx + Math.cos(mid) * radius - tw / 2);
     const py = Math.round(cy + Math.sin(mid) * radius - th / 2);
     blitScaled(rgba, W, H, rotLo, px + 1, py + 1, tw, th);
-    const rot = rotateGlyph(g, deg);
+    const hi = tintGlyph(g.raw, g.hiRgb);
+    const rot = rotateGlyph(hi, deg);
     blitScaled(rgba, W, H, rot, px, py, tw, th);
     theta += (g.adv * track) / radius;
   }
@@ -363,13 +395,14 @@ function applyRevoked(rgba, W, H) {
 }
 
 /**
- * @param {{ serial: string, ca: string, status?: string, pathFamily?: string, pathMark?: string, qualifyPath?: string }} input
- * @returns {Promise<Buffer>} PNG 1800×1800
+ * @param {{ serial: string, ca: string, status?: string, pathFamily?: string, pathMark?: string, qualifyPath?: string, grade?: string }} input
+ * @returns {Promise<{ rgba: Buffer, width: number, height: number, serial: string }>}
  */
-export async function renderOfficialSeal(input) {
+async function paintOfficialSeal(input) {
   const serial = String(input.serial || '').trim().toUpperCase();
   const ca = String(input.ca || '').trim();
   const status = String(input.status || 'VALID').toUpperCase();
+  const grade = String(input.grade || '').trim().toUpperCase();
   const mark = String(
     input.pathMark ||
       (String(input.pathFamily || '').toLowerCase() === 'established'
@@ -403,14 +436,41 @@ export async function renderOfficialSeal(input) {
 
   const atlas = loadAtlas();
   // Band: ✦ {serial} ✦ {PATH} ✦ {ca}  — PATH ∈ SECURED | ESTABLISHED
+  // AA tokens: path word only in platinum; rings / medallion / serial / CA stay gold.
   const band = mark ? `✦ ${serial} ✦ ${mark} ✦ ${ca} ` : `✦ ${serial} ✦ ${ca} `;
-  drawBandText(rgba, W, H, cx, cy, BAND_R, band, atlas);
+  drawBandText(rgba, W, H, cx, cy, BAND_R, band, atlas, {
+    pathMark: mark,
+    pathPlatinum: grade === 'AA'
+  });
 
   await drawQr(rgba, W, H, `${SITE}/verify/${serial}`);
 
   if (status === 'REVOKED') applyRevoked(rgba, W, H);
 
-  return encodePngRgb(rgba, W, H, true);
+  return { rgba, width: W, height: H, serial };
+}
+
+/**
+ * @param {{ serial: string, ca: string, status?: string, pathFamily?: string, pathMark?: string, qualifyPath?: string, grade?: string }} input
+ * @returns {Promise<Buffer>} PNG 1800×1800
+ */
+export async function renderOfficialSeal(input) {
+  const painted = await paintOfficialSeal(input);
+  return encodePngRgb(painted.rgba, painted.width, painted.height, true);
+}
+
+/**
+ * Compressed OG variant — ~1024×1024 indexed PNG (target under 300KB).
+ * Full-res remains at /api/seal/&lt;serial&gt;.png.
+ * @param {{ serial: string, ca: string, status?: string, pathFamily?: string, pathMark?: string, qualifyPath?: string, grade?: string }} input
+ * @returns {Promise<Buffer>}
+ */
+export async function renderOfficialSealOg(input) {
+  const painted = await paintOfficialSeal(input);
+  return encodeOgPng(painted.rgba, painted.width, painted.height, {
+    size: SEAL_OG_SIZE,
+    colors: SEAL_OG_COLORS
+  });
 }
 
 export function renderMissingSealPng() {

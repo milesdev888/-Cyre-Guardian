@@ -305,6 +305,14 @@
       "destination": "/api/badge-og"
     },
     {
+      "source": "/api/seal/:serial/og.png",
+      "destination": "/api/badge-seal?serial=:serial&og=1"
+    },
+    {
+      "source": "/api/seal/:serial/og",
+      "destination": "/api/badge-seal?serial=:serial&og=1"
+    },
+    {
       "source": "/api/seal/:serial",
       "destination": "/api/badge-seal?serial=:serial"
     },

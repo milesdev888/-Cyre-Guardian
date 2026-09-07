@@ -15,7 +15,7 @@ import {
 } from './_badge-registry.js';
 import { qualifyFromScan, evaluateEstablished, analyzePools, pathMark, recheckIssuedPath } from './_badge-qualify.js';
 import { renderBadgeOg, encodePng, decodePng, loadSealImage, blitImage } from './_badge-og-render.js';
-import { renderOfficialSeal } from './_badge-seal-render.js';
+import { renderOfficialSeal, renderOfficialSealOg } from './_badge-seal-render.js';
 
 process.env.BADGE_REGISTRY_STORE = '/tmp/guardian-badge-registry-test-step2b.json';
 
@@ -115,6 +115,16 @@ const sealEst = await renderOfficialSeal({
   pathMark: 'ESTABLISHED'
 });
 assert.equal(sealEst[0], 137);
+
+// OG seal: ~1024px indexed PNG under 300KB
+const sealOg = await renderOfficialSealOg({
+  serial: GENESIS_SERIAL,
+  ca: GENESIS_MINT,
+  status: 'VALID',
+  pathMark: 'SECURED'
+});
+assert.equal(sealOg[0], 137);
+assert.ok(sealOg.length < 300 * 1024, `seal OG must be under 300KB, got ${sealOg.length}`);
 
 // Majority fails established
 const majorityFail = qualifyFromScan({
