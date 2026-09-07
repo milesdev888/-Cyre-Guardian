@@ -2,6 +2,7 @@
 // Renders from LIVE registry status only (anti-copy). Unknown → 404 placeholder PNG.
 
 import { getBadgeBySerial, normalizeSerial } from './_badge-registry.js';
+import { pathMark, pathFamily } from './_badge-qualify.js';
 import { renderOfficialSeal, renderMissingSealPng } from './_badge-seal-render.js';
 
 export default async function handler(req, res) {
@@ -37,10 +38,14 @@ export default async function handler(req, res) {
   }
 
   const status = badge.status || 'VALID';
+  const family = badge.pathFamily || pathFamily(badge.qualifyPath);
   const png = await renderOfficialSeal({
     serial: badge.serial,
     ca: badge.mint,
-    status
+    status,
+    pathFamily: family,
+    pathMark: pathMark(family || badge.qualifyPath),
+    qualifyPath: badge.qualifyPath
   });
 
   res.setHeader('Content-Type', 'image/png');
@@ -48,6 +53,7 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300, stale-while-revalidate=60');
   res.setHeader('X-Guardian-Seal', status);
   res.setHeader('X-Guardian-Seal-Serial', badge.serial);
+  if (family) res.setHeader('X-Guardian-Seal-Path', pathMark(family) || family);
   res.setHeader('Content-Length', String(png.length));
   if (req.method === 'HEAD') return res.status(200).end();
   return res.status(200).end(png);

@@ -488,7 +488,10 @@ export function renderBadgeOg(input) {
   const pathLine = `PATH ${(input.livePath || input.pathLabel || 'NONE').toUpperCase()}`.slice(0, 28);
   drawText(rgba, pathLine, 72, 270, 3, 201, 162, 39);
 
-  const gradeLine = `GRADE ${input.liveGrade || input.grade || '—'} · ${input.lpTier || '—'}`.slice(0, 36);
+  const isEstablished = String(input.pathFamily || '').toLowerCase() === 'established';
+  const gradeLine = isEstablished
+    ? `GRADE ${input.liveGrade || input.grade || '—'} · BATTLE-TESTED`.slice(0, 36)
+    : `GRADE ${input.liveGrade || input.grade || '—'} · ${input.lpTier || '—'}`.slice(0, 36);
   drawText(rgba, gradeLine, 72, 320, 3, 180, 190, 180);
 
   drawText(rgba, String(input.serial || '').toUpperCase(), 72, 390, 3, 200, 210, 200);

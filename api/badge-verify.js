@@ -9,7 +9,7 @@ import {
   revokeBadge,
   hasRevocationHistory
 } from './_badge-registry.js';
-import { qualifyFromScan, QUALIFY_PATHS, pathLabel, pathFamily } from './_badge-qualify.js';
+import { recheckIssuedPath, QUALIFY_PATHS, pathLabel, pathFamily } from './_badge-qualify.js';
 import { formatUtc } from './_badge-og-render.js';
 import { recordVerifyHit } from './_traffic.js';
 
@@ -39,7 +39,13 @@ async function liveRecheck(badge) {
       };
     }
     const payload = await r.json();
-    const q = qualifyFromScan(payload, { hasRevocationHistory: revokedHistory });
+    const family = badge.pathFamily || pathFamily(badge.qualifyPath);
+    // Path-aware re-check: Established badges never judged on Path A lock bars
+    const q = recheckIssuedPath(payload, {
+      pathFamily: family,
+      qualifyPath: badge.qualifyPath,
+      hasRevocationHistory: revokedHistory
+    });
     return {
       ok: true,
       eligible: q.eligible,
@@ -128,7 +134,10 @@ export default async function handler(req, res) {
   };
 
   let status = badge.status;
-  const expired = badge.expiresAt ? Date.parse(badge.expiresAt) <= Date.now() : false;
+  const isEstablished = (badge.pathFamily || pathFamily(badge.qualifyPath)) === 'established';
+  // Established never expires from unlock dates — locks are not Path B evidence
+  const expired =
+    !isEstablished && badge.expiresAt ? Date.parse(badge.expiresAt) <= Date.now() : false;
   if (expired) status = 'EXPIRED';
 
   const live = skipLive ? null : await liveRecheck(badge);
@@ -164,7 +173,7 @@ export default async function handler(req, res) {
     live,
     stillQualifies,
     verifyUrl: `${SITE}/verify/${badge.serial}`,
-    ogImage: `${SITE}/api/badge/og?serial=${encodeURIComponent(badge.serial)}&v=4`,
+    ogImage: `${SITE}/api/badge/og?serial=${encodeURIComponent(badge.serial)}&v=5`,
     sealUrl: `${SITE}/api/seal/${encodeURIComponent(badge.serial)}.png`,
     durable: isDurableBadgeStore(),
     paths: QUALIFY_PATHS,

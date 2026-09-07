@@ -3,7 +3,7 @@
 
 make_seal(ca, serial, status) -> PNG bytes (1800×1800, black bg)
 
-Band (r≈790): ✦ {serial} ✦ {ca}
+Band (r≈790): ✦ {serial} ✦ {PATH} ✦ {ca}  PATH ∈ SECURED | ESTABLISHED
 Guide rings at r≈728 and r≈852. QR bottom-right → https://cyre.dev/verify/{serial}
 REVOKED: desaturate ~25% color, brightness ~70%, red stamp 18°.
 """
@@ -178,11 +178,26 @@ def _make_qr(url: str, box: int = 6) -> Image.Image:
     return qr.make_image(fill_color="#0B1210", back_color="#F0D68C").convert("RGBA")
 
 
-def make_seal(ca: str, serial: str, status: str = "VALID") -> bytes:
-    """Return PNG bytes — 1800×1800 black canvas."""
+def make_seal(
+    ca: str,
+    serial: str,
+    status: str = "VALID",
+    path: str | None = None,
+) -> bytes:
+    """Return PNG bytes — 1800×1800 black canvas.
+
+    path: SECURED | ESTABLISHED (optional; omitted for legacy band).
+    """
     serial = str(serial or "").strip().upper()
     ca = str(ca or "").strip()
     status = str(status or "VALID").upper()
+    mark = str(path or "").strip().upper()
+    if mark in ("LIFETIME", "TIMED", "SECURED"):
+        mark = "SECURED"
+    elif mark in ("ESTABLISHED", "BATTLE-TESTED", "BATTLE_TESTED"):
+        mark = "ESTABLISHED"
+    elif mark not in ("SECURED", "ESTABLISHED"):
+        mark = ""
 
     canvas = Image.new("RGBA", (CANVAS, CANVAS), (0, 0, 0, 255))
     cx = cy = CANVAS / 2
@@ -196,7 +211,7 @@ def make_seal(ca: str, serial: str, status: str = "VALID") -> bytes:
     draw = ImageDraw.Draw(canvas, "RGBA")
     _draw_guide_rings(draw, cx, cy)
 
-    band = f"✦ {serial} ✦ {ca} "
+    band = f"✦ {serial} ✦ {mark} ✦ {ca} " if mark else f"✦ {serial} ✦ {ca} "
     font = _font(CHAR_PX)
     _draw_band_text(canvas, band, cx, cy, BAND_R, font)
 
@@ -253,8 +268,9 @@ if __name__ == "__main__":
     ap.add_argument("--serial", default="GRD-2026-00001")
     ap.add_argument("--ca", default="979sitxCjWFPdAsrF2ybKNENwFcpiHDwaAasC5Xa5qww")
     ap.add_argument("--status", default="VALID", choices=["VALID", "REVOKED"])
+    ap.add_argument("--path", default="SECURED", help="SECURED | ESTABLISHED")
     ap.add_argument("-o", "--out", default="")
     args = ap.parse_args()
     out = Path(args.out) if args.out else Path(f"/tmp/seal-{args.serial}-{args.status}.png")
-    out.write_bytes(make_seal(args.ca, args.serial, args.status))
+    out.write_bytes(make_seal(args.ca, args.serial, args.status, path=args.path))
     print("wrote", out, out.stat().st_size)
