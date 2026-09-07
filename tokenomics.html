@@ -68,6 +68,133 @@ h1 span{color:var(--gold)}
   .grad-row .amt{text-align:left;margin-top:6px}
 }
 footer{border-top:1px solid var(--line);padding:22px 0 44px;color:#6c7891;font-size:12.5px;line-height:1.65;margin-top:44px}
+
+/* —— The $C7 Loop —— */
+#c7-loop{margin-top:36px;scroll-margin-top:24px}
+.c7-loop{
+  position:relative;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%,rgba(216,188,102,.1),transparent 55%),
+    linear-gradient(180deg,rgba(216,188,102,.05),rgba(16,23,16,.92));
+  border:1px solid rgba(216,188,102,.38);
+  border-radius:14px;
+  padding:28px 22px 22px;
+  overflow:hidden;
+}
+.c7-loop::before{
+  content:"";
+  position:absolute;inset:0;
+  background-image:radial-gradient(rgba(216,188,102,.07) 1px,transparent 1px);
+  background-size:18px 18px;
+  opacity:.35;
+  pointer-events:none;
+}
+.c7-loop-head{position:relative;text-align:center;margin-bottom:22px}
+.c7-loop-emblem{
+  width:72px;height:72px;margin:0 auto 14px;display:block;
+  border-radius:50%;
+  box-shadow:0 0 0 1px rgba(216,188,102,.35),0 0 28px rgba(216,188,102,.22);
+  object-fit:cover;
+  animation:c7-loop-pulse 4.2s ease-in-out infinite;
+}
+@keyframes c7-loop-pulse{
+  0%,100%{box-shadow:0 0 0 1px rgba(216,188,102,.35),0 0 22px rgba(216,188,102,.18);transform:scale(1)}
+  50%{box-shadow:0 0 0 1px rgba(216,188,102,.55),0 0 34px rgba(216,188,102,.3);transform:scale(1.03)}
+}
+.c7-loop-head h2{
+  font-family:Cormorant Garamond,serif;font-weight:700;
+  font-size:clamp(26px,4.2vw,34px);letter-spacing:.04em;
+  color:var(--gold);line-height:1.15;margin:0 0 10px;
+}
+.c7-loop-sub{
+  color:var(--text);font-size:15px;line-height:1.55;max-width:520px;margin:0 auto;
+  opacity:.92;
+}
+.c7-loop-flow{
+  position:relative;
+  display:flex;align-items:stretch;justify-content:space-between;gap:0;
+  margin:8px 0 6px;
+}
+.c7-loop-step{
+  flex:1 1 0;min-width:0;
+  text-align:center;padding:10px 6px 12px;
+  position:relative;
+  animation:c7-loop-rise .7s ease both;
+}
+.c7-loop-step:nth-child(1){animation-delay:.05s}
+.c7-loop-step:nth-child(3){animation-delay:.12s}
+.c7-loop-step:nth-child(5){animation-delay:.19s}
+.c7-loop-step:nth-child(7){animation-delay:.26s}
+.c7-loop-step:nth-child(9){animation-delay:.33s}
+@keyframes c7-loop-rise{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.c7-loop-num{
+  width:34px;height:34px;margin:0 auto 10px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;
+  color:var(--ink);background:var(--gold);
+  box-shadow:0 0 16px rgba(216,188,102,.28);
+}
+.c7-loop-title{
+  font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;
+  letter-spacing:.08em;color:var(--gold);margin-bottom:6px;
+}
+.c7-loop-body{
+  font-size:12.5px;line-height:1.45;color:var(--dim);
+}
+.c7-loop-arrow{
+  flex:0 0 18px;align-self:center;
+  color:var(--gold);font-size:18px;line-height:1;opacity:.85;
+  text-align:center;user-select:none;
+  animation:c7-loop-arrow-fade 2.4s ease-in-out infinite;
+}
+@keyframes c7-loop-arrow-fade{
+  0%,100%{opacity:.45}
+  50%{opacity:1}
+}
+.c7-loop-back{
+  position:relative;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  margin:14px 0 4px;
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;
+  letter-spacing:.06em;color:var(--gold);opacity:.9;
+}
+.c7-loop-back-line{
+  flex:1;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(216,188,102,.45),transparent);
+}
+.c7-loop-foot{
+  position:relative;
+  margin-top:16px;padding-top:14px;
+  border-top:1px solid rgba(216,188,102,.22);
+  text-align:center;font-size:13px;line-height:1.55;color:var(--dim);
+}
+.c7-loop-foot a{color:var(--gold)}
+.c7-loop-foot a:hover{text-decoration:underline}
+@media(max-width:720px){
+  .c7-loop{padding:24px 16px 18px;overflow-x:hidden}
+  .c7-loop-flow{
+    flex-direction:column;align-items:stretch;gap:0;
+    overflow-x:hidden;max-width:100%;
+  }
+  .c7-loop-step{padding:12px 4px;text-align:left;display:grid;grid-template-columns:34px 1fr;gap:4px 12px;align-items:start}
+  .c7-loop-num{margin:0;grid-row:1 / span 2}
+  .c7-loop-title{margin:2px 0 2px}
+  .c7-loop-arrow{
+    flex:none;width:34px;height:22px;
+    margin:2px 0;align-self:flex-start;
+    font-size:16px;line-height:22px;
+  }
+  .c7-loop-arrow{visibility:hidden;position:relative}
+  .c7-loop-arrow::after{
+    content:"↓";visibility:visible;position:absolute;left:10px;top:0;
+    color:var(--gold);font-size:16px;
+  }
+  .c7-loop-back{flex-wrap:wrap;text-align:center}
+}
 </style>
   <link rel="stylesheet" href="/theme-guardian.css?v=gf1">
 </head>
@@ -177,6 +304,51 @@ footer{border-top:1px solid var(--line);padding:22px 0 44px;color:#6c7891;font-s
   });
 })();
 </script>
+
+<section id="c7-loop" class="c7-loop" aria-labelledby="c7-loop-heading">
+  <div class="c7-loop-head">
+    <img class="c7-loop-emblem" src="/brand/seals/guardian-seal-medallion.png" alt="" width="72" height="72">
+    <h2 id="c7-loop-heading">THE $C7 LOOP</h2>
+    <p class="c7-loop-sub">Every Guardian Verified badge paid in C7 removes supply forever</p>
+  </div>
+  <div class="c7-loop-flow" role="list">
+    <div class="c7-loop-step" role="listitem">
+      <div class="c7-loop-num" aria-hidden="true">1</div>
+      <div class="c7-loop-title">SCAN</div>
+      <div class="c7-loop-body">Project runs a Guardian scan</div>
+    </div>
+    <div class="c7-loop-arrow" aria-hidden="true">→</div>
+    <div class="c7-loop-step" role="listitem">
+      <div class="c7-loop-num" aria-hidden="true">2</div>
+      <div class="c7-loop-title">QUALIFY</div>
+      <div class="c7-loop-body">LP locked · authorities revoked · grade earned</div>
+    </div>
+    <div class="c7-loop-arrow" aria-hidden="true">→</div>
+    <div class="c7-loop-step" role="listitem">
+      <div class="c7-loop-num" aria-hidden="true">3</div>
+      <div class="c7-loop-title">BADGE</div>
+      <div class="c7-loop-body">Pays $25 USDC — or $20 in $C7</div>
+    </div>
+    <div class="c7-loop-arrow" aria-hidden="true">→</div>
+    <div class="c7-loop-step" role="listitem">
+      <div class="c7-loop-num" aria-hidden="true">4</div>
+      <div class="c7-loop-title">BURN</div>
+      <div class="c7-loop-body">All C7 payments burned weekly · tx published</div>
+    </div>
+    <div class="c7-loop-arrow" aria-hidden="true">→</div>
+    <div class="c7-loop-step" role="listitem">
+      <div class="c7-loop-num" aria-hidden="true">5</div>
+      <div class="c7-loop-title">SUPPLY SHRINKS</div>
+      <div class="c7-loop-body">100M fixed — burned tokens never return</div>
+    </div>
+  </div>
+  <div class="c7-loop-back" aria-label="Loop continues from step 5 back to step 1">
+    <span class="c7-loop-back-line" aria-hidden="true"></span>
+    <span>↩ 5 → 1 · the loop continues</span>
+    <span class="c7-loop-back-line" aria-hidden="true"></span>
+  </div>
+  <p class="c7-loop-foot">Verify any badge: cyre.dev/verify/‹serial› · every burn tx is published on this page</p>
+</section>
 
 <footer>
   CYRE 7 · $C7 tokenomics. Figures describe the intended launch configuration; final on-chain parameters will be verifiable at the published contract address at launch. Nothing on this page is an offer to sell securities, investment advice, or a promise of profit or price performance. Digital assets are volatile — never commit funds you cannot afford to lose.
