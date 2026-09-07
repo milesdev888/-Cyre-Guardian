@@ -164,7 +164,7 @@ export default async function handler(req, res) {
     live,
     stillQualifies,
     verifyUrl: `${SITE}/verify/${badge.serial}`,
-    ogImage: `${SITE}/api/badge/og?serial=${encodeURIComponent(badge.serial)}&v=2`,
+    ogImage: `${SITE}/api/badge/og?serial=${encodeURIComponent(badge.serial)}&v=3`,
     sealUrl:
       status === 'VALID'
         ? `${SITE}/brand/seals/guardian-seal-valid-128.png`

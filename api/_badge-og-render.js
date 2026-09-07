@@ -15,7 +15,7 @@ import zlib from 'node:zlib';
 
 const W = 1200;
 const H = 630;
-const SEAL_DISPLAY = 300; // on-card diameter
+const SEAL_DISPLAY = 320; // on-card diameter (~2.4× from 768px asset)
 
 function crc32(buf) {
   let c = ~0;
@@ -444,8 +444,9 @@ export function renderBadgeOg(input) {
   if (sealImg) {
     blitImage(rgba, sealImg, sealX, sealY, sealSize, sealSize);
   }
-  // Procedural uniqueness: serial engraved along the outer band (~82% of radius)
-  drawCurvedSerial(rgba, input.serial || '', sealX, sealY, sealSize * 0.405, 4);
+  // Procedural uniqueness: serial on the inner gold ring (between text band and shield)
+  // so it doesn't fight "OFFICIAL SEAL / OF AUTHORITY" on the outer arc.
+  drawCurvedSerial(rgba, input.serial || '', sealX, sealY, sealSize * 0.29, 3);
 
   if (revoked) {
     fillRect(rgba, 70, 540, 420, 48, 180, 40, 40, 220);
