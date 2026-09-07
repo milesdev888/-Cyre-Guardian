@@ -1,9 +1,21 @@
-// api/badge-seal.js — GET /api/seal/<serial>.png
+// api/badge-seal.js — GET /api/seal/<serial>.png (+ /api/seal/<serial>/og.png)
 // Renders from LIVE registry status only (anti-copy). Unknown → 404 placeholder PNG.
+// Full-res stays at /api/seal/<serial>.png; OG crawlers use /api/seal/<serial>/og.png (<300KB).
 
 import { getBadgeBySerial, normalizeSerial } from './_badge-registry.js';
 import { pathMark, pathFamily } from './_badge-qualify.js';
-import { renderOfficialSeal, renderMissingSealPng } from './_badge-seal-render.js';
+import {
+  renderOfficialSeal,
+  renderOfficialSealOg,
+  renderMissingSealPng,
+  SEAL_OG_SIZE
+} from './_badge-seal-render.js';
+
+function wantsOg(req) {
+  const q = (req.query && (req.query.og || req.query.variant)) || '';
+  const s = String(q).toLowerCase();
+  return s === '1' || s === 'true' || s === 'og';
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,6 +25,7 @@ export default async function handler(req, res) {
     return res.status(405).end('method not allowed');
   }
 
+  const og = wantsOg(req);
   let raw = String((req.query && (req.query.serial || req.query.id)) || '').trim();
   // Support /api/seal/GRD-2026-00001.png via rewrite query
   raw = raw.replace(/\.png$/i, '');
@@ -23,6 +36,7 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'public, max-age=60');
     res.setHeader('X-Guardian-Seal', 'MISSING');
+    if (og) res.setHeader('X-Guardian-Seal-Variant', 'og');
     if (req.method === 'HEAD') return res.status(404).end();
     return res.status(404).end(png);
   }
@@ -33,20 +47,22 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'image/png');
     res.setHeader('Cache-Control', 'public, max-age=60');
     res.setHeader('X-Guardian-Seal', 'MISSING');
+    if (og) res.setHeader('X-Guardian-Seal-Variant', 'og');
     if (req.method === 'HEAD') return res.status(404).end();
     return res.status(404).end(png);
   }
 
   const status = badge.status || 'VALID';
   const family = badge.pathFamily || pathFamily(badge.qualifyPath);
-  const png = await renderOfficialSeal({
+  const input = {
     serial: badge.serial,
     ca: badge.mint,
     status,
     pathFamily: family,
     pathMark: pathMark(family || badge.qualifyPath),
     qualifyPath: badge.qualifyPath
-  });
+  };
+  const png = og ? await renderOfficialSealOg(input) : await renderOfficialSeal(input);
 
   res.setHeader('Content-Type', 'image/png');
   // ≤10 min TTL so revocation propagates; allow SWR
@@ -54,6 +70,10 @@ export default async function handler(req, res) {
   res.setHeader('X-Guardian-Seal', status);
   res.setHeader('X-Guardian-Seal-Serial', badge.serial);
   if (family) res.setHeader('X-Guardian-Seal-Path', pathMark(family) || family);
+  if (og) {
+    res.setHeader('X-Guardian-Seal-Variant', 'og');
+    res.setHeader('X-Guardian-Seal-Size', String(SEAL_OG_SIZE));
+  }
   res.setHeader('Content-Length', String(png.length));
   if (req.method === 'HEAD') return res.status(200).end();
   return res.status(200).end(png);

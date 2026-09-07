@@ -6,9 +6,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import QRCode from 'qrcode';
-import { decodePng, encodePng, encodePngRgb } from './_badge-og-render.js';
+import { decodePng, encodePng, encodePngRgb, encodeOgPng } from './_badge-og-render.js';
 
 export const SEAL_CANVAS = 1800;
+/** Compressed OG unfurl size — ~1024px square, palette PNG under 300KB. */
+export const SEAL_OG_SIZE = 1024;
+export const SEAL_OG_COLORS = 80;
 const BAND_R = 790;
 const GUIDE_INNER = 728;
 const GUIDE_OUTER = 852;
@@ -364,9 +367,9 @@ function applyRevoked(rgba, W, H) {
 
 /**
  * @param {{ serial: string, ca: string, status?: string, pathFamily?: string, pathMark?: string, qualifyPath?: string }} input
- * @returns {Promise<Buffer>} PNG 1800×1800
+ * @returns {Promise<{ rgba: Buffer, width: number, height: number, serial: string }>}
  */
-export async function renderOfficialSeal(input) {
+async function paintOfficialSeal(input) {
   const serial = String(input.serial || '').trim().toUpperCase();
   const ca = String(input.ca || '').trim();
   const status = String(input.status || 'VALID').toUpperCase();
@@ -410,7 +413,30 @@ export async function renderOfficialSeal(input) {
 
   if (status === 'REVOKED') applyRevoked(rgba, W, H);
 
-  return encodePngRgb(rgba, W, H, true);
+  return { rgba, width: W, height: H, serial };
+}
+
+/**
+ * @param {{ serial: string, ca: string, status?: string, pathFamily?: string, pathMark?: string, qualifyPath?: string }} input
+ * @returns {Promise<Buffer>} PNG 1800×1800
+ */
+export async function renderOfficialSeal(input) {
+  const painted = await paintOfficialSeal(input);
+  return encodePngRgb(painted.rgba, painted.width, painted.height, true);
+}
+
+/**
+ * Compressed OG variant — ~1024×1024 indexed PNG (target under 300KB).
+ * Full-res remains at /api/seal/&lt;serial&gt;.png.
+ * @param {{ serial: string, ca: string, status?: string, pathFamily?: string, pathMark?: string, qualifyPath?: string }} input
+ * @returns {Promise<Buffer>}
+ */
+export async function renderOfficialSealOg(input) {
+  const painted = await paintOfficialSeal(input);
+  return encodeOgPng(painted.rgba, painted.width, painted.height, {
+    size: SEAL_OG_SIZE,
+    colors: SEAL_OG_COLORS
+  });
 }
 
 export function renderMissingSealPng() {

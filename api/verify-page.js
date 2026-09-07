@@ -19,8 +19,9 @@ export default async function handler(req, res) {
   const serial = normalizeSerial(serialRaw) || '';
   const badge = serial ? await getBadgeBySerial(serial) : null;
 
+  // Compressed seal OG (~1024px, under 300KB) — full-res stays at /api/seal/<serial>.png
   const ogImage = serial
-    ? `${SITE}/api/badge/og?serial=${encodeURIComponent(serial)}&v=5`
+    ? `${SITE}/api/seal/${encodeURIComponent(serial)}/og.png`
     : `${SITE}/brand/guardian-wordmark-og.jpg`;
   const title = badge
     ? `Guardian ${badge.pathLabel || badge.qualifyPath || 'Badge'} · ${badge.serial}`
@@ -45,8 +46,8 @@ export default async function handler(req, res) {
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${esc(canonical)}">
 <meta property="og:image" content="${esc(ogImage)}">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
+<meta property="og:image:width" content="1024">
+<meta property="og:image:height" content="1024">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(desc)}">
@@ -121,6 +122,15 @@ export default async function handler(req, res) {
     transform: rotate(-6deg); width: fit-content;
   }
   .stamp.on { display: inline-block; }
+  .share-row { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 10px; }
+  a.share-x {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: transparent; color: var(--gold); border: 1px solid var(--gold);
+    font: 600 14px/1 "IBM Plex Sans", system-ui, sans-serif; padding: 11px 16px; border-radius: 8px;
+    text-decoration: none;
+  }
+  a.share-x:hover { background: rgba(201, 162, 39, 0.12); }
+  a.share-x[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -144,11 +154,15 @@ export default async function handler(req, res) {
         <h2><span class="pulse" id="livePulse"></span>Live re-check</h2>
         <div class="meta" id="liveMeta"></div>
       </div>
+      <div class="share-row">
+        <a id="shareX" class="share-x" href="#" target="_blank" rel="noopener noreferrer" hidden>Share on X</a>
+      </div>
     </div>
     <p class="tiny">Two equal paths: Secured (Lifetime / Timed locks) · Established (Battle-Tested — age, pools, decentralization). Age alone never qualifies.</p>
   </div>
 <script>
 (function () {
+  var SITE = ${JSON.stringify(SITE)};
   var input = document.getElementById('serial');
   var go = document.getElementById('go');
   var out = document.getElementById('out');
@@ -161,6 +175,7 @@ export default async function handler(req, res) {
   var vintage = document.getElementById('vintage');
   var stamp = document.getElementById('stamp');
   var seal = document.getElementById('seal');
+  var shareX = document.getElementById('shareX');
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
@@ -169,12 +184,21 @@ export default async function handler(req, res) {
     return '$' + Math.round(n).toLocaleString('en-US');
   }
   function setBusy(b) { go.disabled = b; go.textContent = b ? 'Checking…' : 'Verify'; }
+  function setShare(serial, badge) {
+    if (!serial || !badge) { shareX.hidden = true; shareX.removeAttribute('href'); return; }
+    var verifyUrl = SITE + '/verify/' + encodeURIComponent(serial);
+    var path = badge.pathLabel || badge.qualifyPath || 'Badge';
+    var text = 'Guardian ' + path + ' · ' + serial + '\\n' + verifyUrl;
+    shareX.href = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(text);
+    shareX.hidden = false;
+  }
   async function verify(raw) {
     var serial = String(raw || '').trim().toUpperCase();
     if (!serial) return;
     input.value = serial;
     out.hidden = false; liveBox.hidden = true; stamp.classList.remove('on'); seal.hidden = true;
     pathPill.hidden = true; vintage.hidden = true; vintage.innerHTML = '';
+    shareX.hidden = true;
     status.className = 'status'; status.textContent = 'Looking up serial…';
     meta.innerHTML = ''; liveMeta.innerHTML = ''; livePulse.className = 'pulse'; setBusy(true);
     try {
@@ -197,7 +221,7 @@ export default async function handler(req, res) {
       seal.hidden = false;
       seal.src = j.sealUrl || ('/api/seal/' + encodeURIComponent(b.serial) + '.png');
       seal.className = 'seal' + (st === 'VALID' ? '' : ' revoked');
-
+      setShare(b.serial, b);
       var live = j.live;
       var est = (live && live.established) || b.established || null;
       if (established) {
