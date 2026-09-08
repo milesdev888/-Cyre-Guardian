@@ -43,13 +43,15 @@ const TROPHY_YELLOW_PULL = 0.55;
 const TROPHY_BLUE_KEEP = 0.42;
 const TROPHY_PIVOT = 142;
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
-/** Full-res QR target: 12–14% of seal width (~220–250px on 1800 master). */
-const QR_PCT_MIN = 0.12;
-const QR_PCT_MAX = 0.14;
-const QR_PCT_TARGET = 0.13;
-/** Spec quiet-zone modules on each side (opaque dark plate, not transparent). */
-const QR_QUIET_MODULES = 4;
-/** ECC M keeps module count low; Q only if payload needs it. */
+/**
+ * Full-res QR on the 1800 master:
+ * - Module field hard-locked to 300px (16.7% of width) — was ~176px / 9.8% and failed phone decode
+ * - Solid white quiet-zone patch with 20px margin (light modules = white; dark modules = black)
+ * - ECC M; payload = https://cyre.dev/verify/<serial>
+ */
+export const QR_MODULE_PX = 300;
+export const QR_MARGIN_PX = 20;
+/** ECC M keeps module count low enough for a crisp 300px field. */
 const QR_ECC = 'M';
 
 /**
@@ -403,77 +405,88 @@ function drawBandText(rgba, W, H, cx, cy, radius, text, atlas, opts = {}) {
 
 /**
  * Camera-scannable QR for full-res seals only.
- * - Size ~12–14% of canvas width (220–250px on 1800)
- * - Opaque dark backing plate + pure-white quiet zone + pure-black modules
- * - No transparency through the QR, no gold tint
- * - Bottom-right; may sit on the outer dark field but stays outside the band radius
+ * - Module field exactly QR_MODULE_PX (300 on 1800 master = 16.7%)
+ * - Solid white quiet-zone patch with QR_MARGIN_PX (20) margin
+ * - White light modules + black dark modules (max contrast, no gold tint)
+ * - Bottom-right; flush to canvas edge so the larger plate clears the band
  *
- * @returns {{ dim: number, x: number, y: number, modules: number, scale: number, url: string }}
+ * @returns {{ dim: number, qrDim: number, x: number, y: number, modules: number, scale: number, url: string, pad: number }}
  */
 async function drawQr(rgba, W, H, url) {
   const matrix = await QRCode.create(url, { errorCorrectionLevel: QR_ECC });
   const modules = matrix.modules;
   const size = modules.size;
-  const quiet = QR_QUIET_MODULES;
-  const cells = size + quiet * 2;
-  const minPx = Math.round(W * QR_PCT_MIN);
-  const maxPx = Math.round(W * QR_PCT_MAX);
-  let scale = Math.max(1, Math.floor(maxPx / cells));
-  if (cells * scale < minPx) scale = Math.ceil(minPx / cells);
-  const alt = Math.max(1, Math.round((W * QR_PCT_TARGET) / cells));
-  if (alt !== scale) {
-    const altDim = cells * alt;
-    if (altDim >= minPx && altDim <= maxPx) scale = alt;
-  }
-  const dim = cells * scale;
-  const pad = Math.max(4, Math.round(scale)); // dark plate rim outside white quiet zone
-  const plate = dim + pad * 2;
+  // Exact 300px module field; ceil scale then blit so we never undersize again.
+  const modulePx = QR_MODULE_PX;
+  const scale = Math.max(1, Math.ceil(modulePx / size));
+  const nativeDim = size * scale;
+  const pad = QR_MARGIN_PX;
+  const plate = modulePx + pad * 2;
 
-  const DARK = [11, 18, 16];
   const WHITE = [255, 255, 255];
   const BLACK = [0, 0, 0];
 
-  // Opaque dark quiet-zone patch behind the QR (no alpha, no gold bleed-through).
-  const plateRgba = Buffer.alloc(plate * plate * 4, 0);
-  for (let i = 0; i < plateRgba.length; i += 4) {
-    plateRgba[i] = DARK[0];
-    plateRgba[i + 1] = DARK[1];
-    plateRgba[i + 2] = DARK[2];
-    plateRgba[i + 3] = 255;
+  // Solid white quiet-zone patch (margin + light modules). No dark plate, no alpha.
+  const nativePlate = nativeDim; // modules only at integer scale first
+  const nativeRgba = Buffer.alloc(nativePlate * nativePlate * 4, 0);
+  for (let i = 0; i < nativeRgba.length; i += 4) {
+    nativeRgba[i] = WHITE[0];
+    nativeRgba[i + 1] = WHITE[1];
+    nativeRgba[i + 2] = WHITE[2];
+    nativeRgba[i + 3] = 255;
   }
-  // Pure white light field (quiet zone + light modules).
-  for (let y = 0; y < dim; y++) {
-    for (let x = 0; x < dim; x++) {
-      const i = ((y + pad) * plate + (x + pad)) * 4;
-      plateRgba[i] = WHITE[0];
-      plateRgba[i + 1] = WHITE[1];
-      plateRgba[i + 2] = WHITE[2];
-      plateRgba[i + 3] = 255;
-    }
-  }
-  // Pure black data modules (max contrast, no gold tint).
+  // Black dark modules.
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       if (!modules.get(x, y)) continue;
-      const px = (x + quiet) * scale + pad;
-      const py = (y + quiet) * scale + pad;
+      const px = x * scale;
+      const py = y * scale;
       for (let dy = 0; dy < scale; dy++) {
         for (let dx = 0; dx < scale; dx++) {
-          const i = ((py + dy) * plate + (px + dx)) * 4;
-          plateRgba[i] = BLACK[0];
-          plateRgba[i + 1] = BLACK[1];
-          plateRgba[i + 2] = BLACK[2];
-          plateRgba[i + 3] = 255;
+          const i = ((py + dy) * nativePlate + (px + dx)) * 4;
+          nativeRgba[i] = BLACK[0];
+          nativeRgba[i + 1] = BLACK[1];
+          nativeRgba[i + 2] = BLACK[2];
+          nativeRgba[i + 3] = 255;
         }
       }
     }
   }
 
-  const margin = Math.max(8, Math.round(W * 0.006));
-  const x0 = W - plate - margin;
-  const y0 = H - plate - margin;
+  // Compose onto exact modulePx + white margin plate.
+  const plateRgba = Buffer.alloc(plate * plate * 4, 0);
+  for (let i = 0; i < plateRgba.length; i += 4) {
+    plateRgba[i] = WHITE[0];
+    plateRgba[i + 1] = WHITE[1];
+    plateRgba[i + 2] = WHITE[2];
+    plateRgba[i + 3] = 255;
+  }
+  blitScaled(
+    plateRgba,
+    plate,
+    plate,
+    { rgba: nativeRgba, width: nativePlate, height: nativePlate },
+    pad,
+    pad,
+    modulePx,
+    modulePx
+  );
+
+  // Flush to bottom-right so the larger plate stays outside the engraved band.
+  const x0 = W - plate;
+  const y0 = H - plate;
   blitScaled(rgba, W, H, { rgba: plateRgba, width: plate, height: plate }, x0, y0, plate, plate);
-  return { dim: plate, qrDim: dim, x: x0, y: y0, modules: size, scale, url, pad };
+  return {
+    dim: plate,
+    qrDim: modulePx,
+    x: x0,
+    y: y0,
+    modules: size,
+    scale,
+    url,
+    pad,
+    pct: modulePx / W
+  };
 }
 
 function applyRevoked(rgba, W, H) {
@@ -592,8 +605,11 @@ async function paintOfficialSeal(input) {
   if (includeQr) {
     // Full-res only. Tiny/OG variants omit QR — an unscannable decorative code is worse than none.
     qr = await drawQr(rgba, W, H, sealVerifyUrl(serial));
-    // Guard: QR nearest corner must stay outside the engraved band radius.
-    const nearestR = Math.hypot(cx - qr.x, cy - qr.y);
+    // Guard: module field (inside the white quiet-zone margin) must stay outside the band.
+    // The white margin may sit on the outer dark field — that is intentional.
+    const modX = qr.x + (qr.pad || 0);
+    const modY = qr.y + (qr.pad || 0);
+    const nearestR = Math.hypot(cx - modX, cy - modY);
     if (nearestR < BAND_R + 8) {
       throw new Error(
         `seal QR overlaps band text (nearestR=${nearestR.toFixed(1)} band=${BAND_R})`

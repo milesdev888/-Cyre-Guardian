@@ -129,7 +129,7 @@ const sealEst = await renderOfficialSeal({
 });
 assert.equal(sealEst[0], 137);
 
-// Full-res QR: 12–14% of seal width, short /v/ URL
+// Full-res QR: hard 300px module field on 1800 master (16.7%), verify URL
 assert.equal(sealVerifyUrl(GENESIS_SERIAL), 'https://cyre.dev/verify/GRD-2026-00001');
 const sealMeta = await renderOfficialSealWithMeta({
   serial: GENESIS_SERIAL,
@@ -138,10 +138,10 @@ const sealMeta = await renderOfficialSealWithMeta({
   pathMark: 'SECURED'
 });
 assert.ok(sealMeta.qr, 'full-res seal must include QR');
-assert.ok(
-  sealMeta.qr.qrDim >= Math.round(SEAL_CANVAS * 0.12) &&
-    sealMeta.qr.qrDim <= Math.round(SEAL_CANVAS * 0.14),
-  `QR dim ${sealMeta.qr.qrDim} outside 12–14% of ${SEAL_CANVAS}`
+assert.equal(
+  sealMeta.qr.qrDim,
+  300,
+  `QR module field must be exactly 300px on ${SEAL_CANVAS} master, got ${sealMeta.qr.qrDim}`
 );
 assert.match(sealMeta.qr.url, /\/verify\/GRD-2026-00001$/);
 
