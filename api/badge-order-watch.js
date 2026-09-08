@@ -4,7 +4,7 @@
 // Also accepts GET ?orderId= for simple cron pings.
 
 import { watchOrders } from './_badge-pay-watch.js';
-import { getOrder, publicOrderView } from './_badge-order.js';
+import { resolveOrder, saveOrder, publicOrderView, verifyOrderToken, getOrder } from './_badge-order.js';
 
 function readBody(req) {
   const b = req.body;
@@ -21,7 +21,9 @@ function readBody(req) {
 
 function founderAuthorized(req) {
   const key = process.env.BADGE_FOUNDER_KEY || process.env.X402_INTERNAL_KEY || '';
-  if (!key) return false;
+  if (!key) {
+    return process.env.VERCEL_ENV !== 'production' && process.env.BADGE_FOUNDER_OPEN === '1';
+  }
   const hdr =
     (req.headers && (req.headers['x-guardian-key'] || req.headers['X-Guardian-Key'])) || '';
   return String(hdr) === key;
@@ -42,6 +44,15 @@ export default async function handler(req, res) {
   const orderId = String(
     (body.orderId || body.id || (req.query && (req.query.orderId || req.query.id)) || '')
   ).trim();
+  const token = String(
+    (body.token || (req.query && req.query.token) || '')
+  ).trim();
+
+  // Hydrate ephemeral store from signed token before watching.
+  if (token) {
+    const hydrated = verifyOrderToken(token);
+    if (hydrated) await saveOrder(hydrated);
+  }
 
   let inject = null;
   if (body.inject && founderAuthorized(req)) {
@@ -56,7 +67,9 @@ export default async function handler(req, res) {
 
   try {
     const results = await watchOrders({ orderId: orderId || undefined, inject });
-    const order = orderId ? await getOrder(orderId) : null;
+    // Prefer store after watch (payment may have updated status); token is fallback only.
+    let order = orderId ? await getOrder(orderId) : null;
+    if (!order) order = await resolveOrder({ id: orderId, token });
     return res.status(200).json({
       ok: true,
       watched: results.length,
