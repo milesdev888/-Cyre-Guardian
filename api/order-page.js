@@ -135,6 +135,9 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
       <p>Serial issued. Your links:</p>
       <a id="verifyLink" href="#">Verify page</a>
       <a id="sealLink" href="#">Seal PNG</a>
+      <div style="margin-top:14px">
+        <a class="btn" id="shareSealBtn" href="#" target="_blank" rel="noreferrer">Share your seal on X</a>
+      </div>
     </div>
   </div>
 
@@ -189,9 +192,13 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
     document.getElementById('watchBtn').disabled = !awaiting;
     if (o.issuance && o.issuance.serial){
       document.getElementById('issuedBox').style.display = '';
-      document.getElementById('verifyLink').href = o.issuance.verifyUrl || ('/verify/' + o.issuance.serial);
+      var vUrl = o.issuance.verifyUrl || ('https://cyre.dev/verify/' + o.issuance.serial);
+      document.getElementById('verifyLink').href = vUrl;
       document.getElementById('verifyLink').textContent = 'Verify · ' + o.issuance.serial;
       document.getElementById('sealLink').href = o.issuance.sealUrl || ('/api/seal/' + o.issuance.serial + '.png');
+      var shareText = 'Guardian Verified · ' + o.issuance.serial + '\\n' + vUrl;
+      document.getElementById('shareSealBtn').href =
+        'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText);
     }
     if (o.id && location.pathname.indexOf(o.id) < 0){
       try { history.replaceState(null, '', '/order/' + o.id); } catch (e) {}
