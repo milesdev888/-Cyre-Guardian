@@ -68,7 +68,7 @@ export default async function handler(req, res) {
       eligible: true,
       showBuy: true,
       qualify,
-      cta: `Get Guardian Verified — $${USDC_USD} USDC or $${C7_USD} in $C7.`,
+      cta: 'Get Guardian Verified — $25',
       checkoutUrl: `${SITE}/order?mint=${encodeURIComponent(mint)}`,
       paths: QUALIFY_PATHS,
       disclaimer: DISCLAIMER
