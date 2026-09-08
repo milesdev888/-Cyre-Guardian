@@ -412,7 +412,7 @@ export function createX402Gate(opts) {
   const description = opts.description + ' Agent guide: https://cyre.dev/SKILL.md';
   const serviceName = opts.serviceName || 'CYRE Guardian';
   const tags = opts.tags || ['risk', 'fraud', 'solana', 'security'];
-  const iconUrl = opts.iconUrl || 'https://cyre.dev/cyre-token-icon-256.png';
+  const iconUrl = opts.iconUrl || 'https://cyre.dev/c7-cobra-256.png';
   const discovery = opts.discovery;
   const isFree = opts.isFree || isCyreSiteRequest;
   const baseOnly = !!opts.baseOnly;
