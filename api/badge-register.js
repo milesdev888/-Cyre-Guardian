@@ -127,6 +127,7 @@ export default async function handler(req, res) {
       });
     }
 
+    // Comp / direct registry lane — never creates a paid order.
     const badge = await registerBadge({
       mint,
       chainId: qualify.chainId || body.chainId || 'solana',
@@ -141,7 +142,8 @@ export default async function handler(req, res) {
       lifetimeEligible: qualify.lifetimeEligible,
       badgeEligible: true,
       expiresAt: qualify.expiresAt || null,
-      scanUrl: `${SCAN_BASE}/?address=${encodeURIComponent(mint)}`
+      scanUrl: `${SCAN_BASE}/?address=${encodeURIComponent(mint)}`,
+      issuanceSource: 'comp'
     });
 
     return res.status(200).json({

@@ -214,7 +214,10 @@ export async function registerBadge(input) {
     badgeEligible: true,
     issuedAt,
     expiresAt: input.expiresAt || null,
-    scanUrl: input.scanUrl || undefined
+    scanUrl: input.scanUrl || undefined,
+    // Paid path sets issuanceSource:'paid' + orderId; comps leave unset or 'comp'.
+    issuanceSource: input.issuanceSource === 'paid' ? 'paid' : input.issuanceSource === 'comp' ? 'comp' : undefined,
+    orderId: input.orderId || undefined
   };
 
   if (redisRestConfig()) {
