@@ -1,0 +1,36 @@
+name: Badge seal QR
+
+on:
+  push:
+    paths:
+      - 'api/_badge-seal-render.js'
+      - 'api/_badge-seal-qr.test.js'
+      - 'api/_badge-registry.test.js'
+      - 'api/_badge-og-render.js'
+      - 'brand/seals/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/badge-seal-qr.yml'
+  pull_request:
+    paths:
+      - 'api/_badge-seal-render.js'
+      - 'api/_badge-seal-qr.test.js'
+      - 'api/_badge-registry.test.js'
+      - 'api/_badge-og-render.js'
+      - 'brand/seals/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/badge-seal-qr.yml'
+
+jobs:
+  decode-at-320:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Seal QR must decode at 320px display
+        run: npm run test:badge
