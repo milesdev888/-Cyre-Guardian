@@ -410,6 +410,10 @@ const GLYPHS = {
   '.': [0, 0, 0, 0, 4],
   ':': [0, 4, 0, 4, 0],
   '/': [1, 2, 4, 8, 16],
+  '(': [4, 8, 8, 8, 4],
+  ')': [8, 4, 4, 4, 8],
+  '·': [0, 0, 4, 0, 0],
+  '•': [0, 0, 4, 0, 0],
   $: [4, 15, 20, 15, 4],
   _: [0, 0, 0, 0, 31],
   '0': [14, 17, 17, 17, 14],
@@ -720,12 +724,33 @@ export const VERIFY_OG_COLORS = 96;
 const VERIFY_SEAL_DISPLAY = 420; // seal-forward verify unfurl
 
 /**
- * Verify URL OG card: seal prominent, large monospace serial, VALID/REVOKED,
+ * Verify-page og:title + OG card headline.
+ * Format: Guardian Verified · {name} (${ticker}) · {serial}
+ *
+ * @param {{ name?: string|null, symbol?: string|null, serial?: string|null }} input
+ * @returns {string}
+ */
+export function formatVerifiedOgTitle(input = {}) {
+  const name = String(input.name || '').trim();
+  const ticker = String(input.symbol || '').trim();
+  const serial = String(input.serial || '').trim();
+  const project =
+    name && ticker ? `${name} ($${ticker})` : name || (ticker ? `$${ticker}` : '');
+  if (project && serial) return `Guardian Verified · ${project} · ${serial}`;
+  if (serial) return `Guardian Verified · ${serial}`;
+  if (project) return `Guardian Verified · ${project}`;
+  return 'Guardian Verified';
+}
+
+/**
+ * Verify URL OG card: seal + registry name/ticker + serial + VALID/REVOKED,
  * footer "checkable at cyre.dev/verify". Compressed indexed PNG for crawlers.
  *
  * @param {{
  *  serial: string,
  *  status: 'VALID'|'REVOKED'|'EXPIRED'|'NOT FOUND',
+ *  name?: string|null,
+ *  symbol?: string|null,
  *  sealPng?: Buffer|null
  * }} input
  * @returns {Buffer} PNG
@@ -747,7 +772,13 @@ export function renderVerifyOg(input) {
   const missing = status === 'NOT FOUND';
   const ok = status === 'VALID';
 
-  drawText(rgba, 'GUARDIAN', 72, 64, 4, 201, 162, 39);
+  const headline = formatVerifiedOgTitle({
+    name: input.name,
+    symbol: input.symbol,
+    serial: input.serial
+  });
+  // Full title across the top — matches og:title (bitmap font is uppercase).
+  drawText(rgba, headline.slice(0, 52), 64, 64, 2, 201, 162, 39);
 
   const sealSize = VERIFY_SEAL_DISPLAY;
   const sealX = Math.round(W * 0.28);
@@ -767,21 +798,29 @@ export function renderVerifyOg(input) {
   }
 
   const textX = 560;
-  drawText(rgba, 'SERIAL', textX, 150, 3, 138, 154, 144);
-  // Large monospace serial — primary identity on verify unfurls
+  const name = String(input.name || '').trim().toUpperCase().slice(0, 16);
+  const ticker = String(input.symbol || '').trim().toUpperCase().slice(0, 10);
+  if (name || ticker) {
+    drawText(rgba, 'PROJECT', textX, 140, 3, 138, 154, 144);
+    const projectLine =
+      name && ticker ? `${name} ($${ticker})` : name || `$${ticker}`;
+    drawText(rgba, projectLine.slice(0, 18), textX, 190, 5, 231, 239, 232);
+  } else {
+    drawText(rgba, 'SERIAL', textX, 140, 3, 138, 154, 144);
+  }
   const serial = String(input.serial || '').toUpperCase().slice(0, 18);
-  drawText(rgba, serial, textX, 200, 5, 231, 239, 232);
+  drawText(rgba, serial, textX, name || ticker ? 260 : 200, 4, 200, 210, 200);
 
   const stColor = ok
     ? [61, 220, 132]
     : revoked || missing
       ? [217, 106, 94]
       : [212, 160, 23];
-  drawText(rgba, status, textX, 290, 6, stColor[0], stColor[1], stColor[2]);
+  drawText(rgba, status, textX, name || ticker ? 340 : 290, 6, stColor[0], stColor[1], stColor[2]);
 
   if (revoked) {
-    fillRect(rgba, textX, 370, 280, 44, 180, 40, 40, 210);
-    drawText(rgba, 'REVOKED', textX + 16, 378, 4, 255, 220, 210);
+    fillRect(rgba, textX, name || ticker ? 420 : 370, 280, 44, 180, 40, 40, 210);
+    drawText(rgba, 'REVOKED', textX + 16, name || ticker ? 428 : 378, 4, 255, 220, 210);
   }
 
   drawText(rgba, 'CHECKABLE AT CYRE.DEV/VERIFY', 72, 560, 3, 160, 170, 160);

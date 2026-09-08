@@ -57,6 +57,8 @@ export default async function handler(req, res) {
 
   const png = renderVerifyOg({
     serial: badge.serial,
+    name: badge.name || null,
+    symbol: badge.symbol || null,
     status,
     sealPng
   });
@@ -65,6 +67,8 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300, stale-while-revalidate=60');
   res.setHeader('X-Guardian-Verify-Og', status);
   res.setHeader('X-Guardian-Verify-Og-Serial', badge.serial);
+  if (badge.name) res.setHeader('X-Guardian-Verify-Og-Name', String(badge.name));
+  if (badge.symbol) res.setHeader('X-Guardian-Verify-Og-Ticker', String(badge.symbol));
   res.setHeader('X-Guardian-Verify-Og-Size', `${VERIFY_OG_W}x${VERIFY_OG_H}`);
   res.setHeader('Content-Length', String(png.length));
   if (req.method === 'HEAD') return res.status(200).end();

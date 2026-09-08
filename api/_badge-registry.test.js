@@ -14,10 +14,23 @@ import {
   hasRevocationHistory
 } from './_badge-registry.js';
 import { qualifyFromScan, evaluateEstablished, analyzePools, pathMark, recheckIssuedPath } from './_badge-qualify.js';
-import { renderBadgeOg, encodePng, decodePng, loadSealImage, blitImage, renderVerifyOg } from './_badge-og-render.js';
+import { renderBadgeOg, encodePng, decodePng, loadSealImage, blitImage, renderVerifyOg, formatVerifiedOgTitle } from './_badge-og-render.js';
 import { renderOfficialSeal, renderOfficialSealOg } from './_badge-seal-render.js';
 
 process.env.BADGE_REGISTRY_STORE = '/tmp/guardian-badge-registry-test-step2b.json';
+
+assert.equal(
+  formatVerifiedOgTitle({
+    name: GENESIS_BADGE.name,
+    symbol: GENESIS_BADGE.symbol,
+    serial: GENESIS_SERIAL
+  }),
+  'Guardian Verified · CYRE ($C7) · GRD-2026-00001'
+);
+assert.equal(
+  formatVerifiedOgTitle({ serial: GENESIS_SERIAL }),
+  'Guardian Verified · GRD-2026-00001'
+);
 
 assert.equal(formatSerial(2026, 1), 'GRD-2026-00001');
 assert.equal(normalizeSerial('grd-2026-00001'), GENESIS_SERIAL);
@@ -166,15 +179,19 @@ const revokedPng = renderBadgeOg({
 });
 assert.equal(revokedPng[0], 137);
 
-// Verify OG card: 1200×630-class indexed PNG under 300KB with seal + status
+// Verify OG card: 1200×630-class indexed PNG under 300KB with seal + status + name/ticker
 const verifyOg = renderVerifyOg({
   serial: GENESIS_SERIAL,
+  name: GENESIS_BADGE.name,
+  symbol: GENESIS_BADGE.symbol,
   status: 'VALID'
 });
 assert.equal(verifyOg[0], 137);
 assert.ok(verifyOg.length < 300 * 1024, `verify OG must be under 300KB, got ${verifyOg.length}`);
 const verifyRevoked = renderVerifyOg({
   serial: GENESIS_SERIAL,
+  name: GENESIS_BADGE.name,
+  symbol: GENESIS_BADGE.symbol,
   status: 'REVOKED'
 });
 assert.equal(verifyRevoked[0], 137);
