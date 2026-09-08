@@ -106,12 +106,12 @@ img{max-width:100%;display:block}
 .brand-orb{
   width:24px;
   height:24px;
-  border-radius:6px;
+  border-radius:0;
   flex:none;
-  background:url('/c7-cobra-256.png?v=c7g2') center/contain no-repeat;
-  background-color:#000;
-  border:1px solid rgba(216,188,102,.42);
-  box-shadow:0 0 14px rgba(201,162,39,.35);
+  background:url('/c7-cobra-256-transparent.png?v=c7t1') center/contain no-repeat;
+  background-color:transparent;
+  border:none;
+  box-shadow:none;
 }
 .brand-r{
   color:var(--cb-blue);

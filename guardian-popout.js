@@ -15,7 +15,7 @@
     'box-shadow:0 0 0 2px rgba(216,188,102,.25),0 0 28px rgba(216,188,102,.4),0 0 48px rgba(216,188,102,.22);' +
     'transition:transform .2s,box-shadow .2s}' +
     '#gp-fab:hover,#gp-fab:focus-visible{transform:scale(1.05);box-shadow:0 0 0 2px rgba(216,188,102,.65),0 0 36px rgba(216,188,102,.55),0 0 60px rgba(216,188,102,.3);outline:none}' +
-    '#gp-fab img{width:100%;height:100%;object-fit:contain;border-radius:50%;display:block;background:#000}' +
+    '#gp-fab img{width:100%;height:100%;object-fit:contain;border-radius:0;display:block;background:transparent}' +
     '#gp-fab .gp-pulse{position:absolute;top:-2px;right:-2px;width:14px;height:14px;border-radius:50%;' +
     'background:#e6cc7e;border:2px solid #0a0f0a;box-shadow:0 0 10px rgba(216,188,102,.7)}' +
     '#gp-fab .gp-pulse::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(216,188,102,.55);' +
@@ -156,7 +156,7 @@
     fab.setAttribute('aria-expanded', 'false');
     fab.setAttribute('aria-controls', 'gp-panel');
     fab.innerHTML =
-      '<img src="/c7-cobra-256.png?v=c7g2" srcset="/c7-cobra-256.png?v=c7g2 1x, /c7-cobra-512.png?v=c7g2 2x" alt="" width="64" height="64">' +
+      '<img src="/c7-cobra-256-transparent.png?v=c7t1" srcset="/c7-cobra-256-transparent.png?v=c7t1 1x, /c7-cobra-512-transparent.png?v=c7t1 2x" alt="" width="64" height="64">' +
       '<span class="gp-pulse" aria-hidden="true"></span>' +
       '<span class="gp-live">LIVE</span>';
     document.body.appendChild(fab);
