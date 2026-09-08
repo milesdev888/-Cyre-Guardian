@@ -11,11 +11,11 @@
   css.id = 'gp-style';
   css.textContent =
     '#gp-fab{position:fixed;right:22px;bottom:22px;z-index:9500;width:64px;height:64px;border-radius:50%;' +
-    'padding:0;border:2px solid rgba(216,188,102,.55);background:#0a0f0a;cursor:pointer;overflow:visible;' +
+    'padding:0;border:2px solid rgba(216,188,102,.55);background:#000;cursor:pointer;overflow:visible;' +
     'box-shadow:0 0 0 2px rgba(216,188,102,.25),0 0 28px rgba(216,188,102,.4),0 0 48px rgba(216,188,102,.22);' +
     'transition:transform .2s,box-shadow .2s}' +
     '#gp-fab:hover,#gp-fab:focus-visible{transform:scale(1.05);box-shadow:0 0 0 2px rgba(216,188,102,.65),0 0 36px rgba(216,188,102,.55),0 0 60px rgba(216,188,102,.3);outline:none}' +
-    '#gp-fab img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}' +
+    '#gp-fab img{width:100%;height:100%;object-fit:contain;border-radius:50%;display:block;background:#000}' +
     '#gp-fab .gp-pulse{position:absolute;top:-2px;right:-2px;width:14px;height:14px;border-radius:50%;' +
     'background:#e6cc7e;border:2px solid #0a0f0a;box-shadow:0 0 10px rgba(216,188,102,.7)}' +
     '#gp-fab .gp-pulse::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px solid rgba(216,188,102,.55);' +
@@ -57,6 +57,11 @@
     '#gp-panel .gp-form button{background:linear-gradient(135deg,#d8bc66,#e6cc7e);color:#0a0f0a;border:0;' +
     'border-radius:999px;padding:0 16px;font:700 13px Inter,system-ui,sans-serif;cursor:pointer}' +
     '#gp-panel .gp-form button:disabled{opacity:.55;cursor:wait}' +
+    /* Phone: keep FAB clear of the hero Scan button (right side of scanbar). */
+    '@media (max-width:720px){' +
+      '#gp-fab{right:auto;left:16px;bottom:max(16px,env(safe-area-inset-bottom,0px));width:56px;height:56px}' +
+      '#gp-panel{right:16px;left:16px;width:auto;bottom:92px;max-height:min(640px,calc(100vh - 110px))}' +
+    '}' +
     '@media (prefers-reduced-motion:reduce){#gp-fab .gp-pulse::after{animation:none!important}#gp-fab,#gp-panel{transition:none!important}}';
   document.head.appendChild(css);
   function addMsg(log, text, who) {
@@ -151,7 +156,7 @@
     fab.setAttribute('aria-expanded', 'false');
     fab.setAttribute('aria-controls', 'gp-panel');
     fab.innerHTML =
-      '<img src="/guardian2.jpg" alt="" width="64" height="64">' +
+      '<img src="/c7-cobra-256.png?v=c7g2" srcset="/c7-cobra-256.png?v=c7g2 1x, /c7-cobra-512.png?v=c7g2 2x" alt="" width="64" height="64">' +
       '<span class="gp-pulse" aria-hidden="true"></span>' +
       '<span class="gp-live">LIVE</span>';
     document.body.appendChild(fab);
