@@ -13,27 +13,33 @@ import { AA_PLATINUM } from '../brand/aa-platinum.js';
 export const SEAL_CANVAS = 1800;
 /** Compressed OG unfurl size — ~1024px square, palette PNG under 300KB. */
 export const SEAL_OG_SIZE = 1024;
-export const SEAL_OG_COLORS = 80;
+export const SEAL_OG_COLORS = 64;
 const BAND_R = 790;
 const GUIDE_INNER = 728;
 const GUIDE_OUTER = 852;
-const GOLD_HI = [240, 214, 140];
-const GOLD_LO = [196, 152, 62];
+const GOLD_HI = [248, 224, 118];
+const GOLD_LO = [212, 168, 52];
 /** Platinum cool sheen for AA path words — from brand/aa-platinum.js (shared). */
 const PLAT_HI = AA_PLATINUM.rgb.hi;
 const PLAT_LO = AA_PLATINUM.rgb.steel;
 /**
- * Trophy-gold levels — calibrated to the v2 reference demo’s medallion gold
- * (bright trophy gold, not antique bronze). Demo band text is AI-garbled and
- * must NEVER be used as the seal; only color/brightness is the target.
+ * Trophy-gold levels — match bright metallic yellow-gold reference
+ * (assets/5f4d0e6e…), NOT amber/bronze/orange. Demo band text is AI-garbled
+ * and must NEVER be used as the seal; only color/brightness is the target.
  * Applied to base art only; band + QR stay registry-engraved afterward.
+ *
+ * Midtone lift ≈ +30% (target +25–35%). Raises G/R toward ~0.70–0.78 so mids
+ * read yellow-gold instead of orange.
  */
-const TROPHY_MID_LIFT = 0.02; // subtle midtone lift; demo body ≈ raw+ε
-const TROPHY_CONTRAST = 1.12;
-const TROPHY_SAT = 1.12;
-const TROPHY_WARM = 1.0;
-const TROPHY_BLUE_LIFT = 0.5; // keep warm gold (high R/B), avoid muddy bronze
-const TROPHY_PIVOT = 118; // gold mid pivot (demo shield flat)
+const TROPHY_MID_LIFT = 0.30;
+const TROPHY_CONTRAST = 1.18;
+const TROPHY_SAT = 1.16;
+/** Target green/red ratio in gold midtones (reference ≈ 0.70). */
+const TROPHY_YELLOW_GR = 0.74;
+const TROPHY_YELLOW_PULL = 0.55;
+/** Keep blue low — trophy gold, not brass mud. */
+const TROPHY_BLUE_KEEP = 0.42;
+const TROPHY_PIVOT = 142;
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
 
 function assetPath(...parts) {
@@ -83,19 +89,30 @@ export function brightenTrophyGold(img) {
     const midW = 4 * t * (1 - t);
     const lift = TROPHY_MID_LIFT * midW * 255;
     r = Math.min(255, r + lift);
-    g = Math.min(255, g + lift * 0.98);
-    b = Math.min(255, b + lift * TROPHY_BLUE_LIFT);
+    g = Math.min(255, g + lift * 1.05);
+    b = Math.min(255, b + lift * TROPHY_BLUE_KEEP);
 
-    // Mild contrast around gold mid
+    // Mild contrast around a brighter gold pivot
     r = Math.max(0, Math.min(255, (r - mid) * TROPHY_CONTRAST + mid));
     g = Math.max(0, Math.min(255, (g - mid) * TROPHY_CONTRAST + mid));
     b = Math.max(0, Math.min(255, (b - mid) * TROPHY_CONTRAST + mid));
 
-    // Saturation toward trophy gold (hold blue down so it stays gold, not bronze)
+    // Yellow-gold hue pull: raise G toward target G/R in warm midtones (not orange).
+    if (r > 70 && r >= g && g >= b) {
+      const targetG = r * TROPHY_YELLOW_GR;
+      if (g < targetG) {
+        g = g + (targetG - g) * TROPHY_YELLOW_PULL * midW;
+      }
+      // Cap blue under green so mids stay yellow, not bronze.
+      const maxB = g * TROPHY_BLUE_KEEP;
+      if (b > maxB) b = b + (maxB - b) * 0.65;
+    }
+
+    // Saturation toward trophy gold (hold blue down)
     const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-    r = Math.max(0, Math.min(255, gray + (r - gray) * TROPHY_SAT * TROPHY_WARM));
-    g = Math.max(0, Math.min(255, gray + (g - gray) * TROPHY_SAT));
-    b = Math.max(0, Math.min(255, gray + (b - gray) * (TROPHY_SAT * 0.78)));
+    r = Math.max(0, Math.min(255, gray + (r - gray) * TROPHY_SAT));
+    g = Math.max(0, Math.min(255, gray + (g - gray) * TROPHY_SAT * 1.04));
+    b = Math.max(0, Math.min(255, gray + (b - gray) * (TROPHY_SAT * 0.72)));
 
     out[i] = Math.round(r);
     out[i + 1] = Math.round(g);
