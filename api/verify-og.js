@@ -1,5 +1,6 @@
 // api/verify-og.js — GET /api/verify/<serial>/og.png
-// Dedicated verify-page OG card (1200×630, ≤300KB): seal + serial + VALID/REVOKED.
+// Dedicated verify-page OG card (1200×630, ≤300KB): seal + name/ticker + serial + status.
+// Headline matches og:title: Guardian Verified · {name} (${ticker}) · {serial}.
 // Status from LIVE registry only. Does not replace /api/seal/<serial>.png or /og.png.
 
 import { getBadgeBySerial, normalizeSerial } from './_badge-registry.js';
