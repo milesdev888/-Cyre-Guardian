@@ -11,7 +11,7 @@
   css.id = 'gp-style';
   css.textContent =
     '#gp-fab{position:fixed;right:22px;bottom:22px;z-index:9500;width:64px;height:64px;border-radius:50%;' +
-    'padding:0;border:2px solid rgba(216,188,102,.55);background:#000;cursor:pointer;overflow:visible;' +
+    'padding:0;border:2px solid rgba(216,188,102,.55);background:transparent;cursor:pointer;overflow:visible;' +
     'box-shadow:0 0 0 2px rgba(216,188,102,.25),0 0 28px rgba(216,188,102,.4),0 0 48px rgba(216,188,102,.22);' +
     'transition:transform .2s,box-shadow .2s}' +
     '#gp-fab:hover,#gp-fab:focus-visible{transform:scale(1.05);box-shadow:0 0 0 2px rgba(216,188,102,.65),0 0 36px rgba(216,188,102,.55),0 0 60px rgba(216,188,102,.3);outline:none}' +
