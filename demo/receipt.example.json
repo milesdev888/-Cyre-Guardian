@@ -27,7 +27,7 @@
             "base",
             "solana"
           ],
-          "iconUrl": "https://cyre.dev/cyre-token-icon-256.png"
+          "iconUrl": "https://cyre.dev/c7-cobra-256.png"
         },
         "accepts": [
           {
@@ -214,7 +214,7 @@
           "attestation",
           "forensics"
         ],
-        "iconUrl": "https://cyre.dev/cyre-token-icon-256.png"
+        "iconUrl": "https://cyre.dev/c7-cobra-256.png"
       },
       "accepts": [
         {
