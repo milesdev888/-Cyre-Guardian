@@ -506,11 +506,27 @@ async function paintOfficialSeal(input) {
 }
 
 /**
+ * Zero RGB on near-transparent pixels — smaller deflate + cleaner edges on dark UIs.
+ * @param {Buffer} rgba
+ */
+function crushTransparent(rgba) {
+  for (let i = 0; i < rgba.length; i += 4) {
+    if (rgba[i + 3] < 8) {
+      rgba[i] = 0;
+      rgba[i + 1] = 0;
+      rgba[i + 2] = 0;
+      rgba[i + 3] = 0;
+    }
+  }
+}
+
+/**
  * @param {{ serial: string, ca: string, status?: string, pathFamily?: string, pathMark?: string, qualifyPath?: string, grade?: string }} input
- * @returns {Promise<Buffer>} PNG 1800×1800
+ * @returns {Promise<Buffer>} PNG 1800×1800 RGBA (transparent plate)
  */
 export async function renderOfficialSeal(input) {
   const painted = await paintOfficialSeal(input);
+  crushTransparent(painted.rgba);
   // RGBA PNG with transparent corners (not opaque RGB).
   return encodePng(painted.rgba, painted.width, painted.height);
 }
