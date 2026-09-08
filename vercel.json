@@ -329,6 +329,10 @@
       "destination": "https://scan.cyre.dev/api/card/:mint.png"
     },
     {
+      "source": "/api/supply/circulating",
+      "destination": "/api/supply-circulating"
+    },
+    {
       "source": "/api/passport/verify",
       "destination": "/api/passport-verify"
     },
