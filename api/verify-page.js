@@ -104,8 +104,23 @@ export default async function handler(req, res) {
   .seal {
     position: absolute; right: -8px; top: 120px; width: 112px; height: 112px;
     filter: drop-shadow(0 8px 18px rgba(0,0,0,.45));
+    pointer-events: none;
   }
   .seal.revoked { filter: grayscale(1) drop-shadow(0 8px 18px rgba(0,0,0,.45)); opacity: .85; }
+  .row { position: relative; z-index: 2; }
+  button { position: relative; z-index: 3; }
+  @media (max-width: 720px) {
+    .seal {
+      position: static;
+      display: block;
+      width: 96px;
+      height: 96px;
+      margin: 18px auto 0;
+      right: auto;
+      top: auto;
+      pointer-events: none;
+    }
+  }
   .path-pill {
     display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px;
     border: 1px solid var(--gold); color: var(--gold); font-size: 12px; font-weight: 600;
@@ -135,7 +150,6 @@ export default async function handler(req, res) {
 </head>
 <body>
   <div class="wrap">
-    <img id="seal" class="seal" alt="" hidden />
     <div class="brand">Guardian</div>
     <h1>Badge verify</h1>
     <p class="sub">Issued path + live qualifying-path re-check. Dates in UTC.</p>
@@ -144,6 +158,7 @@ export default async function handler(req, res) {
       <input id="serial" name="serial" spellcheck="false" autocomplete="off" placeholder="GRD-2026-00001" value="${esc(serial)}" />
       <button id="go" type="button">Verify</button>
     </div>
+    <img id="seal" class="seal" alt="" hidden />
     <div class="card" id="out" hidden>
       <div class="status" id="status"></div>
       <div class="path-pill" id="pathPill" hidden></div>
