@@ -3,6 +3,7 @@
 
 import { getBadgeBySerial, normalizeSerial } from './_badge-registry.js';
 import { formatUtc, formatVerifiedOgTitle } from './_badge-og-render.js';
+import { withOgArtRev } from './_og-art-rev.js';
 
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
 
@@ -21,10 +22,12 @@ export default async function handler(req, res) {
 
   // 1200×630 verify OG card — crawlers must see this in SSR HTML (no JS).
   // Full-res seal remains at /api/seal/<serial>.png; seal OG at /api/seal/<serial>/og.png.
-  // `v=nt1` busts X/Telegram caches after name+ticker title/card change.
-  const ogImage = serial
-    ? `${SITE}/api/verify/${encodeURIComponent(serial)}/og.png?v=nt1`
-    : `${SITE}/brand/guardian-og-1200x630.jpg`;
+  // `r=` busts X/Telegram caches when seal/card art changes (see api/_og-art-rev.js).
+  const ogImage = withOgArtRev(
+    serial
+      ? `${SITE}/api/verify/${encodeURIComponent(serial)}/og.png`
+      : `${SITE}/brand/guardian-og-1200x630.jpg`
+  );
   const title = badge
     ? formatVerifiedOgTitle({
         name: badge.name,
