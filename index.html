@@ -110,7 +110,20 @@ h1{font-family:'Cormorant Garamond',serif;font-weight:600;font-size:clamp(2.6rem
   filter:drop-shadow(0 10px 28px rgba(0,0,0,.45));
   animation:heroFlankIn .9s ease both;
 }
-.hero-flank--cobra{animation-delay:.12s}
+.hero-flank--cobra{
+  animation-delay:.12s;
+  border-radius:50%;
+  object-fit:cover;
+  padding:7px;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(248,224,118,.55), transparent 52%),
+    linear-gradient(145deg, #f3df8a 0%, #c9a227 42%, #8a6418 78%, #e6cc7e 100%);
+  box-shadow:
+    0 0 0 1px rgba(246,228,150,.65),
+    0 0 0 3px rgba(138,100,24,.55),
+    0 10px 28px rgba(0,0,0,.45);
+  filter:none;
+}
 .hero-brand{
   text-align:center;
   min-width:0;
@@ -306,9 +319,10 @@ footer a:hover{color:var(--cream)}
         </div>
         <img
           class="hero-flank hero-flank--cobra"
-          src="/brand/hero-cobra.png"
+          src="/c7-cobra-512.png"
+          srcset="/c7-cobra-256.png 1x, /c7-cobra-512.png 2x"
           width="160" height="160"
-          alt=""
+          alt="$C7 gold cobra crest"
           decoding="async"
           loading="lazy">
       </div>
@@ -345,7 +359,7 @@ footer a:hover{color:var(--cream)}
       <div class="report-card">
         <div>
           <div class="token">
-            <img src="/guardian-c7-cobra-128.png" srcset="/guardian-c7-cobra-128.png 1x, /guardian-c7-cobra-512.png 2x" alt="" width="40" height="40">
+            <img src="/c7-cobra-256.png" srcset="/c7-cobra-256.png 1x, /c7-cobra-512.png 2x" alt="$C7" width="40" height="40">
             <div><strong>$C7</strong><span>Solana · CYRE</span></div>
           </div>
           <div class="report-rows" data-c7-report>

@@ -251,7 +251,7 @@ export default async function handler(req, res) {
         ? 'Path earned: Established (Battle-Tested)'
         : ('Path earned: ' + pathText + (b.pathFamily === 'secured' ? ' (Secured)' : ''));
       seal.hidden = false;
-      seal.src = j.sealUrl || ('/api/seal/' + encodeURIComponent(b.serial) + '.png');
+      seal.src = j.sealUrl || ('/api/seal/' + encodeURIComponent(b.serial) + '/og.png');
       seal.className = 'seal' + (st === 'VALID' ? '' : ' revoked');
       setShare(b.serial, b);
       var live = j.live;
