@@ -27,7 +27,15 @@
       "headers": [
         { "key": "Content-Type", "value": "image/png" },
         { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Cache-Control", "value": "public, max-age=86400, immutable" }
+        { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/(cyre-token-icon|cyre-token-ticker|cyre-token|guardian-c7-cobra)-:size.png",
+      "headers": [
+        { "key": "Content-Type", "value": "image/png" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }
       ]
     },
     {

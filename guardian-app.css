@@ -65,9 +65,10 @@ body.ga-app {
 .ga-brand-orb {
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: 6px;
   flex: none;
-  background: url('/cyre-token-icon-128.png') center/cover no-repeat;
+  background: url('/c7-cobra-256.png?v=c7g2') center/contain no-repeat;
+  background-color: #000;
   border: 1px solid rgba(216, 188, 102, 0.42);
   box-shadow: 0 0 16px rgba(216, 188, 102, 0.45), 0 0 28px rgba(230, 204, 126, 0.32);
 }
