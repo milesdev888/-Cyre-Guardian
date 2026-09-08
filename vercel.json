@@ -353,6 +353,14 @@
       "destination": "/api/badge-seal?serial=:serial&og=1"
     },
     {
+      "source": "/api/seal/:serial/ui.png",
+      "destination": "/api/badge-seal?serial=:serial&ui=1"
+    },
+    {
+      "source": "/api/seal/:serial/ui",
+      "destination": "/api/badge-seal?serial=:serial&ui=1"
+    },
+    {
       "source": "/api/seal/:serial",
       "destination": "/api/badge-seal?serial=:serial"
     },

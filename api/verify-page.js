@@ -103,6 +103,7 @@ export default async function handler(req, res) {
     flex: 0 0 auto;
     /* When the seal wraps onto its own row, center it under the form */
     margin-inline: auto;
+    background: transparent;
   }
   .seal-slot:has(#seal[hidden]) { display: none; }
   label { display: block; font-size: 13px; color: var(--dim); margin-bottom: 8px; }
@@ -131,12 +132,19 @@ export default async function handler(req, res) {
   .pulse.off { background: var(--dim); animation: none; } .pulse.bad { background: var(--bad); }
   @keyframes blink { 50% { opacity: 0.35; } }
   @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+  /* Transparent seal — gold medallion floats; no black square field (same as hero crest). */
   .seal {
     display: block;
     width: 112px;
     max-width: min(112px, 100%);
     height: auto;
     aspect-ratio: 1;
+    object-fit: contain;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
     filter: drop-shadow(0 8px 18px rgba(0,0,0,.45));
   }
   .seal.revoked { filter: grayscale(1) drop-shadow(0 8px 18px rgba(0,0,0,.45)); opacity: .85; }
@@ -259,7 +267,7 @@ export default async function handler(req, res) {
         ? 'Path earned: Established (Battle-Tested)'
         : ('Path earned: ' + pathText + (b.pathFamily === 'secured' ? ' (Secured)' : ''));
       seal.hidden = false;
-      seal.src = j.sealUrl || ('/api/seal/' + encodeURIComponent(b.serial) + '/og.png');
+      seal.src = j.sealUrl || ('/api/seal/' + encodeURIComponent(b.serial) + '/ui.png');
       seal.className = 'seal' + (st === 'VALID' ? '' : ' revoked');
       setShare(b.serial, b);
       var live = j.live;
