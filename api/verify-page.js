@@ -132,19 +132,20 @@ export default async function handler(req, res) {
   .pulse.off { background: var(--dim); animation: none; } .pulse.bad { background: var(--bad); }
   @keyframes blink { 50% { opacity: 0.35; } }
   @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
-  /* Transparent seal — gold medallion floats; no black square field (same as hero crest). */
+  /* Transparent seal — full medallion + QR floats; no black square (same as hero crest). */
   .seal {
     display: block;
-    width: 112px;
-    max-width: min(112px, 100%);
+    width: min(240px, 42vw);
+    max-width: 240px;
     height: auto;
     aspect-ratio: 1;
     object-fit: contain;
-    background: transparent;
-    border: 0;
-    border-radius: 0;
-    padding: 0;
-    box-shadow: none;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    outline: 0;
     filter: drop-shadow(0 8px 18px rgba(0,0,0,.45));
   }
   .seal.revoked { filter: grayscale(1) drop-shadow(0 8px 18px rgba(0,0,0,.45)); opacity: .85; }
@@ -189,7 +190,7 @@ export default async function handler(req, res) {
         </div>
       </div>
       <div class="seal-slot">
-        <img id="seal" class="seal" alt="Guardian Verified seal" width="112" height="112" hidden />
+        <img id="seal" class="seal" alt="Guardian Verified seal" width="240" height="240" hidden />
       </div>
     </div>
     <div class="card" id="out" hidden>
@@ -267,7 +268,8 @@ export default async function handler(req, res) {
         ? 'Path earned: Established (Battle-Tested)'
         : ('Path earned: ' + pathText + (b.pathFamily === 'secured' ? ' (Secured)' : ''));
       seal.hidden = false;
-      seal.src = j.sealUrl || ('/api/seal/' + encodeURIComponent(b.serial) + '/ui.png');
+      // Full-res transparent PNG with QR — never indexed /og.png (black field).
+      seal.src = j.sealUrl || ('/api/seal/' + encodeURIComponent(b.serial) + '.png?v=float1');
       seal.className = 'seal' + (st === 'VALID' ? '' : ' revoked');
       setShare(b.serial, b);
       var live = j.live;
