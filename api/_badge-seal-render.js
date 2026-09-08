@@ -624,7 +624,11 @@ function crushTransparent(rgba) {
  * @returns {Promise<Buffer>} PNG 1800×1800 RGBA (transparent plate)
  */
 export async function renderOfficialSeal(input) {
-  const painted = await paintOfficialSeal({ ...input, includeQr: true });
+  // Default QR on; pass includeQr:false for embeds too small to scan (verify OG card, etc.).
+  const painted = await paintOfficialSeal({
+    ...input,
+    includeQr: input?.includeQr !== false
+  });
   crushTransparent(painted.rgba);
   // RGBA PNG with transparent corners (not opaque RGB).
   return encodePng(painted.rgba, painted.width, painted.height);

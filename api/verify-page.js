@@ -2,7 +2,7 @@
 // Rewritten from /verify so crawlers see OG without JS.
 
 import { getBadgeBySerial, normalizeSerial } from './_badge-registry.js';
-import { formatUtc } from './_badge-og-render.js';
+import { formatUtc, formatVerifiedOgTitle } from './_badge-og-render.js';
 
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
 
@@ -19,13 +19,18 @@ export default async function handler(req, res) {
   const serial = normalizeSerial(serialRaw) || '';
   const badge = serial ? await getBadgeBySerial(serial) : null;
 
-  // Seal OG (~1024px ≤300KB) — crawlers must see this in SSR HTML (no JS).
-  // Full-res seal remains at /api/seal/<serial>.png; dedicated 1200×630 card at /api/verify/<serial>/og.png.
+  // 1200×630 verify OG card — crawlers must see this in SSR HTML (no JS).
+  // Full-res seal remains at /api/seal/<serial>.png; seal OG at /api/seal/<serial>/og.png.
+  // `v=nt1` busts X/Telegram caches after name+ticker title/card change.
   const ogImage = serial
-    ? `${SITE}/api/seal/${encodeURIComponent(serial)}/og.png`
+    ? `${SITE}/api/verify/${encodeURIComponent(serial)}/og.png?v=nt1`
     : `${SITE}/brand/guardian-og-1200x630.jpg`;
   const title = badge
-    ? `Guardian ${badge.pathLabel || badge.qualifyPath || 'Badge'} · ${badge.serial}`
+    ? formatVerifiedOgTitle({
+        name: badge.name,
+        symbol: badge.symbol,
+        serial: badge.serial
+      })
     : 'Guardian badge verify';
   const desc = badge
     ? `${badge.symbol ? '$' + badge.symbol + ' · ' : ''}Path ${badge.pathLabel || badge.qualifyPath || '—'} · issued ${badge.issuedAt ? formatUtc(badge.issuedAt) : ''} · live re-check on view`
@@ -33,10 +38,10 @@ export default async function handler(req, res) {
 
   const canonical = serial ? `${SITE}/verify/${serial}` : `${SITE}/verify`;
   const ogAlt = badge
-    ? `Guardian ${badge.serial} · ${badge.status || 'VALID'} — checkable at cyre.dev/verify`
+    ? `${title} · ${badge.status || 'VALID'} — checkable at cyre.dev/verify`
     : 'Guardian badge verify — checkable at cyre.dev/verify';
-  const ogW = serial ? '1024' : '1200';
-  const ogH = serial ? '1024' : '630';
+  const ogW = '1200';
+  const ogH = '630';
 
   const html = `<!doctype html>
 <html lang="en">
