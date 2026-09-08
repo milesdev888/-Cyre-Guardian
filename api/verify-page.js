@@ -126,7 +126,6 @@ export default async function handler(req, res) {
   .seal {
     display: block;
     width: 112px;
-    height: 112px;
     max-width: min(112px, 100%);
     height: auto;
     aspect-ratio: 1;
