@@ -117,7 +117,7 @@ const sealEst = await renderOfficialSeal({
 assert.equal(sealEst[0], 137);
 
 // Full-res QR: 12–14% of seal width, short /v/ URL
-assert.equal(sealVerifyUrl(GENESIS_SERIAL), 'https://cyre.dev/v/GRD-2026-00001');
+assert.equal(sealVerifyUrl(GENESIS_SERIAL), 'https://cyre.dev/verify/GRD-2026-00001');
 const sealMeta = await renderOfficialSealWithMeta({
   serial: GENESIS_SERIAL,
   ca: GENESIS_MINT,
@@ -130,7 +130,7 @@ assert.ok(
     sealMeta.qr.qrDim <= Math.round(SEAL_CANVAS * 0.14),
   `QR dim ${sealMeta.qr.qrDim} outside 12–14% of ${SEAL_CANVAS}`
 );
-assert.match(sealMeta.qr.url, /\/v\/GRD-2026-00001$/);
+assert.match(sealMeta.qr.url, /\/verify\/GRD-2026-00001$/);
 
 // OG seal: ~1024px indexed PNG under 300KB — QR omitted (unscannable at that size)
 const sealOg = await renderOfficialSealOg({

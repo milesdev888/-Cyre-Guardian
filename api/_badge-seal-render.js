@@ -51,14 +51,16 @@ const QR_QUIET_MODULES = 4;
 const QR_ECC = 'M';
 
 /**
- * Shortest absolute verify URL for QR payloads (fewer modules → larger cells).
- * `/v/:serial` rewrites to the verify page (see vercel.json).
+ * Absolute verify URL for QR payloads.
+ * Uses `/verify/:serial` (live on cyre.dev today). A shorter `/v/:serial` alias
+ * exists in vercel.json for after deploy, but QR must encode a URL that already
+ * resolves — iPhone cameras hitting a 404 are worse than one extra path segment.
  * @param {string} serial
  * @returns {string}
  */
 export function sealVerifyUrl(serial) {
   const s = String(serial || '').trim().toUpperCase();
-  return `${SITE}/v/${encodeURIComponent(s)}`;
+  return `${SITE}/verify/${encodeURIComponent(s)}`;
 }
 
 function assetPath(...parts) {
