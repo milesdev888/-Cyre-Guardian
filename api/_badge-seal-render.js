@@ -7,6 +7,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 import QRCode from 'qrcode';
 import { decodePng, encodePng, encodePngRgb, encodeOgPng } from './_badge-og-render.js';
+import { AA_PLATINUM } from '../brand/aa-platinum.js';
 
 export const SEAL_CANVAS = 1800;
 /** Compressed OG unfurl size — ~1024px square, palette PNG under 300KB. */
@@ -17,9 +18,9 @@ const GUIDE_INNER = 728;
 const GUIDE_OUTER = 852;
 const GOLD_HI = [240, 214, 140];
 const GOLD_LO = [196, 152, 62];
-/** Platinum cool sheen for AA path words on the seal band. */
-const PLAT_HI = [247, 248, 250];
-const PLAT_LO = [184, 190, 200];
+/** Platinum cool sheen for AA path words — from brand/aa-platinum.js (shared). */
+const PLAT_HI = AA_PLATINUM.rgb.hi;
+const PLAT_LO = AA_PLATINUM.rgb.steel;
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
 
 function assetPath(...parts) {
