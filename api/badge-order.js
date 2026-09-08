@@ -5,9 +5,8 @@
 
 import {
   createPaidOrder,
-  getOrder,
+  resolveOrder,
   publicOrderView,
-  ORDER_STATUSES,
   USDC_USD,
   C7_USD,
   BASE_TREASURY,
@@ -53,8 +52,9 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     const id = String((req.query && (req.query.id || req.query.order)) || '').trim();
-    if (id) {
-      const order = await getOrder(id);
+    const token = String((req.query && req.query.token) || '').trim();
+    if (id || token) {
+      const order = await resolveOrder({ id, token });
       if (!order) return res.status(404).json({ ok: false, error: 'order not found' });
       return res.status(200).json(publicOrderView(order));
     }

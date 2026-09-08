@@ -149,8 +149,8 @@ async function nextCounter() {
 export async function allocateUniqueUsdcAtomic() {
   const base = USDC_USD * 1_000_000; // 25_000_000
   for (let attempt = 0; attempt < 200; attempt++) {
-    const n = await nextCounter();
-    const suffix = (n % 9900) + 1; // 1..9900 → $25.000001 .. $25.009900
+    // Prefer crypto randomness so serverless instances without Redis do not collide.
+    const suffix = crypto.randomInt(100, 9900); // $25.000100 .. $25.009899
     const atomic = String(base + suffix);
     if (redisRestConfig()) {
       const set = await redisCommand(['HSETNX', USDC_AMT_KEY, atomic, '1']);
@@ -164,6 +164,39 @@ export async function allocateUniqueUsdcAtomic() {
     return atomic;
   }
   throw new Error('could not allocate unique USDC amount');
+}
+
+function orderHmacSecret() {
+  return (
+    process.env.BADGE_ORDER_HMAC ||
+    process.env.BADGE_FOUNDER_KEY ||
+    process.env.X402_INTERNAL_KEY ||
+    'guardian-order-dev-hmac'
+  );
+}
+
+/** Signed order token — survives Vercel ephemeral /tmp when Redis is unset. */
+export function signOrder(order) {
+  const body = Buffer.from(JSON.stringify(order), 'utf8').toString('base64url');
+  const sig = crypto.createHmac('sha256', orderHmacSecret()).update(body).digest('base64url');
+  return `${body}.${sig}`;
+}
+
+export function verifyOrderToken(token) {
+  const raw = String(token || '').trim();
+  const i = raw.lastIndexOf('.');
+  if (i < 1) return null;
+  const body = raw.slice(0, i);
+  const sig = raw.slice(i + 1);
+  const expect = crypto.createHmac('sha256', orderHmacSecret()).update(body).digest('base64url');
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expect);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+  try {
+    return applyExpiry(JSON.parse(Buffer.from(body, 'base64url').toString('utf8')));
+  } catch (_) {
+    return null;
+  }
 }
 
 export function formatUsdcDisplay(atomic) {
@@ -257,6 +290,22 @@ export async function getOrder(id) {
   return order ? applyExpiry(order) : null;
 }
 
+/** Resolve order from id and/or signed token (token wins for serverless durability). */
+export async function resolveOrder({ id, token } = {}) {
+  if (token) {
+    const fromTok = verifyOrderToken(token);
+    if (fromTok) {
+      // Refresh durable store when possible so watchers see updates.
+      try {
+        await saveOrder(fromTok);
+      } catch (_) {}
+      return fromTok;
+    }
+  }
+  if (id) return getOrder(id);
+  return null;
+}
+
 /** Mark unpaid orders past lock window as EXPIRED. */
 export function applyExpiry(order) {
   if (!order || typeof order !== 'object') return order;
@@ -303,8 +352,16 @@ export async function createPaidOrder({ mint, chainId, qualify, siteUrl }) {
   if (!m) throw new Error('mint required');
   if (!qualify || !qualify.eligible) throw new Error('not badge eligible');
 
-  const n = await nextCounter();
-  const id = `ORD-${new Date().getUTCFullYear()}-${String(n).padStart(5, '0')}`;
+  let n;
+  try {
+    n = await nextCounter();
+  } catch (_) {
+    n = null;
+  }
+  // Serverless without Redis: time+random id (still unique enough for 30m locks).
+  const id = n
+    ? `ORD-${new Date().getUTCFullYear()}-${String(n).padStart(5, '0')}`
+    : `ORD-${new Date().getUTCFullYear()}-${Date.now().toString(36).toUpperCase()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
   const createdAt = new Date().toISOString();
   const expiresAt = new Date(Date.parse(createdAt) + ORDER_TTL_MS).toISOString();
 
@@ -416,9 +473,11 @@ export async function updateOrder(order, patch) {
 export function publicOrderView(order) {
   if (!order) return null;
   const o = applyExpiry(order);
+  const token = signOrder(o);
   return {
     ok: true,
     id: o.id,
+    token,
     source: o.source,
     status: o.status,
     mint: o.mint,

@@ -2,7 +2,7 @@
 // /order?mint=… creates (via API) when qualifying; /order/:id shows status + both payment lanes.
 // Footer disclaimer; locked vocabulary; no investment-speak.
 
-import { getOrder, publicOrderView, USDC_USD, C7_USD, applyExpiry } from './_badge-order.js';
+import { resolveOrder, publicOrderView, USDC_USD, C7_USD, applyExpiry } from './_badge-order.js';
 
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
 
@@ -18,9 +18,10 @@ export default async function handler(req, res) {
   const q = req.query || {};
   const orderId = String(q.id || q.order || '').trim().toUpperCase();
   const mintParam = String(q.mint || '').trim();
+  const tokenParam = String(q.token || '').trim();
   let order = null;
-  if (orderId) {
-    order = await getOrder(orderId);
+  if (orderId || tokenParam) {
+    order = await resolveOrder({ id: orderId, token: tokenParam });
     if (order) order = applyExpiry(order);
   }
 
@@ -214,6 +215,10 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
         return;
       }
       setMsg('Order locked for 30 minutes.');
+      boot = j;
+      if (j.token) {
+        try { history.replaceState(null, '', '/order/' + j.id + '?token=' + encodeURIComponent(j.token)); } catch (e) {}
+      }
       render(j);
     } catch (e){
       setMsg('Could not create order.', true);
@@ -223,7 +228,9 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
   async function refresh(){
     if (!boot.id && !(document.getElementById('mintOut').textContent)) return;
     var id = boot.id || document.getElementById('heading').textContent;
-    var r = await fetch('/api/badge/order?id=' + encodeURIComponent(id), { headers: { accept: 'application/json' } });
+    var q = '/api/badge/order?id=' + encodeURIComponent(id);
+    if (boot.token) q += '&token=' + encodeURIComponent(boot.token);
+    var r = await fetch(q, { headers: { accept: 'application/json' } });
     var j = await r.json();
     if (r.ok){ boot = j; render(j); setMsg('Status refreshed.'); }
   }
@@ -233,7 +240,7 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
     var r = await fetch('/api/badge/order/watch', {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify({ orderId: id })
+      body: JSON.stringify({ orderId: id, token: boot.token || null })
     });
     var j = await r.json();
     if (j.order){ boot = j.order; render(j.order); }
@@ -252,6 +259,10 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
       if (navigator.clipboard) navigator.clipboard.writeText(t).then(function(){ setMsg('Copied.'); });
     });
   });
+  try {
+    var qt = new URLSearchParams(location.search).get('token');
+    if (qt && boot) boot.token = qt;
+  } catch (e) {}
   if (boot && boot.id) render(boot);
   else if (boot && boot.mint){
     document.getElementById('mintInput').value = boot.mint;
