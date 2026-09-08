@@ -243,6 +243,11 @@
       "permanent": false
     },
     {
+      "source": "/v/:serial",
+      "destination": "/verify?serial=:serial",
+      "permanent": false
+    },
+    {
       "source": "/scan",
       "missing": [
         {
