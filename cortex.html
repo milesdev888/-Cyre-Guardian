@@ -376,20 +376,18 @@
     }
   }
 
-  // Tight node markers only — no large soft halo/blur shadows around desks.
-  function glowSprite(rgb){
-    const s = document.createElement('canvas'); s.width=s.height=64;
+  // No soft glow sprites — sharp markers only (pulses keep a tiny cool tip).
+  function tipSprite(rgb){
+    const s = document.createElement('canvas'); s.width=s.height=32;
     const g = s.getContext('2d');
-    const gr = g.createRadialGradient(32,32,0,32,32,28);
-    gr.addColorStop(0, `rgba(${rgb},.55)`);
-    gr.addColorStop(.45,`rgba(${rgb},.12)`);
+    const gr = g.createRadialGradient(16,16,0,16,16,14);
+    gr.addColorStop(0, `rgba(${rgb},.9)`);
+    gr.addColorStop(.55,`rgba(${rgb},.2)`);
     gr.addColorStop(1, `rgba(${rgb},0)`);
-    g.fillStyle=gr; g.fillRect(0,0,64,64);
+    g.fillStyle=gr; g.fillRect(0,0,32,32);
     return s;
   }
-  const CORE = glowSprite('232,197,106');
-  const PULSE_GLOW = glowSprite('95,208,255');
-  const ALERT_CORE = glowSprite('255,77,94');
+  const PULSE_GLOW = tipSprite('95,208,255');
 
   // HUD refs
   const $ = id => document.getElementById(id);
@@ -492,12 +490,9 @@
 
   function draw(){
     ctx.clearRect(0,0,W,H);
-    // depth haze — near-black with faint gold (no purple nebula)
-    const bg = ctx.createRadialGradient(W*.5,H*.45,0, W*.5,H*.45, Math.max(W,H)*.7);
-    bg.addColorStop(0,'rgba(216,188,102,.06)');
-    bg.addColorStop(.55,'rgba(16,23,16,.35)');
-    bg.addColorStop(1,'rgba(10,11,13,0)');
-    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+    // Flat field — no soft radial haze behind the graph
+    ctx.fillStyle = 'rgba(10,11,13,0)';
+    ctx.fillRect(0,0,W,H);
 
     // links — thin gold hairlines, low opacity
     ctx.lineWidth = 1;
@@ -509,25 +504,22 @@
       ctx.strokeStyle=g;
       ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke();
     }
-    // pulses — cool blue only
+    // pulses — cool blue tip only (small)
     for(const p of pulses){
       const A=NODES[p.l[0]], B=NODES[p.l[1]];
       const k = p.fwd ? p.t : 1-p.t;
       const x = A.x+(B.x-A.x)*k, y = A.y+(B.y-A.y)*k;
-      ctx.drawImage(PULSE_GLOW, x-9, y-9, 18, 18);
+      ctx.drawImage(PULSE_GLOW, x-5, y-5, 10, 10);
       ctx.fillStyle='rgba(238,250,255,.95)';
       ctx.beginPath(); ctx.arc(x,y,1.4,0,7); ctx.fill();
     }
-    // nodes — warm gold; alert (kill-switch) uses red core (no large blur halo)
+    // nodes — sharp dots, no blur shadow / halo
     ctx.textAlign='left'; ctx.textBaseline='middle';
     for(const n of NODES){
       const breathe = 1 + Math.sin(n.ph*2)*.10;
       const R = n.r*breathe;
-      const coreSprite = n.alert ? ALERT_CORE : CORE;
-      const core = R * (n.big ? 2.2 : 1.8);
-      ctx.drawImage(coreSprite, n.x-core, n.y-core, core*2, core*2);
       ctx.fillStyle = n.big ? '#f3e6b8' : (n.alert ? '#ff8a95' : '#e8d48b');
-      ctx.beginPath(); ctx.arc(n.x, n.y, Math.max(1.6,R*.28), 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.arc(n.x, n.y, Math.max(1.8,R*.32), 0, 7); ctx.fill();
       // label — gold accent
       ctx.font = (n.big?'600 11px':'500 9px')+' ui-monospace,Menlo,monospace';
       ctx.fillStyle = n.big ? 'rgba(246,228,150,.95)' : (n.alert ? 'rgba(255,140,150,.88)' : 'rgba(216,188,102,.82)');
