@@ -75,10 +75,28 @@ export default async function handler(req, res) {
     font: 400 16px/1.55 "IBM Plex Sans", system-ui, sans-serif;
     padding: 40px 20px 72px;
   }
-  .wrap { max-width: 560px; margin: 0 auto; position: relative; }
+  .wrap { max-width: 720px; margin: 0 auto; }
   .brand { font: 700 34px/1.1 "Cormorant Garamond", Georgia, serif; color: var(--gold); }
   h1 { font: 600 22px/1.25 "Cormorant Garamond", Georgia, serif; margin: 18px 0 8px; }
   .sub { color: var(--dim); margin-bottom: 28px; }
+  /* In-flow layout: form | seal side-by-side when room; wraps below when not.
+     Flex-wrap (not absolute) so intermediate widths never overlap controls. */
+  .verify-layout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 20px 28px;
+  }
+  .verify-form {
+    flex: 1 1 280px;
+    min-width: 0;
+  }
+  .seal-slot {
+    flex: 0 0 auto;
+    /* When the seal wraps onto its own row, center it under the form */
+    margin-inline: auto;
+  }
+  .seal-slot:has(#seal[hidden]) { display: none; }
   label { display: block; font-size: 13px; color: var(--dim); margin-bottom: 8px; }
   .row { display: flex; gap: 10px; flex-wrap: wrap; }
   input {
@@ -106,25 +124,15 @@ export default async function handler(req, res) {
   @keyframes blink { 50% { opacity: 0.35; } }
   @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
   .seal {
-    position: absolute; right: -8px; top: 120px; width: 112px; height: 112px;
+    display: block;
+    width: 112px;
+    height: 112px;
+    max-width: min(112px, 100%);
+    height: auto;
+    aspect-ratio: 1;
     filter: drop-shadow(0 8px 18px rgba(0,0,0,.45));
-    pointer-events: none;
   }
   .seal.revoked { filter: grayscale(1) drop-shadow(0 8px 18px rgba(0,0,0,.45)); opacity: .85; }
-  .row { position: relative; z-index: 2; }
-  button { position: relative; z-index: 3; }
-  @media (max-width: 720px) {
-    .seal {
-      position: static;
-      display: block;
-      width: 96px;
-      height: 96px;
-      margin: 18px auto 0;
-      right: auto;
-      top: auto;
-      pointer-events: none;
-    }
-  }
   .path-pill {
     display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px;
     border: 1px solid var(--gold); color: var(--gold); font-size: 12px; font-weight: 600;
@@ -157,12 +165,18 @@ export default async function handler(req, res) {
     <div class="brand">Guardian</div>
     <h1>Badge verify</h1>
     <p class="sub">Issued path + live qualifying-path re-check. Dates in UTC.</p>
-    <label for="serial">Serial</label>
-    <div class="row">
-      <input id="serial" name="serial" spellcheck="false" autocomplete="off" placeholder="GRD-2026-00001" value="${esc(serial)}" />
-      <button id="go" type="button">Verify</button>
+    <div class="verify-layout">
+      <div class="verify-form">
+        <label for="serial">Serial</label>
+        <div class="row">
+          <input id="serial" name="serial" spellcheck="false" autocomplete="off" placeholder="GRD-2026-00001" value="${esc(serial)}" />
+          <button id="go" type="button">Verify</button>
+        </div>
+      </div>
+      <div class="seal-slot">
+        <img id="seal" class="seal" alt="Guardian Verified seal" width="112" height="112" hidden />
+      </div>
     </div>
-    <img id="seal" class="seal" alt="" hidden />
     <div class="card" id="out" hidden>
       <div class="status" id="status"></div>
       <div class="path-pill" id="pathPill" hidden></div>
