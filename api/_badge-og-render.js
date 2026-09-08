@@ -264,9 +264,28 @@ export function encodePngRgb(rgbOrRgba, width, height, hasAlpha = true) {
 function encodePngInternal(rgba, width, height, colorType) {
   const stride = width * 4;
   const raw = Buffer.alloc((stride + 1) * height);
+  let prev = Buffer.alloc(stride, 0);
   for (let y = 0; y < height; y++) {
-    raw[y * (stride + 1)] = 0;
-    rgba.copy(raw, y * (stride + 1) + 1, y * stride, y * stride + stride);
+    const row = rgba.subarray(y * stride, y * stride + stride);
+    // Paeth filter — much smaller for photographic medallion + sparse alpha
+    const filtered = Buffer.alloc(stride);
+    for (let i = 0; i < stride; i++) {
+      const a = i >= 4 ? row[i - 4] : 0;
+      const b = prev[i];
+      const c = i >= 4 ? prev[i - 4] : 0;
+      const p = a + b - c;
+      const pa = Math.abs(p - a);
+      const pb = Math.abs(p - b);
+      const pc = Math.abs(p - c);
+      let pr;
+      if (pa <= pb && pa <= pc) pr = a;
+      else if (pb <= pc) pr = b;
+      else pr = c;
+      filtered[i] = (row[i] - pr) & 255;
+    }
+    raw[y * (stride + 1)] = 4;
+    filtered.copy(raw, y * (stride + 1) + 1);
+    prev = Buffer.from(row);
   }
   const compressed = zlib.deflateSync(raw, { level: 9 });
   const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
