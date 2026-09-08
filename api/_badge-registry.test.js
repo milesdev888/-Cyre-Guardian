@@ -15,7 +15,7 @@ import {
 } from './_badge-registry.js';
 import { qualifyFromScan, evaluateEstablished, analyzePools, pathMark, recheckIssuedPath } from './_badge-qualify.js';
 import { renderBadgeOg, encodePng, decodePng, loadSealImage, blitImage, renderVerifyOg, formatVerifiedOgTitle } from './_badge-og-render.js';
-import { renderOfficialSeal, renderOfficialSealOg } from './_badge-seal-render.js';
+import { renderOfficialSeal, renderOfficialSealOg, renderOfficialSealWithMeta, sealVerifyUrl, SEAL_CANVAS } from './_badge-seal-render.js';
 
 process.env.BADGE_REGISTRY_STORE = '/tmp/guardian-badge-registry-test-step2b.json';
 
@@ -129,7 +129,23 @@ const sealEst = await renderOfficialSeal({
 });
 assert.equal(sealEst[0], 137);
 
-// OG seal: ~1024px indexed PNG under 300KB
+// Full-res QR: 12–14% of seal width, short /v/ URL
+assert.equal(sealVerifyUrl(GENESIS_SERIAL), 'https://cyre.dev/verify/GRD-2026-00001');
+const sealMeta = await renderOfficialSealWithMeta({
+  serial: GENESIS_SERIAL,
+  ca: GENESIS_MINT,
+  status: 'VALID',
+  pathMark: 'SECURED'
+});
+assert.ok(sealMeta.qr, 'full-res seal must include QR');
+assert.ok(
+  sealMeta.qr.qrDim >= Math.round(SEAL_CANVAS * 0.12) &&
+    sealMeta.qr.qrDim <= Math.round(SEAL_CANVAS * 0.14),
+  `QR dim ${sealMeta.qr.qrDim} outside 12–14% of ${SEAL_CANVAS}`
+);
+assert.match(sealMeta.qr.url, /\/verify\/GRD-2026-00001$/);
+
+// OG seal: ~1024px indexed PNG under 300KB — QR omitted (unscannable at that size)
 const sealOg = await renderOfficialSealOg({
   serial: GENESIS_SERIAL,
   ca: GENESIS_MINT,

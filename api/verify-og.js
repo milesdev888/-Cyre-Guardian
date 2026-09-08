@@ -50,7 +50,9 @@ export default async function handler(req, res) {
       pathFamily: family,
       pathMark: pathMark(family || badge.qualifyPath),
       qualifyPath: badge.qualifyPath,
-      grade: badge.grade || null
+      grade: badge.grade || null,
+      // Card scales the seal down — decorative QR would be unscannable.
+      includeQr: false
     });
   } catch {
     sealPng = null;

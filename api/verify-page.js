@@ -21,8 +21,9 @@ export default async function handler(req, res) {
 
   // 1200×630 verify OG card — crawlers must see this in SSR HTML (no JS).
   // Full-res seal remains at /api/seal/<serial>.png; seal OG at /api/seal/<serial>/og.png.
+  // `v=nt1` busts X/Telegram caches after name+ticker title/card change.
   const ogImage = serial
-    ? `${SITE}/api/verify/${encodeURIComponent(serial)}/og.png`
+    ? `${SITE}/api/verify/${encodeURIComponent(serial)}/og.png?v=nt1`
     : `${SITE}/brand/guardian-og-1200x630.jpg`;
   const title = badge
     ? formatVerifiedOgTitle({

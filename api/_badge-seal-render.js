@@ -41,6 +41,27 @@ const TROPHY_YELLOW_PULL = 0.55;
 const TROPHY_BLUE_KEEP = 0.42;
 const TROPHY_PIVOT = 142;
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
+/** Full-res QR target: 12–14% of seal width (~220–250px on 1800 master). */
+const QR_PCT_MIN = 0.12;
+const QR_PCT_MAX = 0.14;
+const QR_PCT_TARGET = 0.13;
+/** Spec quiet-zone modules on each side (opaque dark plate, not transparent). */
+const QR_QUIET_MODULES = 4;
+/** ECC M keeps module count low; Q only if payload needs it. */
+const QR_ECC = 'M';
+
+/**
+ * Absolute verify URL for QR payloads.
+ * Uses `/verify/:serial` (live on cyre.dev today). A shorter `/v/:serial` alias
+ * exists in vercel.json for after deploy, but QR must encode a URL that already
+ * resolves — iPhone cameras hitting a 404 are worse than one extra path segment.
+ * @param {string} serial
+ * @returns {string}
+ */
+export function sealVerifyUrl(serial) {
+  const s = String(serial || '').trim().toUpperCase();
+  return `${SITE}/verify/${encodeURIComponent(s)}`;
+}
 
 function assetPath(...parts) {
   const candidates = [
@@ -378,39 +399,79 @@ function drawBandText(rgba, W, H, cx, cy, radius, text, atlas, opts = {}) {
   }
 }
 
+/**
+ * Camera-scannable QR for full-res seals only.
+ * - Size ~12–14% of canvas width (220–250px on 1800)
+ * - Opaque dark backing plate + pure-white quiet zone + pure-black modules
+ * - No transparency through the QR, no gold tint
+ * - Bottom-right; may sit on the outer dark field but stays outside the band radius
+ *
+ * @returns {{ dim: number, x: number, y: number, modules: number, scale: number, url: string }}
+ */
 async function drawQr(rgba, W, H, url) {
-  const matrix = await QRCode.create(url, { errorCorrectionLevel: 'M' });
+  const matrix = await QRCode.create(url, { errorCorrectionLevel: QR_ECC });
   const modules = matrix.modules;
   const size = modules.size;
-  const scale = 5;
-  const quiet = 2;
-  const dim = (size + quiet * 2) * scale;
-  const qrRgba = Buffer.alloc(dim * dim * 4, 0);
-  // Standard dark-on-light QR (scannable); gold-on-black is not.
-  for (let i = 0; i < qrRgba.length; i += 4) {
-    qrRgba[i] = 245;
-    qrRgba[i + 1] = 240;
-    qrRgba[i + 2] = 228;
-    qrRgba[i + 3] = 255;
+  const quiet = QR_QUIET_MODULES;
+  const cells = size + quiet * 2;
+  const minPx = Math.round(W * QR_PCT_MIN);
+  const maxPx = Math.round(W * QR_PCT_MAX);
+  let scale = Math.max(1, Math.floor(maxPx / cells));
+  if (cells * scale < minPx) scale = Math.ceil(minPx / cells);
+  const alt = Math.max(1, Math.round((W * QR_PCT_TARGET) / cells));
+  if (alt !== scale) {
+    const altDim = cells * alt;
+    if (altDim >= minPx && altDim <= maxPx) scale = alt;
   }
+  const dim = cells * scale;
+  const pad = Math.max(4, Math.round(scale)); // dark plate rim outside white quiet zone
+  const plate = dim + pad * 2;
+
+  const DARK = [11, 18, 16];
+  const WHITE = [255, 255, 255];
+  const BLACK = [0, 0, 0];
+
+  // Opaque dark quiet-zone patch behind the QR (no alpha, no gold bleed-through).
+  const plateRgba = Buffer.alloc(plate * plate * 4, 0);
+  for (let i = 0; i < plateRgba.length; i += 4) {
+    plateRgba[i] = DARK[0];
+    plateRgba[i + 1] = DARK[1];
+    plateRgba[i + 2] = DARK[2];
+    plateRgba[i + 3] = 255;
+  }
+  // Pure white light field (quiet zone + light modules).
+  for (let y = 0; y < dim; y++) {
+    for (let x = 0; x < dim; x++) {
+      const i = ((y + pad) * plate + (x + pad)) * 4;
+      plateRgba[i] = WHITE[0];
+      plateRgba[i + 1] = WHITE[1];
+      plateRgba[i + 2] = WHITE[2];
+      plateRgba[i + 3] = 255;
+    }
+  }
+  // Pure black data modules (max contrast, no gold tint).
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       if (!modules.get(x, y)) continue;
-      const px = (x + quiet) * scale;
-      const py = (y + quiet) * scale;
+      const px = (x + quiet) * scale + pad;
+      const py = (y + quiet) * scale + pad;
       for (let dy = 0; dy < scale; dy++) {
         for (let dx = 0; dx < scale; dx++) {
-          const i = ((py + dy) * dim + (px + dx)) * 4;
-          qrRgba[i] = 11;
-          qrRgba[i + 1] = 18;
-          qrRgba[i + 2] = 16;
-          qrRgba[i + 3] = 255;
+          const i = ((py + dy) * plate + (px + dx)) * 4;
+          plateRgba[i] = BLACK[0];
+          plateRgba[i + 1] = BLACK[1];
+          plateRgba[i + 2] = BLACK[2];
+          plateRgba[i + 3] = 255;
         }
       }
     }
   }
-  const margin = 36;
-  blitScaled(rgba, W, H, { rgba: qrRgba, width: dim, height: dim }, W - dim - margin, H - dim - margin, dim, dim);
+
+  const margin = Math.max(8, Math.round(W * 0.006));
+  const x0 = W - plate - margin;
+  const y0 = H - plate - margin;
+  blitScaled(rgba, W, H, { rgba: plateRgba, width: plate, height: plate }, x0, y0, plate, plate);
+  return { dim: plate, qrDim: dim, x: x0, y: y0, modules: size, scale, url, pad };
 }
 
 function applyRevoked(rgba, W, H) {
@@ -470,14 +531,24 @@ function applyRevoked(rgba, W, H) {
 }
 
 /**
- * @param {{ serial: string, ca: string, status?: string, pathFamily?: string, pathMark?: string, qualifyPath?: string, grade?: string }} input
- * @returns {Promise<{ rgba: Buffer, width: number, height: number, serial: string }>}
+ * @param {{
+ *  serial: string,
+ *  ca: string,
+ *  status?: string,
+ *  pathFamily?: string,
+ *  pathMark?: string,
+ *  qualifyPath?: string,
+ *  grade?: string,
+ *  includeQr?: boolean
+ * }} input
+ * @returns {Promise<{ rgba: Buffer, width: number, height: number, serial: string, qr?: object|null }>}
  */
 async function paintOfficialSeal(input) {
   const serial = String(input.serial || '').trim().toUpperCase();
   const ca = String(input.ca || '').trim();
   const status = String(input.status || 'VALID').toUpperCase();
   const grade = String(input.grade || '').trim().toUpperCase();
+  const includeQr = input.includeQr !== false;
   const mark = String(
     input.pathMark ||
       (String(input.pathFamily || '').toLowerCase() === 'established'
@@ -492,8 +563,7 @@ async function paintOfficialSeal(input) {
     .toUpperCase();
   const W = SEAL_CANVAS;
   const H = SEAL_CANVAS;
-  // Transparent plate — medallion + band + QR composite without an opaque black square
-  // (fixes verify-page overlap; thumbnails read cleanly on dark UI backgrounds).
+  // Transparent plate — medallion + band (+ optional QR). QR plate itself is fully opaque.
   const rgba = Buffer.alloc(W * H * 4, 0);
 
   const med = brightenTrophyGold(loadMedallion());
@@ -516,11 +586,22 @@ async function paintOfficialSeal(input) {
     pathPlatinum: grade === 'AA'
   });
 
-  await drawQr(rgba, W, H, `${SITE}/verify/${serial}`);
+  let qr = null;
+  if (includeQr) {
+    // Full-res only. Tiny/OG variants omit QR — an unscannable decorative code is worse than none.
+    qr = await drawQr(rgba, W, H, sealVerifyUrl(serial));
+    // Guard: QR nearest corner must stay outside the engraved band radius.
+    const nearestR = Math.hypot(cx - qr.x, cy - qr.y);
+    if (nearestR < BAND_R + 8) {
+      throw new Error(
+        `seal QR overlaps band text (nearestR=${nearestR.toFixed(1)} band=${BAND_R})`
+      );
+    }
+  }
 
   if (status === 'REVOKED') applyRevoked(rgba, W, H);
 
-  return { rgba, width: W, height: H, serial };
+  return { rgba, width: W, height: H, serial, qr };
 }
 
 /**
@@ -543,7 +624,11 @@ function crushTransparent(rgba) {
  * @returns {Promise<Buffer>} PNG 1800×1800 RGBA (transparent plate)
  */
 export async function renderOfficialSeal(input) {
-  const painted = await paintOfficialSeal(input);
+  // Default QR on; pass includeQr:false for embeds too small to scan (verify OG card, etc.).
+  const painted = await paintOfficialSeal({
+    ...input,
+    includeQr: input?.includeQr !== false
+  });
   crushTransparent(painted.rgba);
   // RGBA PNG with transparent corners (not opaque RGB).
   return encodePng(painted.rgba, painted.width, painted.height);
@@ -552,15 +637,33 @@ export async function renderOfficialSeal(input) {
 /**
  * Compressed OG variant — ~1024×1024 indexed PNG (target under 300KB).
  * Full-res remains at /api/seal/&lt;serial&gt;.png.
+ * QR is omitted: at OG/display sizes the code is too small for phones and a
+ * decorative non-scanning QR is worse than none. Use the full-res seal to scan.
  * @param {{ serial: string, ca: string, status?: string, pathFamily?: string, pathMark?: string, qualifyPath?: string, grade?: string }} input
  * @returns {Promise<Buffer>}
  */
 export async function renderOfficialSealOg(input) {
-  const painted = await paintOfficialSeal(input);
+  const painted = await paintOfficialSeal({ ...input, includeQr: false });
   return encodeOgPng(painted.rgba, painted.width, painted.height, {
     size: SEAL_OG_SIZE,
     colors: SEAL_OG_COLORS
   });
+}
+
+/**
+ * Debug/test helper — paint full-res seal and return QR metrics + PNG.
+ * @param {Parameters<typeof paintOfficialSeal>[0]} input
+ */
+export async function renderOfficialSealWithMeta(input) {
+  const painted = await paintOfficialSeal({ ...input, includeQr: true });
+  crushTransparent(painted.rgba);
+  return {
+    png: encodePng(painted.rgba, painted.width, painted.height),
+    qr: painted.qr,
+    width: painted.width,
+    height: painted.height,
+    serial: painted.serial
+  };
 }
 
 export function renderMissingSealPng() {
