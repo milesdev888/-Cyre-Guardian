@@ -1,5 +1,6 @@
 // api/badge-order.js — Create / read / watch paid Guardian Verified orders.
-// POST { mint } — live-scan qualify; if eligible and unissued → create ORDER (30m lock).
+// POST { mint, usdcChain? } — live-scan qualify; if eligible and unissued → create ORDER (30m lock).
+// usdcChain: ethereum | base | arbitrum | solana (default base). Robinhood Chain excluded.
 // Non-qualifying mints get 422 with no checkout — money cannot buy a non-qualifying badge.
 // GET ?id=ORD-… — order status (public).
 // POST ?watch=1 | /api/badge/order/watch — poll for matching payment (same function so ephemeral
@@ -13,6 +14,15 @@ import {
   C7_USD,
   BASE_TREASURY,
   C7_TREASURY,
+  EVM_USDC_TREASURY,
+  SOLANA_USDC_TREASURY,
+  USDC_CHAINS,
+  USDC_CHAIN_IDS,
+  resolveUsdcChain,
+  isUsdcChainLive,
+  liveUsdcChainIds,
+  heldUsdcChainIds,
+  solanaUsdcTreasury,
   isDurableOrderStore,
   saveOrder,
   getOrder,
@@ -151,7 +161,8 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       howTo: {
-        create: 'POST /api/badge/order { mint } — only when live scan qualifies and mint is unissued',
+        create:
+          'POST /api/badge/order { mint, usdcChain?: ethereum|base|arbitrum|solana } — only when live scan qualifies and mint is unissued',
         status: 'GET /api/badge/order?id=ORD-YYYY-NNNNN',
         checkout: `${SITE}/order?mint=<mint>`,
         watch: 'POST /api/badge/order/watch { orderId, token? } — include signed token when order is not in store',
@@ -162,8 +173,23 @@ export default async function handler(req, res) {
         usdcUsd: USDC_USD,
         c7Usd: C7_USD,
         lockMinutes: 30,
+        usdcChains: USDC_CHAIN_IDS,
+        liveUsdcChains: liveUsdcChainIds(),
+        heldUsdcChains: heldUsdcChainIds(),
+        usdcTreasuryEvm: EVM_USDC_TREASURY,
+        usdcTreasurySolana: solanaUsdcTreasury() || null,
         usdcTreasuryBase: BASE_TREASURY,
-        c7TreasurySolana: C7_TREASURY
+        c7TreasurySolana: C7_TREASURY,
+        canonicalUsdc: Object.fromEntries(
+          USDC_CHAIN_IDS.map((id) => [
+            id,
+            {
+              name: USDC_CHAINS[id].name,
+              asset: USDC_CHAINS[id].asset,
+              live: isUsdcChainLive(id)
+            }
+          ])
+        )
       },
       paths: QUALIFY_PATHS,
       disclaimer: DISCLAIMER
@@ -177,6 +203,33 @@ export default async function handler(req, res) {
   const body = readBody(req) || {};
   const mint = String(body.mint || '').trim();
   if (!mint) return res.status(400).json({ ok: false, error: 'mint required' });
+  const usdcChainRaw = body.usdcChain != null ? body.usdcChain : body.usdc_chain;
+  const usdcMeta = resolveUsdcChain(
+    usdcChainRaw != null && usdcChainRaw !== '' ? usdcChainRaw : 'base'
+  );
+  if (!usdcMeta) {
+    return res.status(400).json({
+      ok: false,
+      error: `unsupported usdcChain — choose one of: ${USDC_CHAIN_IDS.join(', ')}`,
+      usdcChains: USDC_CHAIN_IDS,
+      liveUsdcChains: liveUsdcChainIds(),
+      heldUsdcChains: heldUsdcChainIds(),
+      note: 'Robinhood Chain is excluded until canonical USDC is confirmed.'
+    });
+  }
+  if (!isUsdcChainLive(usdcMeta)) {
+    return res.status(400).json({
+      ok: false,
+      error: `USDC on ${usdcMeta.name} is held — receiving treasury not confirmed`,
+      usdcChain: usdcMeta.id,
+      liveUsdcChains: liveUsdcChainIds(),
+      heldUsdcChains: heldUsdcChainIds(),
+      note:
+        usdcMeta.id === 'solana'
+          ? 'Set BADGE_USDC_TREASURY_SOLANA to a confirmed Solana USDC receive address to go live.'
+          : 'Confirm the shared EVM treasury is funded/controlled on this chain, or set BADGE_USDC_LIVE_CHAINS.'
+    });
+  }
 
   try {
     // Live scan first — chainId comes from the report (ethereum for AAVE), never default solana.
@@ -214,7 +267,13 @@ export default async function handler(req, res) {
       });
     }
 
-    const order = await createPaidOrder({ mint, chainId, qualify, siteUrl: SITE });
+    const order = await createPaidOrder({
+      mint,
+      chainId,
+      qualify,
+      siteUrl: SITE,
+      usdcChain: usdcMeta.id
+    });
     return res.status(201).json({
       ...publicOrderView(order),
       checkoutUrl: order.statusUrl,
