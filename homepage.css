@@ -106,11 +106,12 @@ img{max-width:100%;display:block}
 .brand-orb{
   width:24px;
   height:24px;
-  border-radius:50%;
+  border-radius:6px;
   flex:none;
-  background:url('/cyre-token-ticker-128.png') center/cover no-repeat;
-  border:1px solid rgba(0,82,255,.42);
-  box-shadow:0 0 16px rgba(0,82,255,.45), 0 0 28px rgba(87,139,255,.32);
+  background:url('/c7-cobra-256.png?v=c7g2') center/contain no-repeat;
+  background-color:#000;
+  border:1px solid rgba(216,188,102,.42);
+  box-shadow:0 0 14px rgba(201,162,39,.35);
 }
 .brand-r{
   color:var(--cb-blue);
@@ -120,24 +121,26 @@ img{max-width:100%;display:block}
   display:inline-flex;
   align-items:center;
   gap:7px;
-  color:var(--cyan);
+  color:var(--gold);
   font-weight:600;
   letter-spacing:.02em;
-  border:1px solid rgba(0,82,255,.22);
-  background:rgba(0,82,255,.06);
+  border:1px solid rgba(216,188,102,.28);
+  background:rgba(201,162,39,.08);
 }
 .nav-links a.nav-token img{
   width:18px;
   height:18px;
   border-radius:4px;
   display:block;
-  filter:drop-shadow(0 0 6px rgba(0,82,255,.45));
+  object-fit:contain;
+  background:#000;
+  filter:drop-shadow(0 0 6px rgba(201,162,39,.4));
 }
 .nav-links a.nav-token:hover,
 .nav-links a.nav-token:focus-visible{
-  color:#dff8ff;
-  border-color:rgba(0,82,255,.45);
-  background:rgba(0,82,255,.12);
+  color:var(--gold-bright, #e6cc7e);
+  border-color:rgba(216,188,102,.55);
+  background:rgba(201,162,39,.14);
 }
 .nav-links{
   display:flex;
