@@ -14,10 +14,23 @@ import {
   hasRevocationHistory
 } from './_badge-registry.js';
 import { qualifyFromScan, evaluateEstablished, analyzePools, pathMark, recheckIssuedPath } from './_badge-qualify.js';
-import { renderBadgeOg, encodePng, decodePng, loadSealImage, blitImage, renderVerifyOg } from './_badge-og-render.js';
-import { renderOfficialSeal, renderOfficialSealOg } from './_badge-seal-render.js';
+import { renderBadgeOg, encodePng, decodePng, loadSealImage, blitImage, renderVerifyOg, formatVerifiedOgTitle } from './_badge-og-render.js';
+import { renderOfficialSeal, renderOfficialSealOg, renderOfficialSealUi, renderOfficialSealWithMeta, sealVerifyUrl, SEAL_CANVAS, SEAL_UI_SIZE } from './_badge-seal-render.js';
 
 process.env.BADGE_REGISTRY_STORE = '/tmp/guardian-badge-registry-test-step2b.json';
+
+assert.equal(
+  formatVerifiedOgTitle({
+    name: GENESIS_BADGE.name,
+    symbol: GENESIS_BADGE.symbol,
+    serial: GENESIS_SERIAL
+  }),
+  'Guardian Verified · CYRE ($C7) · GRD-2026-00001'
+);
+assert.equal(
+  formatVerifiedOgTitle({ serial: GENESIS_SERIAL }),
+  'Guardian Verified · GRD-2026-00001'
+);
 
 assert.equal(formatSerial(2026, 1), 'GRD-2026-00001');
 assert.equal(normalizeSerial('grd-2026-00001'), GENESIS_SERIAL);
@@ -116,7 +129,23 @@ const sealEst = await renderOfficialSeal({
 });
 assert.equal(sealEst[0], 137);
 
-// OG seal: ~1024px indexed PNG under 300KB
+// Full-res QR: 12–14% of seal width, short /v/ URL
+assert.equal(sealVerifyUrl(GENESIS_SERIAL), 'https://cyre.dev/verify/GRD-2026-00001');
+const sealMeta = await renderOfficialSealWithMeta({
+  serial: GENESIS_SERIAL,
+  ca: GENESIS_MINT,
+  status: 'VALID',
+  pathMark: 'SECURED'
+});
+assert.ok(sealMeta.qr, 'full-res seal must include QR');
+assert.ok(
+  sealMeta.qr.qrDim >= Math.round(SEAL_CANVAS * 0.12) &&
+    sealMeta.qr.qrDim <= Math.round(SEAL_CANVAS * 0.14),
+  `QR dim ${sealMeta.qr.qrDim} outside 12–14% of ${SEAL_CANVAS}`
+);
+assert.match(sealMeta.qr.url, /\/verify\/GRD-2026-00001$/);
+
+// OG seal: ~1024px indexed PNG under 300KB — QR omitted (unscannable at that size)
 const sealOg = await renderOfficialSealOg({
   serial: GENESIS_SERIAL,
   ca: GENESIS_MINT,
@@ -125,6 +154,19 @@ const sealOg = await renderOfficialSealOg({
 });
 assert.equal(sealOg[0], 137);
 assert.ok(sealOg.length < 300 * 1024, `seal OG must be under 300KB, got ${sealOg.length}`);
+
+// UI seal: transparent RGBA thumb (no black square field)
+const sealUi = await renderOfficialSealUi({
+  serial: GENESIS_SERIAL,
+  ca: GENESIS_MINT,
+  status: 'VALID',
+  pathMark: 'SECURED'
+});
+assert.equal(sealUi[0], 137);
+const uiDecoded = decodePng(sealUi);
+assert.equal(uiDecoded.width, SEAL_UI_SIZE);
+assert.equal(uiDecoded.rgba[3], 0, 'UI seal corner alpha must be 0 (no black square)');
+assert.equal(uiDecoded.rgba[(SEAL_UI_SIZE * SEAL_UI_SIZE - 1) * 4 + 3], 0);
 
 // Majority fails established
 const majorityFail = qualifyFromScan({
@@ -166,15 +208,19 @@ const revokedPng = renderBadgeOg({
 });
 assert.equal(revokedPng[0], 137);
 
-// Verify OG card: 1200×630-class indexed PNG under 300KB with seal + status
+// Verify OG card: 1200×630-class indexed PNG under 300KB with seal + status + name/ticker
 const verifyOg = renderVerifyOg({
   serial: GENESIS_SERIAL,
+  name: GENESIS_BADGE.name,
+  symbol: GENESIS_BADGE.symbol,
   status: 'VALID'
 });
 assert.equal(verifyOg[0], 137);
 assert.ok(verifyOg.length < 300 * 1024, `verify OG must be under 300KB, got ${verifyOg.length}`);
 const verifyRevoked = renderVerifyOg({
   serial: GENESIS_SERIAL,
+  name: GENESIS_BADGE.name,
+  symbol: GENESIS_BADGE.symbol,
   status: 'REVOKED'
 });
 assert.equal(verifyRevoked[0], 137);

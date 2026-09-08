@@ -63,6 +63,8 @@ export const ROUTE_CATALOG = [
   { path: '/api/gate', family: 'discovery', paid: true, priceAtomic: '1000', priceEnv: 'X402_PRICE_GATE', bazaarExt: true },
   { path: '/api/handshake', family: 'discovery', paid: true, priceAtomic: '10000', priceEnv: 'X402_PRICE_HANDSHAKE', bazaarExt: true },
   { path: '/api/hint', family: 'discovery', paid: false, bazaarExt: false },
+  { path: '/api/supply', family: 'discovery', paid: false, bazaarExt: false },
+  { path: '/api/supply/circulating', family: 'discovery', paid: false, bazaarExt: false },
   { path: '/api/preflight', family: 'discovery', paid: true, priceAtomic: '10000', priceEnv: 'X402_PRICE_PREFLIGHT', bazaarExt: true },
   { path: '/api/alerts', family: 'discovery', paid: true, priceAtomic: '15000', priceEnv: 'X402_PRICE_ALERTS', bazaarExt: true },
   { path: '/api/pulse', family: 'discovery', paid: true, priceAtomic: '5000', priceEnv: 'X402_PRICE_PULSE', bazaarExt: true },

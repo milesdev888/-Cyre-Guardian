@@ -243,6 +243,11 @@
       "permanent": false
     },
     {
+      "source": "/v/:serial",
+      "destination": "/verify?serial=:serial",
+      "permanent": false
+    },
+    {
       "source": "/scan",
       "missing": [
         {
@@ -324,6 +329,10 @@
       "destination": "https://scan.cyre.dev/api/card/:mint.png"
     },
     {
+      "source": "/api/supply/circulating",
+      "destination": "/api/supply-circulating"
+    },
+    {
       "source": "/api/passport/verify",
       "destination": "/api/passport-verify"
     },
@@ -346,6 +355,14 @@
     {
       "source": "/api/seal/:serial/og",
       "destination": "/api/badge-seal?serial=:serial&og=1"
+    },
+    {
+      "source": "/api/seal/:serial/ui.png",
+      "destination": "/api/badge-seal?serial=:serial&ui=1"
+    },
+    {
+      "source": "/api/seal/:serial/ui",
+      "destination": "/api/badge-seal?serial=:serial&ui=1"
     },
     {
       "source": "/api/seal/:serial",

@@ -238,7 +238,7 @@ footer{border-top:1px solid var(--line);padding:22px 0 44px;color:#6c7891;font-s
 
   <div class="legend">
     <div class="leg"><i style="background:#9d8cff"></i><div><b>Development treasury</b><small>60,000,000 — locked in a 2-year <u>linear</u> on-chain vesting contract. No cliff bomb: tokens release gradually across 24 months, every unlock publicly visible.</small></div><span class="pct">60%</span></div>
-    <div class="leg"><i style="background:#d8bc66"></i><div><b>Community float</b><small>25,000,000 — the only freely tradeable supply at launch. Sold on the bonding curve; seeds the graduated liquidity pool.</small></div><span class="pct">25%</span></div>
+    <div class="leg"><i style="background:#d8bc66"></i><div><b>Community float</b><small><span id="c7-circ-float">25,000,000</span> circulating — total (100M) minus tokens still locked in the Streamflow + team escrow contracts below. Live figure: <a href="/api/supply/circulating" style="color:inherit;text-decoration:underline">/api/supply/circulating</a>.</small></div><span class="pct">25%</span></div>
     <div class="leg"><i style="background:#4fe3d0"></i><div><b>Team</b><small>10,000,000 — 12-month on-chain vesting with a 6-month cliff. The team cannot sell a single token for six months, then daily release.</small></div><span class="pct">10%</span></div>
     <div class="leg"><i style="background:#3ddc84"></i><div><b>Community &amp; growth</b><small>5,000,000 — one flexible reserve covering airdrops, creator rewards, exchange listings and marketing. Deployed as needed; unused portion stays locked; every movement disclosed.</small></div><span class="pct">5%</span></div>
   </div>
@@ -338,6 +338,19 @@ footer{border-top:1px solid var(--line);padding:22px 0 44px;color:#6c7891;font-s
     });
   }
   document.querySelectorAll('.ca-mint').forEach(bindCopy);
+
+  // Live circulating = total − locked (same as /api/supply/circulating)
+  var circEl = document.getElementById('c7-circ-float');
+  if (circEl) {
+    fetch('/api/supply/circulating', { credentials: 'omit' })
+      .then(function (r) { return r.ok ? r.text() : Promise.reject(); })
+      .then(function (t) {
+        var n = Number(String(t).trim());
+        if (!isFinite(n) || n <= 0) return;
+        circEl.textContent = Math.round(n).toLocaleString('en-US');
+      })
+      .catch(function () { /* keep published launch float */ });
+  }
 })();
 </script>
 

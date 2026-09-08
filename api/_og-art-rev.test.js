@@ -5,7 +5,7 @@ function assert(cond, msg) {
   if (!cond) throw new Error(msg || 'assert failed');
 }
 
-assert(OG_ART_REV === '2', 'rev is 2 for seal brightening');
+assert(OG_ART_REV === '3', 'rev is 3 for seal float + verify card');
 assert(
   withOgArtRev('https://cyre.dev/api/seal/GRD-2026-00001/og.png') ===
     `https://cyre.dev/api/seal/GRD-2026-00001/og.png?r=${OG_ART_REV}`,

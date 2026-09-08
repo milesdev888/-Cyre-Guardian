@@ -175,8 +175,10 @@ export default async function handler(req, res) {
     stillQualifies,
     verifyUrl: `${SITE}/verify/${badge.serial}`,
     ogImage: withOgArtRev(`${SITE}/api/badge/og?serial=${encodeURIComponent(badge.serial)}&v=5`),
-    // Prefer compressed OG seal (~1024px ≤300KB) for embeds/UI; full-res still at /api/seal/<serial>.png
-    sealUrl: withOgArtRev(`${SITE}/api/seal/${encodeURIComponent(badge.serial)}/og.png`),
+    // Full-res RGBA (transparent + scannable QR). Indexed /og.png paints a black square.
+    sealUrl: withOgArtRev(`${SITE}/api/seal/${encodeURIComponent(badge.serial)}.png`),
+    // Tiny on-page thumb without QR (scan corners, etc.)
+    sealUrlUi: withOgArtRev(`${SITE}/api/seal/${encodeURIComponent(badge.serial)}/ui.png`),
     durable: isDurableBadgeStore(),
     paths: QUALIFY_PATHS,
     disclaimer: DISCLAIMER

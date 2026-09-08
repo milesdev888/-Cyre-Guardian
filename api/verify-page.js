@@ -2,7 +2,7 @@
 // Rewritten from /verify so crawlers see OG without JS.
 
 import { getBadgeBySerial, normalizeSerial } from './_badge-registry.js';
-import { formatUtc } from './_badge-og-render.js';
+import { formatUtc, formatVerifiedOgTitle } from './_badge-og-render.js';
 import { withOgArtRev } from './_og-art-rev.js';
 
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
@@ -20,15 +20,20 @@ export default async function handler(req, res) {
   const serial = normalizeSerial(serialRaw) || '';
   const badge = serial ? await getBadgeBySerial(serial) : null;
 
-  // Seal OG (~1024px ≤300KB) — crawlers must see this in SSR HTML (no JS).
-  // Full-res seal remains at /api/seal/<serial>.png; dedicated 1200×630 card at /api/verify/<serial>/og.png.
+  // 1200×630 verify OG card — crawlers must see this in SSR HTML (no JS).
+  // Full-res seal remains at /api/seal/<serial>.png; seal OG at /api/seal/<serial>/og.png.
   // `r=` busts X/Telegram caches when seal/card art changes (see api/_og-art-rev.js).
   const ogImage = withOgArtRev(
     serial
-      ? `${SITE}/api/seal/${encodeURIComponent(serial)}/og.png`
+      ? `${SITE}/api/verify/${encodeURIComponent(serial)}/og.png`
       : `${SITE}/brand/guardian-og-1200x630.jpg`
-  );  const title = badge
-    ? `Guardian ${badge.pathLabel || badge.qualifyPath || 'Badge'} · ${badge.serial}`
+  );
+  const title = badge
+    ? formatVerifiedOgTitle({
+        name: badge.name,
+        symbol: badge.symbol,
+        serial: badge.serial
+      })
     : 'Guardian badge verify';
   const desc = badge
     ? `${badge.symbol ? '$' + badge.symbol + ' · ' : ''}Path ${badge.pathLabel || badge.qualifyPath || '—'} · issued ${badge.issuedAt ? formatUtc(badge.issuedAt) : ''} · live re-check on view`
@@ -36,10 +41,10 @@ export default async function handler(req, res) {
 
   const canonical = serial ? `${SITE}/verify/${serial}` : `${SITE}/verify`;
   const ogAlt = badge
-    ? `Guardian ${badge.serial} · ${badge.status || 'VALID'} — checkable at cyre.dev/verify`
+    ? `${title} · ${badge.status || 'VALID'} — checkable at cyre.dev/verify`
     : 'Guardian badge verify — checkable at cyre.dev/verify';
-  const ogW = serial ? '1024' : '1200';
-  const ogH = serial ? '1024' : '630';
+  const ogW = '1200';
+  const ogH = '630';
 
   const html = `<!doctype html>
 <html lang="en">
@@ -101,6 +106,7 @@ export default async function handler(req, res) {
     flex: 0 0 auto;
     /* When the seal wraps onto its own row, center it under the form */
     margin-inline: auto;
+    background: transparent;
   }
   .seal-slot:has(#seal[hidden]) { display: none; }
   label { display: block; font-size: 13px; color: var(--dim); margin-bottom: 8px; }
@@ -129,12 +135,20 @@ export default async function handler(req, res) {
   .pulse.off { background: var(--dim); animation: none; } .pulse.bad { background: var(--bad); }
   @keyframes blink { 50% { opacity: 0.35; } }
   @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+  /* Transparent seal — full medallion + QR floats; no black square (same as hero crest). */
   .seal {
     display: block;
-    width: 112px;
-    max-width: min(112px, 100%);
+    width: min(240px, 42vw);
+    max-width: 240px;
     height: auto;
     aspect-ratio: 1;
+    object-fit: contain;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    outline: 0;
     filter: drop-shadow(0 8px 18px rgba(0,0,0,.45));
   }
   .seal.revoked { filter: grayscale(1) drop-shadow(0 8px 18px rgba(0,0,0,.45)); opacity: .85; }
@@ -179,7 +193,7 @@ export default async function handler(req, res) {
         </div>
       </div>
       <div class="seal-slot">
-        <img id="seal" class="seal" alt="Guardian Verified seal" width="112" height="112" hidden />
+        <img id="seal" class="seal" alt="Guardian Verified seal" width="240" height="240" hidden />
       </div>
     </div>
     <div class="card" id="out" hidden>
@@ -257,7 +271,8 @@ export default async function handler(req, res) {
         ? 'Path earned: Established (Battle-Tested)'
         : ('Path earned: ' + pathText + (b.pathFamily === 'secured' ? ' (Secured)' : ''));
       seal.hidden = false;
-      seal.src = j.sealUrl || ('/api/seal/' + encodeURIComponent(b.serial) + '/og.png?r=2');
+      // Full-res transparent PNG with QR — never indexed /og.png (black field).
+      seal.src = j.sealUrl || ('/api/seal/' + encodeURIComponent(b.serial) + '.png?v=float1');
       seal.className = 'seal' + (st === 'VALID' ? '' : ' revoked');
       setShare(b.serial, b);
       var live = j.live;

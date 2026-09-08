@@ -18,14 +18,15 @@
 <meta name="twitter:image:alt" content="Guardian — The $C7 Loop">
 <style>
   :root{
-    --ink:#0b0618; --panel:rgba(20,12,40,.55); --line:rgba(196,181,253,.16);
-    --violet:#c4b5fd; --cyan:#7cefff; --frost:#eefaff;
-    --red:#ff4d5e; --green:#3ddc84; --dim:#7a6fa3;
+    /* Brand palette — match homepage; cool blue = pulses only; red = kill/risk */
+    --ink:#0a0f0a; --ink-2:#0a0b0d; --panel:rgba(16,23,16,.72); --line:rgba(216,188,102,.22);
+    --gold:#d8bc66; --gold-bright:#e6cc7e; --frost:#ede7d5;
+    --pulse:#5fd0ff; --red:#ff4d5e; --green:#3ddc84; --dim:#97a08d;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%}
   body{
-    background:var(--ink); color:var(--violet); overflow:hidden;
+    background:var(--ink-2); color:var(--gold); overflow:hidden;
     font:10px/1.5 ui-monospace,"JetBrains Mono","SF Mono",Menlo,Consolas,monospace;
     letter-spacing:.06em; -webkit-font-smoothing:antialiased;
   }
@@ -35,11 +36,11 @@
   /* top strip */
   .top{top:0; left:0; right:0; display:flex; gap:14px; align-items:baseline;
        padding:calc(10px + env(safe-area-inset-top)) 14px 8px;
-       background:linear-gradient(180deg, rgba(11,6,24,.85), rgba(11,6,24,0));}
+       background:linear-gradient(180deg, rgba(10,15,10,.88), rgba(10,15,10,0));}
   .top b{color:var(--frost); font-weight:600; letter-spacing:.18em}
   .top span{color:var(--dim)}
-  .top i{font-style:normal; color:var(--cyan)}
-  .top a{pointer-events:auto; color:var(--cyan); text-decoration:none; margin-left:auto}
+  .top i{font-style:normal; color:var(--gold-bright)}
+  .top a{pointer-events:auto; color:var(--gold); text-decoration:none; margin-left:auto}
   .top a:hover{color:var(--frost)}
   /* corner panels */
   .panel{border:1px solid var(--line); background:var(--panel);
@@ -47,31 +48,41 @@
          padding:9px 11px; border-radius:4px; min-width:132px}
   .panel h2{font-size:10px; font-weight:600; color:var(--frost); letter-spacing:.2em; margin-bottom:6px}
   .panel .row{display:flex; justify-content:space-between; gap:14px; color:var(--dim)}
-  .panel .row i{font-style:normal; color:var(--violet)}
+  .panel .row i{font-style:normal; color:var(--gold)}
   .pl{left:12px; top:calc(52px + env(safe-area-inset-top))}
   .pr{right:12px; top:calc(52px + env(safe-area-inset-top))}
-  .bar{height:3px; background:rgba(196,181,253,.14); border-radius:2px; margin:5px 0 2px; overflow:hidden}
+  .bar{height:3px; background:rgba(216,188,102,.14); border-radius:2px; margin:5px 0 2px; overflow:hidden}
   .bar b{display:block; height:100%; border-radius:2px;
-         background:linear-gradient(90deg,var(--violet),var(--cyan));
+         background:linear-gradient(90deg,var(--gold),var(--gold-bright));
          transition:width 1.1s cubic-bezier(.4,0,.2,1)}
-  /* desk dock + paper ledger */
+  /* desk dock — gold chip style (scan-card vocabulary) */
   .dock{
     left:12px; right:12px; bottom:calc(48px + env(safe-area-inset-bottom));
     display:flex; flex-wrap:wrap; gap:6px; max-width:920px; margin:0 auto;
   }
   .dock button{
-    pointer-events:auto; border:1px solid var(--line); background:rgba(20,12,40,.72);
-    color:var(--violet); font:inherit; letter-spacing:.08em; padding:6px 9px; border-radius:4px;
+    pointer-events:auto;
+    border:1px solid rgba(232,197,106,.4);
+    background:rgba(232,197,106,.12);
+    color:#E8C56A;
+    font:inherit; letter-spacing:.08em; padding:6px 11px; border-radius:999px;
     cursor:pointer; backdrop-filter:blur(6px);
   }
-  .dock button:hover, .dock button.is-hot{border-color:rgba(124,239,255,.45); color:var(--frost)}
+  .dock button:hover, .dock button.is-hot{
+    border-color:rgba(232,197,106,.65); color:var(--frost);
+    background:rgba(232,197,106,.18);
+  }
   .dock button[data-state="deferred"]{opacity:.55}
-  .dock button[data-state="armed"], .dock button[data-state="paper-only"]{color:var(--red); border-color:rgba(255,77,94,.35)}
-  .dock button[data-state="live"], .dock button[data-state="watching"], .dock button[data-state="quiet"]{color:var(--cyan)}
+  .dock button[data-state="armed"], .dock button[data-state="paper-only"]{
+    color:var(--red); border-color:rgba(255,77,94,.45); background:rgba(255,77,94,.12);
+  }
+  .dock button[data-state="live"], .dock button[data-state="watching"], .dock button[data-state="quiet"]{
+    color:var(--gold-bright); border-color:rgba(232,197,106,.55);
+  }
   .toast{
     position:fixed; left:50%; bottom:calc(168px + env(safe-area-inset-bottom));
     transform:translateX(-50%); z-index:6; pointer-events:none;
-    background:rgba(11,6,24,.92); border:1px solid var(--line); color:var(--frost);
+    background:rgba(10,15,10,.92); border:1px solid var(--line); color:var(--frost);
     padding:8px 12px; border-radius:4px; opacity:0; transition:opacity .25s;
     max-width:min(90vw,420px); text-align:center;
   }
@@ -79,7 +90,7 @@
   .ledger{
     position:fixed; right:12px; top:calc(120px + env(safe-area-inset-top));
     z-index:5; width:min(300px, calc(100vw - 24px)); max-height:min(52vh,420px); overflow:auto;
-    border:1px solid rgba(124,239,255,.35); background:rgba(14,8,28,.96); backdrop-filter:blur(10px);
+    border:1px solid var(--line); background:rgba(10,15,10,.96); backdrop-filter:blur(10px);
     padding:10px; border-radius:4px; display:none; box-shadow:0 12px 40px rgba(0,0,0,.45);
   }
   .ledger.is-open{display:block !important; pointer-events:auto}
@@ -89,21 +100,21 @@
   .ledger p{color:var(--dim); margin-bottom:8px}
   .ledger input, .ledger #paperAdd{
     width:100%; font:inherit; letter-spacing:.06em; border-radius:4px; border:1px solid var(--line);
-    background:rgba(11,6,24,.8); color:var(--frost); padding:7px 8px; margin-bottom:6px;
+    background:rgba(10,15,10,.8); color:var(--frost); padding:7px 8px; margin-bottom:6px;
   }
-  .ledger #paperAdd{cursor:pointer; background:linear-gradient(90deg,rgba(196,181,253,.2),rgba(124,239,255,.18))}
+  .ledger #paperAdd{cursor:pointer; background:linear-gradient(90deg,rgba(216,188,102,.22),rgba(230,204,126,.16)); color:var(--gold-bright)}
   .ledger ul{list-style:none}
-  .ledger li{border-top:1px solid rgba(196,181,253,.1); padding:6px 0; color:var(--violet)}
+  .ledger li{border-top:1px solid rgba(216,188,102,.12); padding:6px 0; color:var(--gold)}
   .ledger li small{display:block; color:var(--dim)}
   /* bottom strip */
   .bot{bottom:0; left:0; right:0; padding:8px 14px calc(10px + env(safe-area-inset-bottom));
-       background:linear-gradient(0deg, rgba(11,6,24,.85), rgba(11,6,24,0));}
-  .bot .track{height:2px; background:rgba(196,181,253,.14); border-radius:1px; overflow:hidden; margin-bottom:6px}
+       background:linear-gradient(0deg, rgba(10,15,10,.88), rgba(10,15,10,0));}
+  .bot .track{height:2px; background:rgba(216,188,102,.14); border-radius:1px; overflow:hidden; margin-bottom:6px}
   .bot .track b{display:block; height:100%; width:0;
-       background:linear-gradient(90deg,var(--violet),var(--cyan),var(--frost))}
+       background:linear-gradient(90deg,var(--gold),var(--gold-bright),var(--frost))}
   .bot .meta{display:flex; justify-content:space-between; color:var(--dim)}
-  .bot .meta i{font-style:normal; color:var(--cyan)}
-  @media (max-width:560px){ .pr{display:none} .top{gap:10px; flex-wrap:wrap} .dock{gap:4px} .dock button{padding:5px 7px} }
+  .bot .meta i{font-style:normal; color:var(--gold-bright)}
+  @media (max-width:560px){ .pr{display:none} .top{gap:10px; flex-wrap:wrap} .dock{gap:4px} .dock button{padding:5px 9px} }
   @media (prefers-reduced-motion:reduce){ .bar b{transition:none} .toast{transition:none} }
 </style>
 </head>
@@ -169,20 +180,21 @@
   }
 
   // ---- graph definition: Guardian core + agent fleet + memory substrate ----
-  // ax/ay are anchor positions in unit space (0..1), r = core radius, hue: 0 violet, 1 cyan
+  // ax/ay are anchor positions in unit space (0..1), r = core radius
+  // hue: 0 = gold, 1 = gold-bright (core); alert nodes keep red tags
   const NODES = [
     {id:'guardian core', ax:.50, ay:.42, r:15, hue:1, big:1},
     {id:'research',      ax:.26, ay:.24, r:9,  hue:0},
-    {id:'signals',       ax:.72, ay:.22, r:9,  hue:1},
-    {id:'execution',     ax:.80, ay:.48, r:8,  hue:1},
+    {id:'signals',       ax:.72, ay:.22, r:9,  hue:0},
+    {id:'execution',     ax:.80, ay:.48, r:8,  hue:0},
     {id:'risk',          ax:.66, ay:.66, r:9,  hue:0},
     {id:'ops',           ax:.34, ay:.68, r:7,  hue:0},
-    {id:'watchlist',     ax:.16, ay:.46, r:7,  hue:1},
+    {id:'watchlist',     ax:.16, ay:.46, r:7,  hue:0},
     {id:'chain feed',    ax:.10, ay:.72, r:6,  hue:0},
     {id:'filings',       ax:.12, ay:.12, r:6,  hue:0},
-    {id:'sentiment',     ax:.40, ay:.10, r:6,  hue:1},
+    {id:'sentiment',     ax:.40, ay:.10, r:6,  hue:0},
     {id:'vector store',  ax:.58, ay:.86, r:7,  hue:0},
-    {id:'embeddings',    ax:.40, ay:.90, r:6,  hue:1},
+    {id:'embeddings',    ax:.40, ay:.90, r:6,  hue:0},
     {id:'attestations',  ax:.86, ay:.78, r:6,  hue:0},
     {id:'kill-switch',   ax:.90, ay:.30, r:6,  hue:0, alert:1},
   ];
@@ -364,7 +376,7 @@
     }
   }
 
-  // pre-render a soft glow sprite per hue for cheap bloom
+  // pre-render glow sprites — gold for nodes/core; cool blue reserved for active pulses
   function glowSprite(rgb){
     const s = document.createElement('canvas'); s.width=s.height=128;
     const g = s.getContext('2d');
@@ -375,8 +387,10 @@
     g.fillStyle=gr; g.fillRect(0,0,128,128);
     return s;
   }
-  const GLOW = [ glowSprite('196,181,253'), glowSprite('124,239,255') ];
-  const CORE = glowSprite('238,250,255');
+  const GLOW = [ glowSprite('216,188,102'), glowSprite('230,204,126') ];
+  const CORE = glowSprite('232,197,106');
+  const PULSE_GLOW = glowSprite('95,208,255');
+  const ALERT_GLOW = glowSprite('255,77,94');
 
   // HUD refs
   const $ = id => document.getElementById(id);
@@ -479,45 +493,46 @@
 
   function draw(){
     ctx.clearRect(0,0,W,H);
-    // depth haze
+    // depth haze — near-black with faint gold (no purple nebula)
     const bg = ctx.createRadialGradient(W*.5,H*.45,0, W*.5,H*.45, Math.max(W,H)*.7);
-    bg.addColorStop(0,'rgba(60,35,110,.20)');
-    bg.addColorStop(.6,'rgba(24,12,54,.10)');
-    bg.addColorStop(1,'rgba(11,6,24,0)');
+    bg.addColorStop(0,'rgba(216,188,102,.06)');
+    bg.addColorStop(.55,'rgba(16,23,16,.35)');
+    bg.addColorStop(1,'rgba(10,11,13,0)');
     ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
 
-    // links
+    // links — thin gold hairlines, low opacity
     ctx.lineWidth = 1;
     for(const [a,b] of LINKS){
       const A=NODES[a], B=NODES[b];
       const g = ctx.createLinearGradient(A.x,A.y,B.x,B.y);
-      g.addColorStop(0,'rgba(196,181,253,.14)');
-      g.addColorStop(1,'rgba(124,239,255,.14)');
+      g.addColorStop(0,'rgba(216,188,102,.16)');
+      g.addColorStop(1,'rgba(230,204,126,.10)');
       ctx.strokeStyle=g;
       ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke();
     }
-    // pulses
+    // pulses — cool blue only
     for(const p of pulses){
       const A=NODES[p.l[0]], B=NODES[p.l[1]];
       const k = p.fwd ? p.t : 1-p.t;
       const x = A.x+(B.x-A.x)*k, y = A.y+(B.y-A.y)*k;
-      ctx.drawImage(GLOW[1], x-9, y-9, 18, 18);
+      ctx.drawImage(PULSE_GLOW, x-9, y-9, 18, 18);
       ctx.fillStyle='rgba(238,250,255,.95)';
       ctx.beginPath(); ctx.arc(x,y,1.4,0,7); ctx.fill();
     }
-    // nodes
+    // nodes — warm gold; alert (kill-switch) uses red halo
     ctx.textAlign='left'; ctx.textBaseline='middle';
     for(const n of NODES){
       const breathe = 1 + Math.sin(n.ph*2)*.10;
       const R = n.r*breathe;
       const halo = R*(n.big?7:5.2);
-      ctx.drawImage(GLOW[n.hue], n.x-halo, n.y-halo, halo*2, halo*2);
+      const haloSprite = n.alert ? ALERT_GLOW : GLOW[n.hue];
+      ctx.drawImage(haloSprite, n.x-halo, n.y-halo, halo*2, halo*2);
       ctx.drawImage(CORE, n.x-R*1.7, n.y-R*1.7, R*3.4, R*3.4);
-      ctx.fillStyle = n.big ? '#ffffff' : '#eefaff';
+      ctx.fillStyle = n.big ? '#f3e6b8' : (n.alert ? '#ff8a95' : '#e8d48b');
       ctx.beginPath(); ctx.arc(n.x, n.y, Math.max(1.6,R*.28), 0, 7); ctx.fill();
-      // label
+      // label — gold accent
       ctx.font = (n.big?'600 11px':'500 9px')+' ui-monospace,Menlo,monospace';
-      ctx.fillStyle = n.big ? 'rgba(238,250,255,.95)' : 'rgba(196,181,253,.78)';
+      ctx.fillStyle = n.big ? 'rgba(246,228,150,.95)' : (n.alert ? 'rgba(255,140,150,.88)' : 'rgba(216,188,102,.82)');
       const lx = n.x + halo*.42, ly = n.y - R*.4;
       ctx.fillText(n.id, lx, ly);
       // status tag
@@ -525,7 +540,7 @@
         ctx.font='600 9px ui-monospace,Menlo,monospace';
         const w = ctx.measureText(n.tag.w).width;
         ctx.globalAlpha = Math.min(1, n.tagT*3);
-        ctx.fillStyle='rgba(11,6,24,.75)';
+        ctx.fillStyle='rgba(10,15,10,.78)';
         ctx.fillRect(lx-3, ly+7, w+8, 13);
         ctx.strokeStyle=n.tag.c; ctx.globalAlpha*=.9;
         ctx.strokeRect(lx-3, ly+7, w+8, 13);
