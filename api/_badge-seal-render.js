@@ -19,10 +19,9 @@ const GUIDE_INNER = 728;
 const GUIDE_OUTER = 852;
 const GOLD_HI = [240, 214, 140];
 const GOLD_LO = [196, 152, 62];
-<<<<<<< HEAD
-/** Platinum cool sheen for AA path words on the seal band. */
-const PLAT_HI = [247, 248, 250];
-const PLAT_LO = [184, 190, 200];
+/** Platinum cool sheen for AA path words — from brand/aa-platinum.js (shared). */
+const PLAT_HI = AA_PLATINUM.rgb.hi;
+const PLAT_LO = AA_PLATINUM.rgb.steel;
 /**
  * Trophy-gold levels — calibrated to the v2 reference demo’s medallion gold
  * (bright trophy gold, not antique bronze). Demo band text is AI-garbled and
@@ -35,11 +34,6 @@ const TROPHY_SAT = 1.12;
 const TROPHY_WARM = 1.0;
 const TROPHY_BLUE_LIFT = 0.5; // keep warm gold (high R/B), avoid muddy bronze
 const TROPHY_PIVOT = 118; // gold mid pivot (demo shield flat)
-=======
-/** Platinum cool sheen for AA path words — from brand/aa-platinum.js (shared). */
-const PLAT_HI = AA_PLATINUM.rgb.hi;
-const PLAT_LO = AA_PLATINUM.rgb.steel;
->>>>>>> origin/main
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
 
 function assetPath(...parts) {
