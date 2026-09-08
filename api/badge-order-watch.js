@@ -4,7 +4,7 @@
 // Also accepts GET ?orderId= for simple cron pings.
 
 import { watchOrders } from './_badge-pay-watch.js';
-import { resolveOrder, saveOrder, publicOrderView, verifyOrderToken } from './_badge-order.js';
+import { resolveOrder, saveOrder, publicOrderView, verifyOrderToken, getOrder } from './_badge-order.js';
 
 function readBody(req) {
   const b = req.body;
@@ -67,7 +67,9 @@ export default async function handler(req, res) {
 
   try {
     const results = await watchOrders({ orderId: orderId || undefined, inject });
-    const order = await resolveOrder({ id: orderId, token });
+    // Prefer store after watch (payment may have updated status); token is fallback only.
+    let order = orderId ? await getOrder(orderId) : null;
+    if (!order) order = await resolveOrder({ id: orderId, token });
     return res.status(200).json({
       ok: true,
       watched: results.length,
