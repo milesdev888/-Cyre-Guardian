@@ -376,21 +376,20 @@
     }
   }
 
-  // pre-render glow sprites — gold for nodes/core; cool blue reserved for active pulses
+  // Tight node markers only — no large soft halo/blur shadows around desks.
   function glowSprite(rgb){
-    const s = document.createElement('canvas'); s.width=s.height=128;
+    const s = document.createElement('canvas'); s.width=s.height=64;
     const g = s.getContext('2d');
-    const gr = g.createRadialGradient(64,64,0,64,64,64);
-    gr.addColorStop(0, `rgba(${rgb},.85)`);
-    gr.addColorStop(.25,`rgba(${rgb},.32)`);
+    const gr = g.createRadialGradient(32,32,0,32,32,28);
+    gr.addColorStop(0, `rgba(${rgb},.55)`);
+    gr.addColorStop(.45,`rgba(${rgb},.12)`);
     gr.addColorStop(1, `rgba(${rgb},0)`);
-    g.fillStyle=gr; g.fillRect(0,0,128,128);
+    g.fillStyle=gr; g.fillRect(0,0,64,64);
     return s;
   }
-  const GLOW = [ glowSprite('216,188,102'), glowSprite('230,204,126') ];
   const CORE = glowSprite('232,197,106');
   const PULSE_GLOW = glowSprite('95,208,255');
-  const ALERT_GLOW = glowSprite('255,77,94');
+  const ALERT_CORE = glowSprite('255,77,94');
 
   // HUD refs
   const $ = id => document.getElementById(id);
@@ -519,21 +518,20 @@
       ctx.fillStyle='rgba(238,250,255,.95)';
       ctx.beginPath(); ctx.arc(x,y,1.4,0,7); ctx.fill();
     }
-    // nodes — warm gold; alert (kill-switch) uses red halo
+    // nodes — warm gold; alert (kill-switch) uses red core (no large blur halo)
     ctx.textAlign='left'; ctx.textBaseline='middle';
     for(const n of NODES){
       const breathe = 1 + Math.sin(n.ph*2)*.10;
       const R = n.r*breathe;
-      const halo = R*(n.big?7:5.2);
-      const haloSprite = n.alert ? ALERT_GLOW : GLOW[n.hue];
-      ctx.drawImage(haloSprite, n.x-halo, n.y-halo, halo*2, halo*2);
-      ctx.drawImage(CORE, n.x-R*1.7, n.y-R*1.7, R*3.4, R*3.4);
+      const coreSprite = n.alert ? ALERT_CORE : CORE;
+      const core = R * (n.big ? 2.2 : 1.8);
+      ctx.drawImage(coreSprite, n.x-core, n.y-core, core*2, core*2);
       ctx.fillStyle = n.big ? '#f3e6b8' : (n.alert ? '#ff8a95' : '#e8d48b');
       ctx.beginPath(); ctx.arc(n.x, n.y, Math.max(1.6,R*.28), 0, 7); ctx.fill();
       // label — gold accent
       ctx.font = (n.big?'600 11px':'500 9px')+' ui-monospace,Menlo,monospace';
       ctx.fillStyle = n.big ? 'rgba(246,228,150,.95)' : (n.alert ? 'rgba(255,140,150,.88)' : 'rgba(216,188,102,.82)');
-      const lx = n.x + halo*.42, ly = n.y - R*.4;
+      const lx = n.x + R*2.4, ly = n.y - R*.4;
       ctx.fillText(n.id, lx, ly);
       // status tag
       if(n.tag && n.tagT>0){
