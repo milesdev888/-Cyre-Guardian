@@ -7,6 +7,9 @@
     },
     "api/badge-seal.js": {
       "includeFiles": "brand/seals/**"
+    },
+    "api/verify-og.js": {
+      "includeFiles": "brand/seals/**"
     }
   },
   "headers": [
@@ -319,6 +322,14 @@
     {
       "source": "/api/seal",
       "destination": "/api/badge-seal"
+    },
+    {
+      "source": "/api/verify/:serial/og.png",
+      "destination": "/api/verify-og?serial=:serial"
+    },
+    {
+      "source": "/api/verify/:serial/og",
+      "destination": "/api/verify-og?serial=:serial"
     },
     {
       "source": "/verify",

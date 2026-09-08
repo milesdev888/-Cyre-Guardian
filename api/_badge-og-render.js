@@ -711,6 +711,84 @@ export function renderBadgeOg(input) {
   return encodePng(rgba, W, H);
 }
 
+/** Verify-page share card size (Twitter/X large image). */
+export const VERIFY_OG_W = W;
+export const VERIFY_OG_H = H;
+/** Long-edge target for compressed verify OG (~1200×630, &lt;300KB). */
+export const VERIFY_OG_LONG_EDGE = 1200;
+export const VERIFY_OG_COLORS = 96;
+const VERIFY_SEAL_DISPLAY = 420; // seal-forward verify unfurl
+
+/**
+ * Verify URL OG card: seal prominent, large monospace serial, VALID/REVOKED,
+ * footer "checkable at cyre.dev/verify". Compressed indexed PNG for crawlers.
+ *
+ * @param {{
+ *  serial: string,
+ *  status: 'VALID'|'REVOKED'|'EXPIRED'|'NOT FOUND',
+ *  sealPng?: Buffer|null
+ * }} input
+ * @returns {Buffer} PNG
+ */
+export function renderVerifyOg(input) {
+  const rgba = Buffer.alloc(W * H * 4, 0);
+  for (let y = 0; y < H; y++) {
+    const t = y / H;
+    const r = Math.round(9 + t * 10);
+    const g = Math.round(16 + t * 12);
+    const b = Math.round(14 + t * 10);
+    fillRect(rgba, 0, y, W, 1, r, g, b, 255);
+  }
+  fillRect(rgba, 48, 48, W - 96, H - 96, 14, 20, 17, 255);
+
+  const status = String(input.status || 'VALID').toUpperCase();
+  const revoked = status === 'REVOKED';
+  const expired = status === 'EXPIRED';
+  const missing = status === 'NOT FOUND';
+  const ok = status === 'VALID';
+
+  drawText(rgba, 'GUARDIAN', 72, 64, 4, 201, 162, 39);
+
+  const sealSize = VERIFY_SEAL_DISPLAY;
+  const sealX = Math.round(W * 0.28);
+  const sealY = Math.round(H * 0.52);
+  if (input.sealPng) {
+    try {
+      const sealImg = decodePng(input.sealPng);
+      blitImage(rgba, sealImg, sealX, sealY, sealSize, sealSize, { keyBlack: true });
+    } catch {
+      const sealImg = loadSealImage(revoked || expired || missing);
+      if (sealImg) blitImage(rgba, sealImg, sealX, sealY, sealSize, sealSize);
+    }
+  } else {
+    const sealImg = loadSealImage(revoked || expired || missing);
+    if (sealImg) blitImage(rgba, sealImg, sealX, sealY, sealSize, sealSize);
+    drawCurvedSerial(rgba, input.serial || '', sealX, sealY, sealSize * 0.29, 3);
+  }
+
+  const textX = 560;
+  drawText(rgba, 'SERIAL', textX, 150, 3, 138, 154, 144);
+  // Large monospace serial — primary identity on verify unfurls
+  const serial = String(input.serial || '').toUpperCase().slice(0, 18);
+  drawText(rgba, serial, textX, 200, 5, 231, 239, 232);
+
+  const stColor = ok
+    ? [61, 220, 132]
+    : revoked || missing
+      ? [217, 106, 94]
+      : [212, 160, 23];
+  drawText(rgba, status, textX, 290, 6, stColor[0], stColor[1], stColor[2]);
+
+  if (revoked) {
+    fillRect(rgba, textX, 370, 280, 44, 180, 40, 40, 210);
+    drawText(rgba, 'REVOKED', textX + 16, 378, 4, 255, 220, 210);
+  }
+
+  drawText(rgba, 'CHECKABLE AT CYRE.DEV/VERIFY', 72, 560, 3, 160, 170, 160);
+
+  return encodeOgPng(rgba, W, H, { size: VERIFY_OG_LONG_EDGE, colors: VERIFY_OG_COLORS });
+}
+
 export function formatUtc(iso) {
   const d = new Date(iso);
   if (!Number.isFinite(d.getTime())) return String(iso).slice(0, 19) + 'Z';
