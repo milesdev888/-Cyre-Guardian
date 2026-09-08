@@ -1,5 +1,6 @@
 // api/_badge-seal-render.js — Seal Pass 2: 1800×1800 official medallion + engraved band + QR.
 // Band from registry only: ✦ {serial} ✦ {PATH} ✦ {ca}  PATH ∈ SECURED | ESTABLISHED
+// Base art gets a trophy-gold levels pass before composite; plate is transparent RGBA.
 // Pure Node (+ qrcode). Medallion + glyph atlas from /brand/seals.
 
 import fs from 'node:fs';
@@ -20,6 +21,18 @@ const GOLD_LO = [196, 152, 62];
 /** Platinum cool sheen for AA path words on the seal band. */
 const PLAT_HI = [247, 248, 250];
 const PLAT_LO = [184, 190, 200];
+/**
+ * Trophy-gold levels — calibrated to the v2 reference demo’s medallion gold
+ * (bright trophy gold, not antique bronze). Demo band text is AI-garbled and
+ * must NEVER be used as the seal; only color/brightness is the target.
+ * Applied to base art only; band + QR stay registry-engraved afterward.
+ */
+const TROPHY_MID_LIFT = 0.02; // subtle midtone lift; demo body ≈ raw+ε
+const TROPHY_CONTRAST = 1.12;
+const TROPHY_SAT = 1.12;
+const TROPHY_WARM = 1.0;
+const TROPHY_BLUE_LIFT = 0.5; // keep warm gold (high R/B), avoid muddy bronze
+const TROPHY_PIVOT = 118; // gold mid pivot (demo shield flat)
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
 
 function assetPath(...parts) {
@@ -46,6 +59,48 @@ function loadMedallion() {
   if (!p) throw new Error('medallion asset missing');
   medallionCache = decodePng(fs.readFileSync(p));
   return medallionCache;
+}
+
+/**
+ * Brightness/levels pass on base medallion before compositing.
+ * Color/brightness matched to the trophy-gold reference demo; band + QR drawn after stay crisp.
+ * @param {{ rgba: Buffer, width: number, height: number }} img
+ * @returns {{ rgba: Buffer, width: number, height: number }}
+ */
+export function brightenTrophyGold(img) {
+  const { rgba: src, width, height } = img;
+  const out = Buffer.from(src);
+  const mid = TROPHY_PIVOT;
+  for (let i = 0; i < out.length; i += 4) {
+    if (out[i + 3] < 1) continue;
+    let r = out[i];
+    let g = out[i + 1];
+    let b = out[i + 2];
+    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+    const t = lum / 255;
+    // Bell weight peaks in midtones; preserves deep shadows + specular highlights.
+    const midW = 4 * t * (1 - t);
+    const lift = TROPHY_MID_LIFT * midW * 255;
+    r = Math.min(255, r + lift);
+    g = Math.min(255, g + lift * 0.98);
+    b = Math.min(255, b + lift * TROPHY_BLUE_LIFT);
+
+    // Mild contrast around gold mid
+    r = Math.max(0, Math.min(255, (r - mid) * TROPHY_CONTRAST + mid));
+    g = Math.max(0, Math.min(255, (g - mid) * TROPHY_CONTRAST + mid));
+    b = Math.max(0, Math.min(255, (b - mid) * TROPHY_CONTRAST + mid));
+
+    // Saturation toward trophy gold (hold blue down so it stays gold, not bronze)
+    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+    r = Math.max(0, Math.min(255, gray + (r - gray) * TROPHY_SAT * TROPHY_WARM));
+    g = Math.max(0, Math.min(255, gray + (g - gray) * TROPHY_SAT));
+    b = Math.max(0, Math.min(255, gray + (b - gray) * (TROPHY_SAT * 0.78)));
+
+    out[i] = Math.round(r);
+    out[i + 1] = Math.round(g);
+    out[i + 2] = Math.round(b);
+  }
+  return { rgba: out, width, height };
 }
 
 function loadAtlas() {
@@ -341,7 +396,9 @@ async function drawQr(rgba, W, H, url) {
 }
 
 function applyRevoked(rgba, W, H) {
+  // Desaturation + dim applied on top of the already-brightened base (transparent pixels untouched).
   for (let i = 0; i < rgba.length; i += 4) {
+    if (rgba[i + 3] < 1) continue;
     const r = rgba[i];
     const g = rgba[i + 1];
     const b = rgba[i + 2];
@@ -417,13 +474,11 @@ async function paintOfficialSeal(input) {
     .toUpperCase();
   const W = SEAL_CANVAS;
   const H = SEAL_CANVAS;
+  // Transparent plate — medallion + band + QR composite without an opaque black square
+  // (fixes verify-page overlap; thumbnails read cleanly on dark UI backgrounds).
   const rgba = Buffer.alloc(W * H * 4, 0);
-  // black bg
-  for (let i = 0; i < rgba.length; i += 4) {
-    rgba[i + 3] = 255;
-  }
 
-  const med = loadMedallion();
+  const med = brightenTrophyGold(loadMedallion());
   const target = GUIDE_INNER * 2 - 8;
   const dx = Math.round((W - target) / 2);
   const dy = Math.round((H - target) / 2);
@@ -456,7 +511,8 @@ async function paintOfficialSeal(input) {
  */
 export async function renderOfficialSeal(input) {
   const painted = await paintOfficialSeal(input);
-  return encodePngRgb(painted.rgba, painted.width, painted.height, true);
+  // RGBA PNG with transparent corners (not opaque RGB).
+  return encodePng(painted.rgba, painted.width, painted.height);
 }
 
 /**
