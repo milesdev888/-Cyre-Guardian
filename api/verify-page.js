@@ -19,10 +19,10 @@ export default async function handler(req, res) {
   const serial = normalizeSerial(serialRaw) || '';
   const badge = serial ? await getBadgeBySerial(serial) : null;
 
-  // Compressed seal OG (~1024px, under 300KB) — full-res stays at /api/seal/<serial>.png
+  // Dedicated verify OG card (1200×630, ≤300KB) — seal full-res stays at /api/seal/<serial>.png
   const ogImage = serial
-    ? `${SITE}/api/seal/${encodeURIComponent(serial)}/og.png`
-    : `${SITE}/brand/guardian-wordmark-og.jpg`;
+    ? `${SITE}/api/verify/${encodeURIComponent(serial)}/og.png`
+    : `${SITE}/brand/guardian-og-1200x630.jpg`;
   const title = badge
     ? `Guardian ${badge.pathLabel || badge.qualifyPath || 'Badge'} · ${badge.serial}`
     : 'Guardian badge verify';
@@ -31,6 +31,9 @@ export default async function handler(req, res) {
     : 'Look up a Guardian badge serial and run a live qualifying-path re-check.';
 
   const canonical = serial ? `${SITE}/verify/${serial}` : `${SITE}/verify`;
+  const ogAlt = badge
+    ? `Guardian ${badge.serial} · ${badge.status || 'VALID'} — checkable at cyre.dev/verify`
+    : 'Guardian badge verify — checkable at cyre.dev/verify';
 
   const html = `<!doctype html>
 <html lang="en">
@@ -46,8 +49,9 @@ export default async function handler(req, res) {
 <meta property="og:description" content="${esc(desc)}">
 <meta property="og:url" content="${esc(canonical)}">
 <meta property="og:image" content="${esc(ogImage)}">
-<meta property="og:image:width" content="1024">
-<meta property="og:image:height" content="1024">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="${esc(ogAlt)}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(desc)}">

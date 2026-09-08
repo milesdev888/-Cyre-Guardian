@@ -14,7 +14,7 @@ import {
   hasRevocationHistory
 } from './_badge-registry.js';
 import { qualifyFromScan, evaluateEstablished, analyzePools, pathMark, recheckIssuedPath } from './_badge-qualify.js';
-import { renderBadgeOg, encodePng, decodePng, loadSealImage, blitImage } from './_badge-og-render.js';
+import { renderBadgeOg, encodePng, decodePng, loadSealImage, blitImage, renderVerifyOg } from './_badge-og-render.js';
 import { renderOfficialSeal, renderOfficialSealOg } from './_badge-seal-render.js';
 
 process.env.BADGE_REGISTRY_STORE = '/tmp/guardian-badge-registry-test-step2b.json';
@@ -165,6 +165,20 @@ const revokedPng = renderBadgeOg({
   checkedAt: new Date().toISOString()
 });
 assert.equal(revokedPng[0], 137);
+
+// Verify OG card: 1200×630-class indexed PNG under 300KB with seal + status
+const verifyOg = renderVerifyOg({
+  serial: GENESIS_SERIAL,
+  status: 'VALID'
+});
+assert.equal(verifyOg[0], 137);
+assert.ok(verifyOg.length < 300 * 1024, `verify OG must be under 300KB, got ${verifyOg.length}`);
+const verifyRevoked = renderVerifyOg({
+  serial: GENESIS_SERIAL,
+  status: 'REVOKED'
+});
+assert.equal(verifyRevoked[0], 137);
+assert.ok(verifyRevoked.length < 300 * 1024, `revoked verify OG must be under 300KB, got ${verifyRevoked.length}`);
 
 // Ornate seal PNG must decode with transparent corners (blit root-cause fix)
 const sealImg = loadSealImage(false);
