@@ -345,6 +345,34 @@
       "destination": "/api/badge-register"
     },
     {
+      "source": "/api/badge/order/watch",
+      "destination": "/api/badge-order-watch"
+    },
+    {
+      "source": "/api/badge/order",
+      "destination": "/api/badge-order"
+    },
+    {
+      "source": "/api/badge/founder",
+      "destination": "/api/badge-founder"
+    },
+    {
+      "source": "/api/badge/burn-ledger",
+      "destination": "/api/badge-burn-ledger"
+    },
+    {
+      "source": "/api/badge/qualify",
+      "destination": "/api/badge-qualify"
+    },
+    {
+      "source": "/order/:id",
+      "destination": "/api/order-page?id=:id"
+    },
+    {
+      "source": "/order",
+      "destination": "/api/order-page"
+    },
+    {
       "source": "/api/badge/og",
       "destination": "/api/badge-og"
     },

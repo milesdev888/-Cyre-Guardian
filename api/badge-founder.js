@@ -1,0 +1,194 @@
+// api/badge-founder.js — Founder approve / reject gate for paid orders
+// (same conceptual gate free-twenty comps will share — comps still use /api/badge/register).
+// Auth: x-guardian-key = BADGE_FOUNDER_KEY || X402_INTERNAL_KEY
+// Actions: list | approve | reject | refunded
+
+import {
+  getOrder,
+  listOrders,
+  updateOrder,
+  publicOrderView,
+  ORDER_STATUSES,
+  assertPaidSource
+} from './_badge-order.js';
+import { registerBadge } from './_badge-registry.js';
+
+const SCAN_BASE = process.env.GUARDIAN_SCAN_URL || 'https://scan.cyre.dev';
+const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
+
+function readBody(req) {
+  const b = req.body;
+  if (!b) return null;
+  if (typeof b === 'string') {
+    try {
+      return JSON.parse(b);
+    } catch (e) {
+      return null;
+    }
+  }
+  return b;
+}
+
+function founderAuthorized(req) {
+  const key = process.env.BADGE_FOUNDER_KEY || process.env.X402_INTERNAL_KEY || '';
+  if (!key) return process.env.VERCEL_ENV !== 'production' && process.env.BADGE_FOUNDER_OPEN === '1';
+  const hdr =
+    (req.headers && (req.headers['x-guardian-key'] || req.headers['X-Guardian-Key'])) || '';
+  return String(hdr) === key;
+}
+
+export default async function handler(req, res) {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'content-type, x-guardian-key');
+  if (req.method === 'OPTIONS') return res.status(204).end();
+
+  if (!founderAuthorized(req)) {
+    return res.status(401).json({ ok: false, error: 'founder key required' });
+  }
+
+  if (req.method === 'GET') {
+    const pending = await listOrders({ status: ORDER_STATUSES.PENDING_FOUNDER_APPROVAL, limit: 100 });
+    const refunds = await listOrders({ status: ORDER_STATUSES.REFUND_PENDING, limit: 50 });
+    return res.status(200).json({
+      ok: true,
+      pending: pending.map(publicOrderView),
+      refundPending: refunds.map(publicOrderView),
+      note: 'Comps bypass this queue — use POST /api/badge/register (never creates an order).'
+    });
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ ok: false, error: 'method not allowed' });
+  }
+
+  const body = readBody(req) || {};
+  const action = String(body.action || '').toLowerCase();
+  const orderId = String(body.orderId || body.id || '').trim();
+
+  if (action === 'list') {
+    const pending = await listOrders({ status: ORDER_STATUSES.PENDING_FOUNDER_APPROVAL, limit: 100 });
+    return res.status(200).json({ ok: true, pending: pending.map(publicOrderView) });
+  }
+
+  if (!orderId) return res.status(400).json({ ok: false, error: 'orderId required' });
+  const order = await getOrder(orderId);
+  if (!order) return res.status(404).json({ ok: false, error: 'order not found' });
+  try {
+    assertPaidSource(order);
+  } catch (e) {
+    return res.status(400).json({ ok: false, error: e.message });
+  }
+
+  if (action === 'approve') {
+    if (order.status !== ORDER_STATUSES.PENDING_FOUNDER_APPROVAL) {
+      return res.status(409).json({
+        ok: false,
+        error: `order status is ${order.status}, expected PENDING_FOUNDER_APPROVAL`
+      });
+    }
+    const q = order.qualifyAtPayment || order.qualifySnapshot || {};
+    const badge = await registerBadge({
+      mint: order.mint,
+      chainId: order.chainId || 'solana',
+      symbol: order.symbol || q.symbol,
+      name: order.name || q.name,
+      grade: q.grade || 'U',
+      score: q.score ?? null,
+      lpTier: q.lpTier || 'UNVERIFIED',
+      qualifyPath: q.path,
+      pathLabel: q.pathLabel,
+      pathFamily: q.pathFamily,
+      lifetimeEligible: Boolean(q.lifetimeEligible),
+      badgeEligible: true,
+      expiresAt: q.expiresAt || null,
+      scanUrl: `${SCAN_BASE}/?address=${encodeURIComponent(order.mint)}`,
+      // Paid-path metadata (comps never set these)
+      issuanceSource: 'paid',
+      orderId: order.id
+    });
+
+    const issued = await updateOrder(order, {
+      status: ORDER_STATUSES.ISSUED,
+      approval: {
+        status: 'APPROVED',
+        decidedAt: new Date().toISOString(),
+        reason: body.reason || null
+      },
+      issuance: {
+        serial: badge.serial,
+        issuedAt: badge.issuedAt,
+        verifyUrl: `${SITE}/verify/${badge.serial}`,
+        sealUrl: `${SITE}/api/seal/${badge.serial}.png`,
+        source: 'paid',
+        orderId: order.id
+      }
+    });
+
+    return res.status(200).json({
+      ok: true,
+      order: publicOrderView(issued),
+      badge,
+      verifyUrl: `${SITE}/verify/${badge.serial}`,
+      sealUrl: `${SITE}/api/seal/${badge.serial}.png`
+    });
+  }
+
+  if (action === 'reject') {
+    if (
+      order.status !== ORDER_STATUSES.PENDING_FOUNDER_APPROVAL &&
+      order.status !== ORDER_STATUSES.QUALIFY_LOST
+    ) {
+      return res.status(409).json({
+        ok: false,
+        error: `cannot reject from status ${order.status}`
+      });
+    }
+    const rejected = await updateOrder(order, {
+      status: ORDER_STATUSES.REFUND_PENDING,
+      approval: {
+        status: 'REJECTED',
+        decidedAt: new Date().toISOString(),
+        reason: body.reason || 'brand-safety veto'
+      },
+      refund: {
+        status: 'REFUND_PENDING',
+        recordedAt: new Date().toISOString(),
+        note:
+          body.note ||
+          'Founder brand-safety veto — send refund manually, then mark refunded.'
+      }
+    });
+    return res.status(200).json({
+      ok: true,
+      order: publicOrderView(rejected),
+      next: 'Send refund manually, then POST { action: "refunded", orderId, tx }'
+    });
+  }
+
+  if (action === 'refunded') {
+    if (order.status !== ORDER_STATUSES.REFUND_PENDING && order.status !== ORDER_STATUSES.REJECTED) {
+      return res.status(409).json({
+        ok: false,
+        error: `cannot mark refunded from status ${order.status}`
+      });
+    }
+    const refunded = await updateOrder(order, {
+      status: ORDER_STATUSES.REFUNDED,
+      refund: {
+        status: 'REFUNDED',
+        recordedAt: (order.refund && order.refund.recordedAt) || new Date().toISOString(),
+        refundedAt: new Date().toISOString(),
+        tx: body.tx || null,
+        note: body.note || (order.refund && order.refund.note) || null
+      }
+    });
+    return res.status(200).json({ ok: true, order: publicOrderView(refunded) });
+  }
+
+  return res.status(400).json({
+    ok: false,
+    error: 'action must be list|approve|reject|refunded'
+  });
+}
