@@ -292,6 +292,22 @@
       "destination": "https://scan.cyre.dev/api/scan"
     },
     {
+      "source": "/api/card/:mint.png",
+      "destination": "https://scan.cyre.dev/api/card/:mint.png"
+    },
+    {
+      "source": "/api/card/:mint/og.png",
+      "destination": "https://scan.cyre.dev/api/card/:mint/og.png"
+    },
+    {
+      "source": "/api/card/:mint/og",
+      "destination": "https://scan.cyre.dev/api/card/:mint/og.png"
+    },
+    {
+      "source": "/api/card/:mint",
+      "destination": "https://scan.cyre.dev/api/card/:mint.png"
+    },
+    {
       "source": "/api/passport/verify",
       "destination": "/api/passport-verify"
     },
