@@ -3,6 +3,7 @@
 
 import { getBadgeBySerial, normalizeSerial } from './_badge-registry.js';
 import { formatUtc } from './_badge-og-render.js';
+import { withOgArtRev } from './_og-art-rev.js';
 
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
 
@@ -21,10 +22,12 @@ export default async function handler(req, res) {
 
   // Seal OG (~1024px ≤300KB) — crawlers must see this in SSR HTML (no JS).
   // Full-res seal remains at /api/seal/<serial>.png; dedicated 1200×630 card at /api/verify/<serial>/og.png.
-  const ogImage = serial
-    ? `${SITE}/api/seal/${encodeURIComponent(serial)}/og.png`
-    : `${SITE}/brand/guardian-og-1200x630.jpg`;
-  const title = badge
+  // `r=` busts X/Telegram caches when seal/card art changes (see api/_og-art-rev.js).
+  const ogImage = withOgArtRev(
+    serial
+      ? `${SITE}/api/seal/${encodeURIComponent(serial)}/og.png`
+      : `${SITE}/brand/guardian-og-1200x630.jpg`
+  );  const title = badge
     ? `Guardian ${badge.pathLabel || badge.qualifyPath || 'Badge'} · ${badge.serial}`
     : 'Guardian badge verify';
   const desc = badge
@@ -254,7 +257,7 @@ export default async function handler(req, res) {
         ? 'Path earned: Established (Battle-Tested)'
         : ('Path earned: ' + pathText + (b.pathFamily === 'secured' ? ' (Secured)' : ''));
       seal.hidden = false;
-      seal.src = j.sealUrl || ('/api/seal/' + encodeURIComponent(b.serial) + '/og.png');
+      seal.src = j.sealUrl || ('/api/seal/' + encodeURIComponent(b.serial) + '/og.png?r=2');
       seal.className = 'seal' + (st === 'VALID' ? '' : ' revoked');
       setShare(b.serial, b);
       var live = j.live;

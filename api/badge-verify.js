@@ -12,6 +12,7 @@ import {
 import { recheckIssuedPath, QUALIFY_PATHS, pathLabel, pathFamily } from './_badge-qualify.js';
 import { formatUtc } from './_badge-og-render.js';
 import { recordVerifyHit } from './_traffic.js';
+import { withOgArtRev } from './_og-art-rev.js';
 
 const DISCLAIMER =
   'Patterns, not verdicts. Issued serial + live re-check. Failed live checks mark the badge REVOKED.';
@@ -173,9 +174,9 @@ export default async function handler(req, res) {
     live,
     stillQualifies,
     verifyUrl: `${SITE}/verify/${badge.serial}`,
-    ogImage: `${SITE}/api/badge/og?serial=${encodeURIComponent(badge.serial)}&v=5`,
+    ogImage: withOgArtRev(`${SITE}/api/badge/og?serial=${encodeURIComponent(badge.serial)}&v=5`),
     // Prefer compressed OG seal (~1024px ≤300KB) for embeds/UI; full-res still at /api/seal/<serial>.png
-    sealUrl: `${SITE}/api/seal/${encodeURIComponent(badge.serial)}/og.png`,
+    sealUrl: withOgArtRev(`${SITE}/api/seal/${encodeURIComponent(badge.serial)}/og.png`),
     durable: isDurableBadgeStore(),
     paths: QUALIFY_PATHS,
     disclaimer: DISCLAIMER
