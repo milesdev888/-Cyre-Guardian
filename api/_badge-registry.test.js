@@ -15,7 +15,7 @@ import {
 } from './_badge-registry.js';
 import { qualifyFromScan, evaluateEstablished, analyzePools, pathMark, recheckIssuedPath } from './_badge-qualify.js';
 import { renderBadgeOg, encodePng, decodePng, loadSealImage, blitImage, renderVerifyOg, formatVerifiedOgTitle } from './_badge-og-render.js';
-import { renderOfficialSeal, renderOfficialSealOg, renderOfficialSealWithMeta, sealVerifyUrl, SEAL_CANVAS } from './_badge-seal-render.js';
+import { renderOfficialSeal, renderOfficialSealOg, renderOfficialSealUi, renderOfficialSealWithMeta, sealVerifyUrl, SEAL_CANVAS, SEAL_UI_SIZE } from './_badge-seal-render.js';
 
 process.env.BADGE_REGISTRY_STORE = '/tmp/guardian-badge-registry-test-step2b.json';
 
@@ -154,6 +154,19 @@ const sealOg = await renderOfficialSealOg({
 });
 assert.equal(sealOg[0], 137);
 assert.ok(sealOg.length < 300 * 1024, `seal OG must be under 300KB, got ${sealOg.length}`);
+
+// UI seal: transparent RGBA thumb (no black square field)
+const sealUi = await renderOfficialSealUi({
+  serial: GENESIS_SERIAL,
+  ca: GENESIS_MINT,
+  status: 'VALID',
+  pathMark: 'SECURED'
+});
+assert.equal(sealUi[0], 137);
+const uiDecoded = decodePng(sealUi);
+assert.equal(uiDecoded.width, SEAL_UI_SIZE);
+assert.equal(uiDecoded.rgba[3], 0, 'UI seal corner alpha must be 0 (no black square)');
+assert.equal(uiDecoded.rgba[(SEAL_UI_SIZE * SEAL_UI_SIZE - 1) * 4 + 3], 0);
 
 // Majority fails established
 const majorityFail = qualifyFromScan({

@@ -7,13 +7,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import QRCode from 'qrcode';
-import { decodePng, encodePng, encodePngRgb, encodeOgPng } from './_badge-og-render.js';
+import { decodePng, encodePng, encodePngRgb, encodeOgPng, downscaleRgba } from './_badge-og-render.js';
 import { AA_PLATINUM } from '../brand/aa-platinum.js';
 
 export const SEAL_CANVAS = 1800;
 /** Compressed OG unfurl size — ~1024px square, palette PNG under 300KB. */
 export const SEAL_OG_SIZE = 1024;
 export const SEAL_OG_COLORS = 64;
+/** On-page UI thumb — RGBA transparent, no QR (too small to scan). */
+export const SEAL_UI_SIZE = 256;
 const BAND_R = 790;
 const GUIDE_INNER = 728;
 const GUIDE_OUTER = 852;
@@ -639,6 +641,7 @@ export async function renderOfficialSeal(input) {
  * Full-res remains at /api/seal/&lt;serial&gt;.png.
  * QR is omitted: at OG/display sizes the code is too small for phones and a
  * decorative non-scanning QR is worse than none. Use the full-res seal to scan.
+ * Note: indexed OG flattens alpha to opaque black — do NOT use for on-page UI.
  * @param {{ serial: string, ca: string, status?: string, pathFamily?: string, pathMark?: string, qualifyPath?: string, grade?: string }} input
  * @returns {Promise<Buffer>}
  */
@@ -648,6 +651,22 @@ export async function renderOfficialSealOg(input) {
     size: SEAL_OG_SIZE,
     colors: SEAL_OG_COLORS
   });
+}
+
+/**
+ * On-page UI seal — ~256×256 RGBA with real transparency (floats on page bg).
+ * No QR (escape clause: tiny variants omit rather than ship decorative codes).
+ * Use this for verify page / scan report — not the indexed OG (black field).
+ * @param {{ serial: string, ca: string, status?: string, pathFamily?: string, pathMark?: string, qualifyPath?: string, grade?: string }} input
+ * @returns {Promise<Buffer>}
+ */
+export async function renderOfficialSealUi(input) {
+  const painted = await paintOfficialSeal({ ...input, includeQr: false });
+  crushTransparent(painted.rgba);
+  const size = SEAL_UI_SIZE;
+  const small = downscaleRgba(painted.rgba, painted.width, painted.height, size, size);
+  crushTransparent(small);
+  return encodePng(small, size, size);
 }
 
 /**
