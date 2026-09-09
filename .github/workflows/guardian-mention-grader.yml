@@ -1,8 +1,10 @@
+# DISABLED 2026-09-09 — zombie fail mail.
+# Root cause was package.json "type":"module" vs CommonJS require (fixed via .cjs).
+# Render cron guardian-mention-grader is SUSPENDED. Re-enable schedule only after
+# founder review + BRIDGE_URL secret is set on both GHA and Render.
 name: Guardian mention grader
 
 on:
-  schedule:
-    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 concurrency:
@@ -27,4 +29,4 @@ jobs:
           DRY_RUN: ${{ vars.BOT_LIVE == 'true' && 'false' || 'true' }}
           BRAIN: ${{ vars.BRAIN || 'false' }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: node mention-grader.js
+        run: node mention-grader.cjs

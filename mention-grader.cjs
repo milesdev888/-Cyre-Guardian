@@ -20,9 +20,13 @@ const DRY_RUN = (process.env.DRY_RUN || "true").toLowerCase() !== "false";
 const MAX_PER_RUN = parseInt(process.env.MAX_PER_RUN || "5", 10);
 const B58 = /[1-9A-HJ-NP-Za-km-z]{32,44}/g;
 let brain = { voiceLine: async () => null, _enabled: () => false };
-try { brain = require("./guardian-brain.js"); } catch (e) { console.log("[grader] brain module absent — template voice only"); }
-const { callBridgeTool } = require("./bot-bridge.js");
-if (!BRIDGE) { console.error("FATAL: BRIDGE_URL not set"); process.exit(1); }
+try { brain = require("./guardian-brain.cjs"); } catch (e) { console.log("[grader] brain module absent — template voice only"); }
+const { callBridgeTool } = require("./bot-bridge.cjs");
+if (!BRIDGE) {
+  // Soft-exit: missing secret must not page the founder via cron fail mail.
+  console.log("[grader] BRIDGE_URL not set — skipping run (exit 0).");
+  process.exit(0);
+}
 
 async function callTool(name, args) {
   return callBridgeTool(name, args);

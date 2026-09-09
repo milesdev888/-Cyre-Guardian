@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // CYRE bot smoke test — checks bridge health, mention fetch, and address grading.
 // Usage:
-//   BRIDGE_URL=https://cyre-x-bridge.onrender.com/mcp/<secret> node scripts/bot-smoke.js
+//   BRIDGE_URL=https://cyre-x-bridge.onrender.com/mcp/<secret> node scripts/bot-smoke.cjs
 // Optional:
 //   CYRE_API=https://cyre.dev/api/address
 //   TEST_ADDRESS=5tzFkiKscXHK5ZXCGbXZxdw7gTjjD1mBwuoFbhUvuAi9
@@ -21,7 +21,7 @@ function ok(msg) {
 }
 
 async function callTool(name, args) {
-  const { callBridgeTool } = require("../bot-bridge.js");
+  const { callBridgeTool } = require("../bot-bridge.cjs");
   return callBridgeTool(name, args);
 }
 
