@@ -57,7 +57,6 @@ export default async function handler(req, res) {
         found: Boolean(existing),
         badge: existing,
         paths: QUALIFY_PATHS,
-        durable: isDurableBadgeStore(),
         disclaimer: DISCLAIMER
       });
     }
@@ -69,7 +68,6 @@ export default async function handler(req, res) {
         genesis: `${GENESIS_SERIAL} → ${GENESIS_MINT}`
       },
       paths: QUALIFY_PATHS,
-      durable: isDurableBadgeStore(),
       scanBase: SCAN_BASE,
       disclaimer: DISCLAIMER
     });
@@ -151,7 +149,6 @@ export default async function handler(req, res) {
       badge,
       qualify,
       verifyUrl: `https://cyre.dev/verify/${badge.serial}`,
-      durable: isDurableBadgeStore(),
       paths: QUALIFY_PATHS,
       disclaimer: DISCLAIMER
     });

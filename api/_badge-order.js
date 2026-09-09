@@ -2,7 +2,8 @@
 // Comp issuance (badge-register) NEVER creates orders; paid orders NEVER look like comps.
 // Status machine:
 //   AWAITING_PAYMENT → (expire) EXPIRED
-//   AWAITING_PAYMENT → (watcher match + re-qualify) PAID → PENDING_FOUNDER_APPROVAL
+//   AWAITING_PAYMENT → (watcher match + re-qualify) PAID → name-screen
+//     → ISSUED (AUTO_APPROVED) | PENDING_FOUNDER_APPROVAL (flagged / auto-off)
 //   PENDING_FOUNDER_APPROVAL → APPROVED → ISSUED | REJECTED → REFUND_PENDING → REFUNDED
 // Price lock: 30 minutes. Unique USDC cent-amount for Base matching; Solana Pay reference for C7.
 
@@ -10,6 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { C7_MINT, C7_DECIMALS } from './_supply.js';
+import { redisCommand, isDurableRedis } from './_redis.js';
 
 const FILE_STORE = process.env.BADGE_ORDER_STORE || '/tmp/guardian-badge-orders.json';
 const KEY_PREFIX = 'guardian:order:';
@@ -76,37 +78,10 @@ export function newSolanaPayReference() {
   return encodeBase58(crypto.randomBytes(32));
 }
 
-function redisRestConfig() {
-  const url = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '';
-  if (url.startsWith('https://')) {
-    const token =
-      process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || '';
-    return token ? { url: url.replace(/\/$/, ''), token } : null;
-  }
-  return null;
-}
 
 /** True when orders persist across serverless instances (Redis/KV configured). */
 export function isDurableOrderStore() {
-  return !!redisRestConfig();
-}
-
-async function redisCommand(cmd) {
-  const cfg = redisRestConfig();
-  if (!cfg) return null;
-  const r = await fetch(cfg.url, {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + cfg.token,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(cmd)
-  });
-  if (!r.ok) {
-    const t = await r.text();
-    throw new Error('redis ' + r.status + ' ' + t.slice(0, 200));
-  }
-  return r.json();
+  return isDurableRedis();
 }
 
 function emptyFileStore() {
@@ -140,7 +115,7 @@ function writeFileStore(store) {
 }
 
 async function nextCounter() {
-  if (redisRestConfig()) {
+  if (isDurableRedis()) {
     const row = await redisCommand(['INCR', COUNTER_KEY]);
     return Number(row && row.result) || 1;
   }
@@ -157,7 +132,7 @@ export async function allocateUniqueUsdcAtomic() {
     // Prefer crypto randomness so serverless instances without Redis do not collide.
     const suffix = crypto.randomInt(100, 9900); // $25.000100 .. $25.009899
     const atomic = String(base + suffix);
-    if (redisRestConfig()) {
+    if (isDurableRedis()) {
       const set = await redisCommand(['HSETNX', USDC_AMT_KEY, atomic, '1']);
       if (set && Number(set.result) === 1) return atomic;
       continue;
@@ -296,7 +271,7 @@ export function buildEip681Erc20Transfer({ token, chainId, to, amountAtomic }) {
 export async function saveOrder(order) {
   const id = String(order.id || '').trim().toUpperCase();
   const row = id && id !== order.id ? { ...order, id } : order;
-  if (redisRestConfig()) {
+  if (isDurableRedis()) {
     await redisCommand(['SET', KEY_PREFIX + id, JSON.stringify(row)]);
     await redisCommand(['ZADD', INDEX_KEY, String(Date.parse(row.createdAt) || Date.now()), id]);
     return row;
@@ -310,7 +285,7 @@ export async function saveOrder(order) {
 export async function getOrder(id) {
   const key = String(id || '').trim().toUpperCase();
   if (!key) return null;
-  if (redisRestConfig()) {
+  if (isDurableRedis()) {
     const row = await redisCommand(['GET', KEY_PREFIX + key]);
     if (!row || !row.result) return null;
     try {
@@ -407,7 +382,7 @@ export async function listOrders({ status, limit = 50 } = {}) {
   const lim = Math.min(200, Math.max(1, Number(limit) || 50));
   /** @type {object[]} */
   let all = [];
-  if (redisRestConfig()) {
+  if (isDurableRedis()) {
     const row = await redisCommand(['ZREVRANGE', INDEX_KEY, '0', String(lim * 3 - 1)]);
     const ids = (row && row.result) || [];
     for (const id of ids) {
@@ -585,12 +560,14 @@ export function publicOrderView(order) {
     paymentLane: o.paymentLane,
     paymentTx: o.paymentTx,
     qualifySnapshot: o.qualifySnapshot,
+    screenFlags: o.screenFlags || null,
     issuance: o.issuance,
     approval: o.approval
       ? {
           status: o.approval.status,
           decidedAt: o.approval.decidedAt,
-          reason: o.approval.reason || null
+          reason: o.approval.reason || null,
+          holdReason: o.approval.holdReason || null
         }
       : null,
     refund: o.refund

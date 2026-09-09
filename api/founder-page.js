@@ -1,4 +1,4 @@
-// api/founder-page.js — Mobile founder queue: unlock with key, list pending, Approve / Reject.
+// api/founder-page.js — Mobile founder queue: unlock with key, list pending, Approve / Reject / Revoke.
 // /founder — key stored in sessionStorage only (never logged). Supports order token hydrate when durable:false.
 
 export default async function handler(req, res) {
@@ -32,10 +32,14 @@ textarea{min-height:88px;font-family:"IBM Plex Mono",monospace;font-size:12px}
 .btn-ok{background:var(--live);color:#062012}
 .btn-bad{background:transparent;color:var(--bad);border:1px solid rgba(217,106,94,.55)}
 .btn-ghost{background:transparent;color:var(--gold);border:1px solid rgba(201,162,39,.4)}
+.btn-revoke{background:transparent;color:var(--bad);border:1px solid rgba(217,106,94,.55);margin-top:10px}
 .card{margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:8px;background:rgba(10,16,14,.7)}
+.card.flagged{border-color:rgba(217,106,94,.55)}
 .card .id{font-family:"IBM Plex Mono",monospace;font-size:14px;color:var(--gold)}
 .card .meta{margin-top:6px;font-size:13px;color:var(--dim);word-break:break-all}
-.pill{display:inline-block;margin-top:8px;padding:3px 9px;border-radius:999px;border:1px solid rgba(201,162,39,.4);font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--gold)}
+.pill{display:inline-block;margin-top:8px;margin-right:6px;padding:3px 9px;border-radius:999px;border:1px solid rgba(201,162,39,.4);font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--gold)}
+.pill.flag{border-color:rgba(217,106,94,.55);color:var(--bad)}
+.flags{margin-top:8px;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--bad);line-height:1.45}
 #msg{margin-top:14px;min-height:1.2em;font-size:13.5px;color:var(--dim)}
 #msg.bad{color:var(--bad)}
 #msg.ok{color:var(--live)}
@@ -47,7 +51,7 @@ footer{margin-top:28px;color:var(--dim);font-size:12px;line-height:1.55}
 <div class="wrap">
   <a class="brand" href="/">Guardian <span>Verified</span></a>
   <h1>Founder queue</h1>
-  <p class="sub">Pending paid orders. Brand-safety Approve or Reject. Key stays on this device only.</p>
+  <p class="sub">Flagged holds and manual Approve / Reject. Recently issued serials can be revoked in one tap. Key stays on this device only.</p>
 
   <div class="panel" id="lockPanel">
     <h2>UNLOCK</h2>
@@ -60,6 +64,11 @@ footer{margin-top:28px;color:var(--dim);font-size:12px;line-height:1.55}
     <h2>PENDING</h2>
     <p class="sub" id="queueHint">Loading…</p>
     <div id="list"></div>
+
+    <h2 style="margin-top:22px">RECENTLY ISSUED</h2>
+    <p class="sub" id="issuedHint">—</p>
+    <div id="issuedList"></div>
+
     <button class="btn btn-ghost" id="refreshBtn" type="button">Refresh</button>
     <button class="btn btn-ghost" id="lockBtn" type="button">Lock</button>
 
@@ -71,8 +80,8 @@ footer{margin-top:28px;color:var(--dim);font-size:12px;line-height:1.55}
 
   <p id="msg"></p>
   <footer>
-    Approve mints a paid serial and verify page. Reject opens the refund path.
-    Comps never appear here — use registry register separately.
+    Clean names auto-issue after payment when BADGE_AUTO_APPROVE is on. Flagged names land here.
+    Approve mints a paid serial. Reject opens the refund path. Revoke marks an issued serial REVOKED.
   </footer>
 </div>
 <script>
@@ -95,6 +104,12 @@ footer{margin-top:28px;color:var(--dim);font-size:12px;line-height:1.55}
   function esc(s){
     return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
+  function flagHtml(o){
+    var sf = o.screenFlags;
+    if (!sf || !sf.flags || !sf.flags.length) return '';
+    return '<div class="flags">FLAGGED · ' + esc(sf.flags.join(' · ')) +
+      (sf.reason ? ('<br>' + esc(sf.reason)) : '') + '</div>';
+  }
   function renderList(pending){
     var root = document.getElementById('list');
     root.innerHTML = '';
@@ -103,7 +118,8 @@ footer{margin-top:28px;color:var(--dim);font-size:12px;line-height:1.55}
       : 'No pending orders in this instance. Paste an order token below if needed.';
     pending.forEach(function(o){
       var el = document.createElement('div');
-      el.className = 'card';
+      var flagged = !!(o.screenFlags && o.screenFlags.flags && o.screenFlags.flags.length);
+      el.className = 'card' + (flagged ? ' flagged' : '');
       var lane = o.paymentLane || '';
       var tx = o.paymentTx || '';
       el.innerHTML =
@@ -113,7 +129,9 @@ footer{margin-top:28px;color:var(--dim);font-size:12px;line-height:1.55}
         '<div class="meta">' + esc((o.qualifySnapshot && (o.qualifySnapshot.pathLabel || o.qualifySnapshot.path)) || '') +
           (lane ? (' · ' + esc(lane)) : '') + '</div>' +
         (tx ? ('<div class="meta">tx ' + esc(tx) + '</div>') : '') +
+        flagHtml(o) +
         '<span class="pill">' + esc(o.status) + '</span>' +
+        (flagged ? '<span class="pill flag">NAME SCREEN</span>' : '') +
         '<div class="btn-row">' +
           '<button type="button" class="btn btn-ok" data-act="approve" data-id="' + esc(o.id) + '">Approve</button>' +
           '<button type="button" class="btn btn-bad" data-act="reject" data-id="' + esc(o.id) + '">Reject</button>' +
@@ -124,6 +142,38 @@ footer{margin-top:28px;color:var(--dim);font-size:12px;line-height:1.55}
     root.querySelectorAll('button[data-act]').forEach(function(btn){
       btn.addEventListener('click', function(){
         act(btn.getAttribute('data-act'), btn.getAttribute('data-id'), btn.closest('.card'));
+      });
+    });
+  }
+  function renderIssued(issued){
+    var root = document.getElementById('issuedList');
+    root.innerHTML = '';
+    var live = (issued || []).filter(function(o){
+      return o && o.issuance && o.issuance.serial && !(o.issuance.revokedAt || (o.approval && o.approval.status === 'REVOKED'));
+    });
+    document.getElementById('issuedHint').textContent = live.length
+      ? (live.length + ' recent issued — one-tap revoke')
+      : 'No recent issued paid serials in this instance.';
+    live.forEach(function(o){
+      var el = document.createElement('div');
+      el.className = 'card';
+      var serial = o.issuance && o.issuance.serial;
+      var verify = o.issuance && o.issuance.verifyUrl;
+      var auto = o.approval && o.approval.status === 'AUTO_APPROVED';
+      el.innerHTML =
+        '<div class="id">' + esc(serial) + '</div>' +
+        '<div class="meta">' + esc([o.name, o.symbol && ('$'+o.symbol)].filter(Boolean).join(' · ')) +
+          ' · ' + esc(o.id) + '</div>' +
+        '<div class="meta mono">mint ' + esc(o.mint) + '</div>' +
+        (verify ? ('<div class="meta"><a href="' + esc(verify) + '" style="color:var(--gold)">verify</a></div>') : '') +
+        '<span class="pill">' + esc(auto ? 'AUTO_APPROVED' : 'ISSUED') + '</span>' +
+        '<button type="button" class="btn btn-revoke" data-act="revoke" data-id="' + esc(o.id) + '" data-serial="' + esc(serial) + '">Revoke</button>';
+      if (o.token) el.dataset.token = o.token;
+      root.appendChild(el);
+    });
+    root.querySelectorAll('button[data-act]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        act(btn.getAttribute('data-act'), btn.getAttribute('data-id'), btn.closest('.card'), btn.getAttribute('data-serial'));
       });
     });
   }
@@ -138,6 +188,7 @@ footer{margin-top:28px;color:var(--dim);font-size:12px;line-height:1.55}
       if (!r.ok){ setKey(''); setMsg(j.error || 'Unlock failed.', 'bad'); return; }
       showQueue(true);
       renderList(j.pending || []);
+      renderIssued(j.issued || []);
       setMsg('Unlocked.', 'ok');
     } catch (e) {
       setKey('');
@@ -151,6 +202,7 @@ footer{margin-top:28px;color:var(--dim);font-size:12px;line-height:1.55}
     var j = await r.json();
     if (!r.ok){ setMsg(j.error || 'Refresh failed.', 'bad'); if (r.status === 401){ setKey(''); showQueue(false); } return; }
     renderList(j.pending || []);
+    renderIssued(j.issued || []);
     setMsg('Updated.', 'ok');
   }
   async function loadToken(){
@@ -164,30 +216,38 @@ footer{margin-top:28px;color:var(--dim);font-size:12px;line-height:1.55}
     var j = await r.json();
     if (!r.ok){ setMsg(j.error || 'Could not load token.', 'bad'); return; }
     var pending = j.pending || [];
-    if (!pending.length && j.order){
-      setMsg('Order loaded · status ' + (j.order.status || '') + ' (not pending).', 'bad');
+    var issued = j.issued || [];
+    if (!pending.length && !issued.length && j.order){
+      setMsg('Order loaded · status ' + (j.order.status || '') + ' (not pending/issued).', 'bad');
       renderList([]);
+      renderIssued([]);
       return;
     }
     renderList(pending);
-    setMsg(pending.length ? 'Order loaded into queue.' : 'No pending order in that token.', pending.length ? 'ok' : 'bad');
+    renderIssued(issued);
+    setMsg((pending.length || issued.length) ? 'Order loaded.' : 'No pending/issued order in that token.', (pending.length || issued.length) ? 'ok' : 'bad');
   }
-  async function act(action, id, card){
+  async function act(action, id, card, serial){
     if (!getKey()){ setMsg('Unlock first.', 'bad'); return; }
     var tok = card && card.dataset.token;
     if (!tok){
       var pasted = (document.getElementById('tokenInput').value || '').trim();
       if (pasted) tok = pasted;
     }
-    setMsg((action === 'approve' ? 'Approving ' : 'Rejecting ') + id + '…');
+    if (action === 'revoke'){
+      if (!confirm('Revoke ' + (serial || id) + '? This marks the serial REVOKED.')) return;
+    }
+    setMsg((action === 'approve' ? 'Approving ' : action === 'reject' ? 'Rejecting ' : 'Revoking ') + (serial || id) + '…');
     var r = await fetch('/api/badge/founder', {
       method: 'POST', headers: headers(),
-      body: JSON.stringify({ action: action, orderId: id, token: tok || null })
+      body: JSON.stringify({ action: action, orderId: id || null, serial: serial || null, token: tok || null })
     });
     var j = await r.json();
     if (!r.ok){ setMsg(j.error || 'Action failed.', 'bad'); return; }
     if (action === 'approve' && j.verifyUrl){
       setMsg('Issued ' + ((j.badge && j.badge.serial) || (j.order && j.order.issuance && j.order.issuance.serial) || '') + ' · ' + j.verifyUrl, 'ok');
+    } else if (action === 'revoke'){
+      setMsg('Revoked ' + ((j.badge && j.badge.serial) || serial || id), 'ok');
     } else {
       setMsg(id + ' → ' + ((j.order && j.order.status) || action), 'ok');
     }

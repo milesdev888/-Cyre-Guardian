@@ -2,6 +2,7 @@
 // Serial format: GRD-YYYY-NNNNN (e.g. GRD-2026-00001).
 // Redis (Upstash/KV REST) when configured; else ephemeral /tmp file (dev/preview).
 // Genesis serial GRD-2026-00001 is seeded for C7 acceptance (generic registry + fixture).
+import { redisCommand, isDurableRedis } from './_redis.js';
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -38,43 +39,54 @@ export const GENESIS_BADGE = {
   note: 'Genesis acceptance serial — Phase 2 step 2'
 };
 
-function redisRestConfig() {
-  const url = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '';
-  if (url.startsWith('https://')) {
-    const token =
-      process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || '';
-    return token ? { url: url.replace(/\/$/, ''), token } : null;
-  }
-  return null;
-}
+/**
+ * Paid serial lost when issuance lived only in an ephemeral Vercel instance.
+ * Seeded like genesis so verify/seal stay live before REDIS_URL is wired; also
+ * written into Redis via ensureKnownIssuedInRedis().
+ */
+export const PAID_SERIAL_00002 = 'GRD-2026-00002';
+export const PAID_MINT_00002 = '6GmAFSYs4gk3FDao5FzzySQpPZaWsa4rUJHacpMpUNgx';
+export const PAID_CHAIN_00002 = 'solana';
 
-async function redisCommand(cmd) {
-  const cfg = redisRestConfig();
-  if (!cfg) return null;
-  const r = await fetch(cfg.url, {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + cfg.token,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(cmd)
-  });
-  if (!r.ok) {
-    const t = await r.text();
-    throw new Error('redis ' + r.status + ' ' + t.slice(0, 200));
-  }
-  return r.json();
-}
+export const PAID_BADGE_00002 = {
+  schema: 'guardian.badge.v1',
+  serial: PAID_SERIAL_00002,
+  mint: PAID_MINT_00002,
+  chainId: PAID_CHAIN_00002,
+  symbol: 'STONK',
+  name: 'STONK',
+  grade: 'A',
+  score: 93,
+  lpTier: 'BURNED',
+  qualifyPath: 'lifetime',
+  pathLabel: 'Lifetime',
+  pathFamily: 'secured',
+  status: 'VALID',
+  lifetimeEligible: true,
+  badgeEligible: true,
+  issuedAt: '2026-09-09T03:35:30.832Z',
+  expiresAt: null,
+  scanUrl: `https://scan.cyre.dev/?address=${PAID_MINT_00002}`,
+  issuanceSource: 'paid',
+  orderId: 'ORD-2026-00002',
+  note: 'Recovered paid serial — ephemeral instance loss → Redis + code seed'
+};
 
 export function isDurableBadgeStore() {
-  return !!redisRestConfig();
+  return isDurableRedis();
 }
 
 function emptyFileStore() {
   return {
-    bySerial: { [GENESIS_SERIAL]: { ...GENESIS_BADGE } },
-    byMint: { [GENESIS_CHAIN + ':' + GENESIS_MINT]: GENESIS_SERIAL },
-    counters: { '2026': 1 },
+    bySerial: {
+      [GENESIS_SERIAL]: { ...GENESIS_BADGE },
+      [PAID_SERIAL_00002]: { ...PAID_BADGE_00002 }
+    },
+    byMint: {
+      [GENESIS_CHAIN + ':' + GENESIS_MINT]: GENESIS_SERIAL,
+      [PAID_CHAIN_00002 + ':' + PAID_MINT_00002]: PAID_SERIAL_00002
+    },
+    counters: { '2026': 2 },
     revoked: {}
   };
 }
@@ -89,11 +101,16 @@ function readFileStore() {
       byMint: data.byMint && typeof data.byMint === 'object' ? data.byMint : {},
       counters: data.counters && typeof data.counters === 'object' ? data.counters : {}
     };
-    // Always keep genesis available (survives empty /tmp on cold start until first write).
+    // Always keep known issued serials available (survives empty /tmp on cold start).
     if (!store.bySerial[GENESIS_SERIAL]) {
       store.bySerial[GENESIS_SERIAL] = { ...GENESIS_BADGE };
       store.byMint[GENESIS_CHAIN + ':' + GENESIS_MINT] = GENESIS_SERIAL;
       store.counters['2026'] = Math.max(Number(store.counters['2026']) || 0, 1);
+    }
+    if (!store.bySerial[PAID_SERIAL_00002]) {
+      store.bySerial[PAID_SERIAL_00002] = { ...PAID_BADGE_00002 };
+      store.byMint[PAID_CHAIN_00002 + ':' + PAID_MINT_00002] = PAID_SERIAL_00002;
+      store.counters['2026'] = Math.max(Number(store.counters['2026']) || 0, 2);
     }
     return store;
   } catch (e) {
@@ -125,13 +142,21 @@ export function formatSerial(year, n) {
  */
 export async function allocateSerial(year = new Date().getUTCFullYear()) {
   const y = String(year);
-  if (redisRestConfig()) {
+  if (isDurableRedis()) {
     const row = await redisCommand(['INCR', COUNTER_KEY + y]);
     let n = Number(row && row.result) || 0;
-    // First incr on empty key returns 1 — reserve 00001 as genesis for 2026.
+    // First incr on empty key returns 1 — reserve 00001 genesis + 00002 recovered paid.
     if (y === '2026' && n === 1) {
       const again = await redisCommand(['INCR', COUNTER_KEY + y]);
       n = Number(again && again.result) || 2;
+    }
+    if (y === '2026' && n === 2) {
+      // Ensure recovered paid serial is not re-allocated if counter was reset.
+      const row = await redisCommand(['GET', KEY_PREFIX + PAID_SERIAL_00002]);
+      if (row && row.result) {
+        const again = await redisCommand(['INCR', COUNTER_KEY + y]);
+        n = Number(again && again.result) || 3;
+      }
     }
     if (y === '2026' && n < 1) n = 1;
     return formatSerial(y, n);
@@ -142,6 +167,9 @@ export async function allocateSerial(year = new Date().getUTCFullYear()) {
   if (y === '2026' && n === 1 && store.bySerial[GENESIS_SERIAL]) {
     // Genesis already owns 00001.
     n = Math.max(n, 2);
+  }
+  if (y === '2026' && n === 2 && store.bySerial[PAID_SERIAL_00002]) {
+    n = Math.max(n, 3);
   }
   store.counters[y] = n;
   writeFileStore(store);
@@ -220,11 +248,11 @@ export async function registerBadge(input) {
     orderId: input.orderId || undefined
   };
 
-  if (redisRestConfig()) {
+  if (isDurableRedis()) {
     await redisCommand(['SET', KEY_PREFIX + serial, JSON.stringify(record)]);
     await redisCommand(['SET', BY_MINT_PREFIX + chainId + ':' + mint, serial]);
-    // Ensure genesis keys exist in Redis once.
-    await ensureGenesisInRedis();
+    // Ensure known issued keys exist in Redis once.
+    await ensureKnownIssuedInRedis();
     return record;
   }
 
@@ -240,21 +268,24 @@ export async function registerBadge(input) {
   return record;
 }
 
-async function ensureGenesisInRedis() {
-  if (!redisRestConfig()) return;
-  const row = await redisCommand(['GET', KEY_PREFIX + GENESIS_SERIAL]);
-  if (row && row.result) return;
-  await redisCommand(['SET', KEY_PREFIX + GENESIS_SERIAL, JSON.stringify(GENESIS_BADGE)]);
-  await redisCommand([
-    'SET',
-    BY_MINT_PREFIX + GENESIS_CHAIN + ':' + GENESIS_MINT,
-    GENESIS_SERIAL
-  ]);
-  // Counter at least 1 for 2026
-  const cur = await redisCommand(['GET', COUNTER_KEY + '2026']);
-  if (!cur || !cur.result) {
-    await redisCommand(['SET', COUNTER_KEY + '2026', '1']);
+async function ensureKnownIssuedInRedis() {
+  if (!isDurableRedis()) return;
+
+  async function ensure(serial, badge, chain, mint, minCounter) {
+    const row = await redisCommand(['GET', KEY_PREFIX + serial]);
+    if (!row || !row.result) {
+      await redisCommand(['SET', KEY_PREFIX + serial, JSON.stringify(badge)]);
+    }
+    await redisCommand(['SET', BY_MINT_PREFIX + chain + ':' + mint, serial]);
+    const cur = await redisCommand(['GET', COUNTER_KEY + '2026']);
+    const n = Number(cur && cur.result) || 0;
+    if (n < minCounter) {
+      await redisCommand(['SET', COUNTER_KEY + '2026', String(minCounter)]);
+    }
   }
+
+  await ensure(GENESIS_SERIAL, GENESIS_BADGE, GENESIS_CHAIN, GENESIS_MINT, 1);
+  await ensure(PAID_SERIAL_00002, PAID_BADGE_00002, PAID_CHAIN_00002, PAID_MINT_00002, 2);
 }
 
 /** @param {string} serial */
@@ -262,24 +293,31 @@ export async function getBadgeBySerial(serial) {
   const key = normalizeSerial(serial);
   if (!key) return null;
 
-  if (key === GENESIS_SERIAL) {
-    // Always resolve genesis even before Redis seed / cold /tmp.
-    if (redisRestConfig()) {
-      await ensureGenesisInRedis();
+  const knownSeed =
+    key === GENESIS_SERIAL
+      ? GENESIS_BADGE
+      : key === PAID_SERIAL_00002
+        ? PAID_BADGE_00002
+        : null;
+
+  if (knownSeed) {
+    // Always resolve known issued serials even before Redis seed / cold /tmp.
+    if (isDurableRedis()) {
+      await ensureKnownIssuedInRedis();
       const row = await redisCommand(['GET', KEY_PREFIX + key]);
       if (row && row.result) {
         try {
           return JSON.parse(row.result);
         } catch (e) {
-          return { ...GENESIS_BADGE };
+          return { ...knownSeed };
         }
       }
     }
-    return { ...GENESIS_BADGE };
+    return { ...knownSeed };
   }
 
-  if (redisRestConfig()) {
-    await ensureGenesisInRedis();
+  if (isDurableRedis()) {
+    await ensureKnownIssuedInRedis();
     const row = await redisCommand(['GET', KEY_PREFIX + key]);
     if (!row || !row.result) return null;
     try {
@@ -300,8 +338,11 @@ export async function getBadgeByMint(mint, chainId = 'solana') {
   if (m === GENESIS_MINT && chainId === GENESIS_CHAIN) {
     return getBadgeBySerial(GENESIS_SERIAL);
   }
-  if (redisRestConfig()) {
-    await ensureGenesisInRedis();
+  if (m === PAID_MINT_00002 && chainId === PAID_CHAIN_00002) {
+    return getBadgeBySerial(PAID_SERIAL_00002);
+  }
+  if (isDurableRedis()) {
+    await ensureKnownIssuedInRedis();
     const row = await redisCommand(['GET', BY_MINT_PREFIX + chainId + ':' + m]);
     if (!row || !row.result) return null;
     return getBadgeBySerial(row.result);
@@ -329,7 +370,7 @@ export async function revokeBadge(serial, reason = 'live re-check failed') {
     pathLabel: badge.pathLabel || badge.qualifyPath || undefined
   };
 
-  if (redisRestConfig()) {
+  if (isDurableRedis()) {
     await redisCommand(['SET', KEY_PREFIX + key, JSON.stringify(updated)]);
     await redisCommand([
       'SET',
@@ -351,7 +392,7 @@ export async function revokeBadge(serial, reason = 'live re-check failed') {
 export async function hasRevocationHistory(mint, chainId = 'solana') {
   const m = String(mint || '').trim();
   if (!m) return false;
-  if (redisRestConfig()) {
+  if (isDurableRedis()) {
     const row = await redisCommand(['GET', 'guardian:badge:revoked:' + chainId + ':' + m]);
     return Boolean(row && row.result);
   }

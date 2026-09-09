@@ -5,7 +5,6 @@ import {
   getBadgeBySerial,
   getBadgeByMint,
   normalizeSerial,
-  isDurableBadgeStore,
   revokeBadge,
   hasRevocationHistory
 } from './_badge-registry.js';
@@ -98,7 +97,6 @@ export default async function handler(req, res) {
       ok: true,
       howTo: 'GET /api/badge/verify?serial=GRD-2026-00001 or ?mint=<address>',
       paths: QUALIFY_PATHS,
-      durable: isDurableBadgeStore(),
       disclaimer: DISCLAIMER
     });
   }
@@ -121,7 +119,6 @@ export default async function handler(req, res) {
       status: 'MISSING',
       serial: rawSerial || null,
       error: 'serial not found',
-      durable: isDurableBadgeStore(),
       disclaimer: DISCLAIMER
     });
   }
@@ -179,7 +176,6 @@ export default async function handler(req, res) {
     sealUrl: withOgArtRev(`${SITE}/api/seal/${encodeURIComponent(badge.serial)}.png`),
     // Tiny on-page thumb without QR (scan corners, etc.)
     sealUrlUi: withOgArtRev(`${SITE}/api/seal/${encodeURIComponent(badge.serial)}/ui.png`),
-    durable: isDurableBadgeStore(),
     paths: QUALIFY_PATHS,
     disclaimer: DISCLAIMER
   });

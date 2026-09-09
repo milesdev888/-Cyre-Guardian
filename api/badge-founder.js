@@ -1,6 +1,6 @@
-// api/badge-founder.js — Founder approve / reject gate for paid orders
+// api/badge-founder.js — Founder approve / reject / revoke gate for paid orders
 // Auth: x-guardian-key = BADGE_FOUNDER_KEY || X402_INTERNAL_KEY
-// Actions: list | approve | reject | refunded
+// Actions: list | approve | reject | refunded | revoke
 // When durable:false, pass signed order `token` so approve/reject hydrates across instances.
 
 import {
@@ -13,9 +13,9 @@ import {
   resolveOrder,
   hydrateOrderToken
 } from './_badge-order.js';
-import { registerBadge } from './_badge-registry.js';
+import { getBadgeBySerial, revokeBadge } from './_badge-registry.js';
+import { issuePaidOrderBadge } from './_badge-pay-watch.js';
 
-const SCAN_BASE = process.env.GUARDIAN_SCAN_URL || 'https://scan.cyre.dev';
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
 
 function readBody(req) {
@@ -74,14 +74,17 @@ export default async function handler(req, res) {
       return res.status(200).json({
         ok: true,
         pending: o && o.status === ORDER_STATUSES.PENDING_FOUNDER_APPROVAL ? [publicOrderView(o)] : [],
+        issued: o && o.status === ORDER_STATUSES.ISSUED ? [publicOrderView(o)] : [],
         order: o ? publicOrderView(o) : null
       });
     }
     const pending = await listOrders({ status: ORDER_STATUSES.PENDING_FOUNDER_APPROVAL, limit: 100 });
+    const issued = await listOrders({ status: ORDER_STATUSES.ISSUED, limit: 40 });
     const refunds = await listOrders({ status: ORDER_STATUSES.REFUND_PENDING, limit: 50 });
     return res.status(200).json({
       ok: true,
       pending: pending.map(publicOrderView),
+      issued: issued.map(publicOrderView),
       refundPending: refunds.map(publicOrderView),
       durableNote:
         'If durable store is unset, paste the signed order token from the checkout URL to load a pending order.',
@@ -97,6 +100,7 @@ export default async function handler(req, res) {
   const action = String(body.action || '').toLowerCase();
   const orderId = String(body.orderId || body.id || '').trim();
   const token = String(body.token || '').trim();
+  const serialRaw = String(body.serial || '').trim();
 
   if (action === 'list') {
     if (token) {
@@ -104,16 +108,95 @@ export default async function handler(req, res) {
       return res.status(200).json({
         ok: true,
         pending: o && o.status === ORDER_STATUSES.PENDING_FOUNDER_APPROVAL ? [publicOrderView(o)] : [],
+        issued: o && o.status === ORDER_STATUSES.ISSUED ? [publicOrderView(o)] : [],
         order: o ? publicOrderView(o) : null
       });
     }
     const pending = await listOrders({ status: ORDER_STATUSES.PENDING_FOUNDER_APPROVAL, limit: 100 });
-    return res.status(200).json({ ok: true, pending: pending.map(publicOrderView) });
+    const issued = await listOrders({ status: ORDER_STATUSES.ISSUED, limit: 40 });
+    return res.status(200).json({
+      ok: true,
+      pending: pending.map(publicOrderView),
+      issued: issued.map(publicOrderView)
+    });
+  }
+
+  if (action === 'revoke') {
+    let order = null;
+    let serial = serialRaw;
+    if (orderId || token) {
+      order = await loadOrder({ orderId, token });
+      if (!order) return res.status(404).json({ ok: false, error: 'order not found' });
+      try {
+        assertPaidSource(order);
+      } catch (e) {
+        return res.status(400).json({ ok: false, error: e.message });
+      }
+      if (!serial && order.issuance && order.issuance.serial) {
+        serial = order.issuance.serial;
+      }
+    }
+    if (!serial) {
+      return res.status(400).json({ ok: false, error: 'serial or issued orderId required' });
+    }
+    const badge = await getBadgeBySerial(serial);
+    if (!badge) return res.status(404).json({ ok: false, error: 'badge not found' });
+    if (badge.status === 'REVOKED') {
+      return res.status(200).json({
+        ok: true,
+        alreadyRevoked: true,
+        badge,
+        order: order ? publicOrderView(order) : null
+      });
+    }
+    const revoked = await revokeBadge(serial, body.reason || 'founder revoke');
+    if (!revoked) {
+      return res.status(500).json({ ok: false, error: 'revoke failed' });
+    }
+    let updatedOrder = null;
+    if (order && order.status === ORDER_STATUSES.ISSUED) {
+      updatedOrder = await updateOrder(order, {
+        approval: {
+          ...(order.approval || {}),
+          status: 'REVOKED',
+          revokedAt: new Date().toISOString(),
+          reason: body.reason || 'founder revoke'
+        },
+        issuance: {
+          ...(order.issuance || {}),
+          revokedAt: revoked.revokedAt,
+          revokeReason: revoked.revokeReason
+        }
+      });
+    } else if (!order && revoked.orderId) {
+      const linked = await getOrder(revoked.orderId);
+      if (linked && linked.status === ORDER_STATUSES.ISSUED) {
+        updatedOrder = await updateOrder(linked, {
+          approval: {
+            ...(linked.approval || {}),
+            status: 'REVOKED',
+            revokedAt: new Date().toISOString(),
+            reason: body.reason || 'founder revoke'
+          },
+          issuance: {
+            ...(linked.issuance || {}),
+            revokedAt: revoked.revokedAt,
+            revokeReason: revoked.revokeReason
+          }
+        });
+      }
+    }
+    return res.status(200).json({
+      ok: true,
+      badge: revoked,
+      order: updatedOrder ? publicOrderView(updatedOrder) : order ? publicOrderView(order) : null,
+      verifyUrl: `${SITE}/verify/${revoked.serial}`
+    });
   }
 
   if (!orderId && !token) return res.status(400).json({ ok: false, error: 'orderId or token required' });
   const order = await loadOrder({ orderId, token });
-  if (!order) return res.status(404).json({ ok: false, error: 'order not found — pass signed token if durable:false' });
+  if (!order) return res.status(404).json({ ok: false, error: 'order not found — pass signed token if missing from store' });
   try {
     assertPaidSource(order);
   } catch (e) {
@@ -128,40 +211,10 @@ export default async function handler(req, res) {
       });
     }
     const q = order.qualifyAtPayment || order.qualifySnapshot || {};
-    const badge = await registerBadge({
-      mint: order.mint,
-      chainId: order.chainId || 'solana',
-      symbol: order.symbol || q.symbol,
-      name: order.name || q.name,
-      grade: q.grade || 'U',
-      score: q.score ?? null,
-      lpTier: q.lpTier || 'UNVERIFIED',
-      qualifyPath: q.path,
-      pathLabel: q.pathLabel,
-      pathFamily: q.pathFamily,
-      lifetimeEligible: Boolean(q.lifetimeEligible),
-      badgeEligible: true,
-      expiresAt: q.expiresAt || null,
-      scanUrl: `${SCAN_BASE}/?address=${encodeURIComponent(order.mint)}`,
-      issuanceSource: 'paid',
-      orderId: order.id
-    });
-
-    const issued = await updateOrder(order, {
-      status: ORDER_STATUSES.ISSUED,
-      approval: {
-        status: 'APPROVED',
-        decidedAt: new Date().toISOString(),
-        reason: body.reason || null
-      },
-      issuance: {
-        serial: badge.serial,
-        issuedAt: badge.issuedAt,
-        verifyUrl: `${SITE}/verify/${badge.serial}`,
-        sealUrl: `${SITE}/api/seal/${badge.serial}.png`,
-        source: 'paid',
-        orderId: order.id
-      }
+    const { order: issued, badge } = await issuePaidOrderBadge(order, q, {
+      status: 'APPROVED',
+      decidedAt: new Date().toISOString(),
+      reason: body.reason || null
     });
 
     return res.status(200).json({
@@ -227,6 +280,6 @@ export default async function handler(req, res) {
 
   return res.status(400).json({
     ok: false,
-    error: 'action must be list|approve|reject|refunded'
+    error: 'action must be list|approve|reject|refunded|revoke'
   });
 }
