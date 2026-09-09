@@ -15,7 +15,7 @@
 //   X_API_KEY, X_API_SECRET, X_ACCESS_TOKEN, X_ACCESS_SECRET  (fallback if no bridge)
 
 const crypto = require('crypto');
-const { postTweet: bridgePostTweet, bridgeConfigured } = require('./bot-bridge.js');
+const { postTweet: bridgePostTweet, bridgeConfigured } = require('./bot-bridge.cjs');
 
 const RPC = process.env.RPC || 'https://api.mainnet-beta.solana.com';
 const WATCHLIST = (process.env.WATCHLIST || '').split(',').map(s => s.trim()).filter(Boolean);

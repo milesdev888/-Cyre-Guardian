@@ -12,7 +12,7 @@ services:
     repo: https://github.com/milesdev888/-Cyre-Guardian
     branch: main
     buildCommand: "true"
-    startCommand: node x-connector.js
+    startCommand: node x-connector.cjs
     healthCheckPath: /
     envVars:
       - key: CONNECT_SECRET
@@ -35,7 +35,7 @@ cronJobs:
     branch: main
     schedule: "*/10 * * * *"
     buildCommand: "true"
-    startCommand: node mention-grader.js
+    startCommand: node mention-grader.cjs
     envVars:
       - key: BRIDGE_URL
         sync: false
@@ -60,7 +60,7 @@ cronJobs:
     branch: main
     schedule: "*/15 * * * *"
     buildCommand: "true"
-    startCommand: node watcher.js
+    startCommand: node watcher.cjs
     envVars:
       - key: WATCHLIST
         sync: false

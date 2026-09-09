@@ -90,8 +90,8 @@ cyre.dev/tokenomics and @Cyredev888.
 | `swap-config.js` | Jupiter referral pubkey + 50 bps fee config (fill after referral.jup.ag setup). |
 | `SWAP-SPEC.md` | Guardian Protected Swap constitution + build order. |
 | `api/token.js` | GET `/api/token?mint=` — mint/freeze authority + holder concentration + project `name`/`symbol` (RugCheck metadata + Jupiter search; client also falls back to DexScreener). Tries `getTokenLargestAccounts` on `SOLANA_RPC` (+ optional `SOLANA_RPC_FALLBACK`); if rate-limited, falls back to RugCheck measured `topHolders` pct only (never their risk score). Optional `&holders=1` light retry. Origin-locked to cyre.dev (+ this project's Vercel previews); 60/min throttle. |
-| `watcher.js` | Render cron `guardian-watcher` (*/15): full wallet scan + optional tweets. **Keep paused / DRY_RUN** when RPC credits matter; site pulse is separate. |
-| `mention-grader.js` | Render cron `guardian-mention-grader` (*/10): @mention + address → public grade reply via bridge. |
+| `watcher.cjs` | Render cron `guardian-watcher` (*/15): full wallet scan + optional tweets. **SUSPENDED 2026-09-09** (ESM/`require` crash after `package.json` `"type":"module"`). GHA schedule disabled. Re-enable only after founder review. |
+| `mention-grader.cjs` | Render cron `guardian-mention-grader` (*/10): @mention + address → public grade reply via bridge. **SUSPENDED 2026-09-09** (same ESM crash). GHA schedule disabled. |
 | `api/chat.js` | Guardian chat (Anthropic). HARDENED: origin-locked to cyre.dev, role-sanitized, haiku model, daily cap. Keep all guardrails. |
 | `api/address.js` | GET /api/address — 1,000-sig window, 6 explainable signals, LOW/MED/HIGH. Env `SOLANA_RPC`. (Live file; SPEC formerly said `.mjs`.) |
 | `api/watch.js` | GET /api/watch — `?address=` and optional `?list=` (≤10). Reuses address signals; fresh-window alerts; counters from this measured run only; `Cache-Control: no-store` (no CDN reuse). Marks noisy if last24h ≥ 200. No LLM. Env `SOLANA_RPC`. |
@@ -267,8 +267,9 @@ no leftover gold chrome in UI (`#d9b36c`/`#d4a84b` as button/nav accents), no wh
 - **Vercel** (personal acct, project serves cyre.dev): env `ANTHROPIC_API_KEY`,
   `COINGECKO_API_KEY`, `SOLANA_RPC` (Helius when upgraded). www.cyre.dev NOT attached yet — pre-launch task.
 - **Render** workspace `tea-d9sgsmh42hec73c9sqjg`: crons `guardian-watcher`
-  (crn-da2j9smgekts73b2vq50) + `guardian-mention-grader` (crn-da3tddm1egvs73ar5k20),
-  web service `cyre-x-bridge`. Crons auto-deploy on main commits — another reason for §2.1.
+  (crn-da2j9smgekts73b2vq50) + `guardian-mention-grader` (crn-da3tddm1egvs73ar5k20)
+  are **user-suspended as of 2026-09-09** (zombie fail mail from CJS/`type:module` crash).
+  Web service `cyre-x-bridge` remains up. Crons still auto-deploy on main when unsuspended.
 - **X**: @Cyredev888 via the bridge. Posting is founder-approval-gated, always.
 - Costs learned: exchange wallets in any watchlist = call-volume bomb. Watchlists use
   QUIET wallets (whales/treasuries). Claude-per-tx loops need ≥300s cooldowns.

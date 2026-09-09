@@ -1,8 +1,10 @@
+# DISABLED 2026-09-09 — zombie fail mail.
+# Root cause was package.json "type":"module" vs CommonJS require (fixed via .cjs).
+# Render cron guardian-watcher is SUSPENDED. Re-enable schedule only after
+# founder review + WATCHLIST / SOLANA_RPC secrets are set.
 name: Guardian watcher
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 concurrency:
@@ -25,4 +27,4 @@ jobs:
           RPC: ${{ secrets.SOLANA_RPC }}
           INTERVAL_MIN: '15'
           DRY_RUN: ${{ vars.BOT_LIVE == 'true' && 'false' || 'true' }}
-        run: node watcher.js
+        run: node watcher.cjs
