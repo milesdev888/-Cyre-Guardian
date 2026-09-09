@@ -1,8 +1,13 @@
 // api/_badge-qualify.js — Phase 2: qualifying paths for Guardian badges.
 // Paths: lifetime | timed | established | none
 // ESTABLISHED (all required; age alone never qualifies):
-//   deployed ≥2y, ≥3 independent pools, no single-pool majority, ≥$100k liquidity,
-//   no mint/freeze/owner powers, no revocation history in the registry.
+//   deployed ≥2y, ≥3 independent pools, liquidity-scaled max-pool-share ceiling,
+//   ≥$100k liquidity, no mint/freeze/owner powers, no revocation history.
+//
+// Majority-pool ceiling scales with absolute liquidity (see majorityShareCeiling):
+//   total < $1M  → ≤50%
+//   $1M…$5M      → linear 50%→80%
+//   total ≥ $5M  → ≤80%
 
 /** @typedef {'lifetime'|'timed'|'established'|'none'} QualifyPath */
 
@@ -32,6 +37,40 @@ const ESTABLISHED_MIN_AGE_DAYS = 730; // ≥ 2 years
 const ESTABLISHED_MIN_POOLS = 3;
 const ESTABLISHED_MIN_LIQUIDITY_USD = 100_000;
 
+/** Strict flat majority bar applies below this total liquidity (USD). */
+export const ESTABLISHED_MAJORITY_STRICT_USD = 1_000_000;
+/** Above this total liquidity (USD), ceiling is fully relaxed to ESTABLISHED_MAJORITY_SHARE_RELAXED. */
+export const ESTABLISHED_MAJORITY_RELAX_USD = 5_000_000;
+/** Max single-pool share when total liquidity is below ESTABLISHED_MAJORITY_STRICT_USD. */
+export const ESTABLISHED_MAJORITY_SHARE_STRICT = 0.5;
+/** Max single-pool share when total liquidity is at/above ESTABLISHED_MAJORITY_RELAX_USD. */
+export const ESTABLISHED_MAJORITY_SHARE_RELAXED = 0.8;
+
+/**
+ * Liquidity-scaled single-pool share ceiling for Established.
+ * Flat &lt;50% is correct for small books; majors with deep absolute liquidity
+ * may concentrate more in the deepest venue without the same rug shape.
+ *
+ * @param {number} totalLiquidityUsd
+ * @returns {number} ceiling in [0.5, 0.8]
+ */
+export function majorityShareCeiling(totalLiquidityUsd) {
+  const total = Number(totalLiquidityUsd);
+  if (!Number.isFinite(total) || total < ESTABLISHED_MAJORITY_STRICT_USD) {
+    return ESTABLISHED_MAJORITY_SHARE_STRICT;
+  }
+  if (total >= ESTABLISHED_MAJORITY_RELAX_USD) {
+    return ESTABLISHED_MAJORITY_SHARE_RELAXED;
+  }
+  const t =
+    (total - ESTABLISHED_MAJORITY_STRICT_USD) /
+    (ESTABLISHED_MAJORITY_RELAX_USD - ESTABLISHED_MAJORITY_STRICT_USD);
+  return (
+    ESTABLISHED_MAJORITY_SHARE_STRICT +
+    (ESTABLISHED_MAJORITY_SHARE_RELAXED - ESTABLISHED_MAJORITY_SHARE_STRICT) * t
+  );
+}
+
 export const QUALIFY_PATHS = {
   lifetime: {
     id: 'lifetime',
@@ -50,7 +89,7 @@ export const QUALIFY_PATHS = {
     label: 'Established',
     family: 'established',
     detail:
-      'Deployed ≥2 years, ≥3 independent pools with no single majority, ≥$100K liquidity, no mint/freeze/owner powers, no revocation history. Age alone never qualifies.'
+      'Deployed ≥2 years, ≥3 independent pools, max pool share within the liquidity-scaled ceiling (≤50% below $1M total liquidity; linear to ≤80% at/above $5M), ≥$100K liquidity, no mint/freeze/owner powers, no revocation history. Age alone never qualifies.'
   }
 };
 
@@ -177,11 +216,13 @@ export function analyzePools(report) {
 
   const total = independent.reduce((s, r) => s + r.liquidityUsd, 0);
   const maxShare = total > 0 ? Math.max(...independent.map((r) => r.liquidityUsd / total)) : 1;
+  const shareCeiling = majorityShareCeiling(total);
   return {
     poolCount: independent.length,
     totalLiquidityUsd: total,
     maxPoolShare: maxShare,
-    noSingleMajority: independent.length >= 2 && maxShare <= 0.5,
+    majorityShareCeiling: shareCeiling,
+    noSingleMajority: independent.length >= 2 && maxShare <= shareCeiling,
     pools: independent
   };
 }
@@ -209,6 +250,7 @@ export function evaluateEstablished(report, opts = {}) {
     totalLiquidityUsd: pools.totalLiquidityUsd,
     liqOk,
     maxPoolShare: pools.maxPoolShare,
+    majorityShareCeiling: pools.majorityShareCeiling,
     majorityOk,
     authoritiesClean,
     revocationOk

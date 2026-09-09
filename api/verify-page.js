@@ -299,7 +299,7 @@ export default async function handler(req, res) {
           '<div><b>Serial</b> <span class="mono">' + esc(b.serial) + '</span></div>' +
           '<div><b>Mint</b> <span class="mono">' + esc(b.mint) + '</span></div>' +
           '<div><b>Verified age</b> ' + (years != null ? (esc(years) + ' years on-chain') : '—') + '</div>' +
-          '<div><b>Liquidity</b> ' + esc(liq) + ' across ' + esc(pools) + ' independent pools — no single pool majority</div>' +
+          '<div><b>Liquidity</b> ' + esc(liq) + ' across ' + esc(pools) + ' independent pools — max share within liquidity-scaled ceiling</div>' +
           '<div><b>Decentralization</b> No single party can pull this token\\'s liquidity.</div>' +
           '<div><b>Authorities</b> mint revoked, freeze revoked' + (sinceYear ? (' — revoked since ' + esc(sinceYear)) : '') + '</div>' +
           '<div><b>Clean history</b> no revocations, no fraud flags on record</div>' +

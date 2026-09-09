@@ -13,7 +13,16 @@ import {
   revokeBadge,
   hasRevocationHistory
 } from './_badge-registry.js';
-import { qualifyFromScan, evaluateEstablished, analyzePools, pathMark, recheckIssuedPath } from './_badge-qualify.js';
+import {
+  qualifyFromScan,
+  evaluateEstablished,
+  analyzePools,
+  pathMark,
+  recheckIssuedPath,
+  majorityShareCeiling,
+  ESTABLISHED_MAJORITY_SHARE_STRICT,
+  ESTABLISHED_MAJORITY_SHARE_RELAXED
+} from './_badge-qualify.js';
 import { renderBadgeOg, encodePng, decodePng, loadSealImage, blitImage, renderVerifyOg, formatVerifiedOgTitle } from './_badge-og-render.js';
 import { renderOfficialSeal, renderOfficialSealOg, renderOfficialSealUi, renderOfficialSealWithMeta, sealVerifyUrl, SEAL_CANVAS, SEAL_UI_SIZE } from './_badge-seal-render.js';
 
@@ -167,7 +176,7 @@ assert.equal(uiDecoded.width, SEAL_UI_SIZE);
 assert.equal(uiDecoded.rgba[3], 0, 'UI seal corner alpha must be 0 (no black square)');
 assert.equal(uiDecoded.rgba[(SEAL_UI_SIZE * SEAL_UI_SIZE - 1) * 4 + 3], 0);
 
-// Majority fails established
+// Majority fails established — thin book keeps strict ≤50% ceiling
 const majorityFail = qualifyFromScan({
   ...estReport,
   pools: [
@@ -177,6 +186,88 @@ const majorityFail = qualifyFromScan({
   ]
 });
 assert.equal(majorityFail.eligible, false);
+
+// Liquidity-scaled majority ceiling
+assert.equal(majorityShareCeiling(500_000), ESTABLISHED_MAJORITY_SHARE_STRICT);
+assert.equal(majorityShareCeiling(1_000_000), ESTABLISHED_MAJORITY_SHARE_STRICT);
+assert.ok(Math.abs(majorityShareCeiling(3_000_000) - 0.65) < 1e-9);
+assert.equal(majorityShareCeiling(5_000_000), ESTABLISHED_MAJORITY_SHARE_RELAXED);
+assert.equal(majorityShareCeiling(36_000_000), ESTABLISHED_MAJORITY_SHARE_RELAXED);
+
+// LINK-shaped: ~$36M total, ~57% deepest pool, 6 pools → Established PASS
+const linkLike = qualifyFromScan({
+  schema: 'guardian.report.v2',
+  grade: 'A',
+  score: 89,
+  token: {
+    address: '0x514910771AF9Ca656af840dff83E8264EcF986CA',
+    symbol: 'LINK',
+    name: 'ChainLink Token'
+  },
+  chain: { id: 'ethereum' },
+  lp: { tier: 'UNVERIFIED', lifetimeEligible: false, badgeEligible: false },
+  checks: [{ id: 'owner_privileges', status: 'pass' }],
+  pools: [
+    { dex: 'uniswap', pairAddress: 'link1', liquidityUsd: 20_587_731, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'link2', liquidityUsd: 13_172_728, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'link3', liquidityUsd: 907_589, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'link4', liquidityUsd: 856_186, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'link5', liquidityUsd: 360_426, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'link6', liquidityUsd: 116_919, createdAt: old }
+  ]
+});
+assert.equal(linkLike.eligible, true, 'LINK-shaped deep book must pass Established');
+assert.equal(linkLike.path, 'established');
+assert.ok(linkLike.established.maxPoolShare > 0.5);
+assert.ok(linkLike.established.maxPoolShare <= linkLike.established.majorityShareCeiling);
+
+// pepeCoin-shaped: ~$1.9M total, ~99.7% single pool → still refused
+const pepeLike = qualifyFromScan({
+  schema: 'guardian.report.v2',
+  grade: 'A',
+  score: 91,
+  token: {
+    address: '0xA9E8aCf069C58aEc8825542845Fd754e41a9489A',
+    symbol: 'pepecoin',
+    name: 'pepeCoin'
+  },
+  chain: { id: 'ethereum' },
+  lp: { tier: 'UNVERIFIED', lifetimeEligible: false, badgeEligible: false },
+  checks: [{ id: 'owner_privileges', status: 'pass' }],
+  pools: [
+    { dex: 'uniswap', pairAddress: 'pepe1', liquidityUsd: 1_903_773, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'pepe2', liquidityUsd: 4_966, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'pepe3', liquidityUsd: 103, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'pepe4', liquidityUsd: 1, createdAt: old }
+  ]
+});
+assert.equal(pepeLike.eligible, false, 'pepeCoin-shaped majority must still fail');
+assert.match(pepeLike.reason, /liquidity concentration/i);
+
+// AAVE-shaped: deep + already under 50% → still passes
+const aaveLike = qualifyFromScan({
+  schema: 'guardian.report.v2',
+  grade: 'A',
+  score: 89,
+  token: {
+    address: '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9',
+    symbol: 'AAVE',
+    name: 'Aave Token'
+  },
+  chain: { id: 'ethereum' },
+  lp: { tier: 'UNVERIFIED', lifetimeEligible: false, badgeEligible: false },
+  checks: [{ id: 'owner_privileges', status: 'pass' }],
+  pools: [
+    { dex: 'uniswap', pairAddress: 'aave1', liquidityUsd: 6_020_000, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'aave2', liquidityUsd: 3_100_000, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'aave3', liquidityUsd: 1_800_000, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'aave4', liquidityUsd: 1_100_000, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'aave5', liquidityUsd: 700_000, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'aave6', liquidityUsd: 376_000, createdAt: old }
+  ]
+});
+assert.equal(aaveLike.eligible, true);
+assert.equal(aaveLike.path, 'established');
 
 // OG render produces PNG header
 const png = renderBadgeOg({

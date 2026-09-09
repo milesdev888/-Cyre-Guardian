@@ -313,7 +313,43 @@ RWA feed patterns: stale / spike / divergence on NestUSD Lazer seeds.
 
 `https://cyre.dev/check` (address) · `https://cyre.dev/scan` (token) · site origin stays free on the APIs above.
 
+## Guardian Verified · Established methodology
+
+Two equal-prestige paths issue the same seal: **Secured** (Lifetime / Timed locks) and **Established** (Battle-Tested). Age alone never qualifies Established.
+
+### Established hard gates (all required)
+
+| Gate | Threshold |
+|------|-----------|
+| On-chain age | ≥ **730 days** (2 years) |
+| Independent pools | ≥ **3** (unique pair addresses) |
+| Total liquidity | ≥ **$100,000** USD across those pools |
+| Authorities | mint / freeze / owner powers clean |
+| Revocation history | none on the mint in the badge registry |
+| Max pool share | ≤ **liquidity-scaled ceiling** (below) |
+
+### Majority-pool ceiling (liquidity-scaled)
+
+A flat &lt;50% single-pool rule is right for small books and wrong for majors with deep absolute liquidity (e.g. LINK failing solely at ~57% of a **$36M** book). Ceiling scales with **total** independent-pool liquidity:
+
+| Total liquidity (USD) | Max single-pool share |
+|-----------------------|------------------------|
+| **&lt; $1,000,000** | **≤ 50%** (strict) |
+| **$1M → $5M** | **linear ramp 50% → 80%** |
+| **≥ $5,000,000** | **≤ 80%** (fully relaxed) |
+
+Formula (`majorityShareCeiling` in `api/_badge-qualify.js`):
+
+- `L < 1e6` → `0.50`
+- `L ≥ 5e6` → `0.80`
+- else → `0.50 + 0.30 × (L − 1e6) / (5e6 − 1e6)`
+
+**Calibration anchors:** deep majors with a dominant venue under the ceiling (LINK-class) can pass; thin absolute books with ~99% in one pool (pepeCoin-class) still refuse; already-distributed majors (AAVE-class) still pass.
+
+Qualify probe: `GET https://cyre.dev/api/badge/qualify?mint=<address>&chainId=<chain>`.
+
 ## Links
 
 - Site: https://cyre.dev · Listing: https://agentic.market (search "guardian") · Updates: https://x.com/Cyredev888
 - CYRE token: **$C7 — the CYRE token.** CA only at https://cyre.dev/tokenomics and @Cyredev888.
+- Badges: https://cyre.dev/badges · Builder Hub: https://cyre.dev/builders
