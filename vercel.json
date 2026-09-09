@@ -357,6 +357,10 @@
       "destination": "/api/badge-founder"
     },
     {
+      "source": "/founder",
+      "destination": "/api/founder-page"
+    },
+    {
       "source": "/api/badge/burn-ledger",
       "destination": "/api/badge-burn-ledger"
     },

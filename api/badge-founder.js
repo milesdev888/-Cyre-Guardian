@@ -1,7 +1,7 @@
 // api/badge-founder.js — Founder approve / reject gate for paid orders
-// (same conceptual gate free-twenty comps will share — comps still use /api/badge/register).
 // Auth: x-guardian-key = BADGE_FOUNDER_KEY || X402_INTERNAL_KEY
 // Actions: list | approve | reject | refunded
+// When durable:false, pass signed order `token` so approve/reject hydrates across instances.
 
 import {
   getOrder,
@@ -9,7 +9,10 @@ import {
   updateOrder,
   publicOrderView,
   ORDER_STATUSES,
-  assertPaidSource
+  assertPaidSource,
+  resolveOrder,
+  saveOrder,
+  verifyOrderToken
 } from './_badge-order.js';
 import { registerBadge } from './_badge-registry.js';
 
@@ -37,6 +40,24 @@ function founderAuthorized(req) {
   return String(hdr) === key;
 }
 
+async function loadOrder({ orderId, token }) {
+  if (token) {
+    const hydrated = verifyOrderToken(token);
+    if (hydrated) {
+      await saveOrder(hydrated);
+      if (!orderId || String(hydrated.id).toUpperCase() === String(orderId).toUpperCase()) {
+        return hydrated;
+      }
+    }
+  }
+  if (orderId) {
+    const o = await resolveOrder({ id: orderId, token });
+    if (o) return o;
+    return getOrder(orderId);
+  }
+  return null;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -49,12 +70,23 @@ export default async function handler(req, res) {
   }
 
   if (req.method === 'GET') {
+    const token = String((req.query && req.query.token) || '').trim();
+    if (token) {
+      const o = await loadOrder({ token });
+      return res.status(200).json({
+        ok: true,
+        pending: o && o.status === ORDER_STATUSES.PENDING_FOUNDER_APPROVAL ? [publicOrderView(o)] : [],
+        order: o ? publicOrderView(o) : null
+      });
+    }
     const pending = await listOrders({ status: ORDER_STATUSES.PENDING_FOUNDER_APPROVAL, limit: 100 });
     const refunds = await listOrders({ status: ORDER_STATUSES.REFUND_PENDING, limit: 50 });
     return res.status(200).json({
       ok: true,
       pending: pending.map(publicOrderView),
       refundPending: refunds.map(publicOrderView),
+      durableNote:
+        'If durable store is unset, paste the signed order token from the checkout URL to load a pending order.',
       note: 'Comps bypass this queue — use POST /api/badge/register (never creates an order).'
     });
   }
@@ -66,15 +98,24 @@ export default async function handler(req, res) {
   const body = readBody(req) || {};
   const action = String(body.action || '').toLowerCase();
   const orderId = String(body.orderId || body.id || '').trim();
+  const token = String(body.token || '').trim();
 
   if (action === 'list') {
+    if (token) {
+      const o = await loadOrder({ token });
+      return res.status(200).json({
+        ok: true,
+        pending: o && o.status === ORDER_STATUSES.PENDING_FOUNDER_APPROVAL ? [publicOrderView(o)] : [],
+        order: o ? publicOrderView(o) : null
+      });
+    }
     const pending = await listOrders({ status: ORDER_STATUSES.PENDING_FOUNDER_APPROVAL, limit: 100 });
     return res.status(200).json({ ok: true, pending: pending.map(publicOrderView) });
   }
 
-  if (!orderId) return res.status(400).json({ ok: false, error: 'orderId required' });
-  const order = await getOrder(orderId);
-  if (!order) return res.status(404).json({ ok: false, error: 'order not found' });
+  if (!orderId && !token) return res.status(400).json({ ok: false, error: 'orderId or token required' });
+  const order = await loadOrder({ orderId, token });
+  if (!order) return res.status(404).json({ ok: false, error: 'order not found — pass signed token if durable:false' });
   try {
     assertPaidSource(order);
   } catch (e) {
@@ -104,7 +145,6 @@ export default async function handler(req, res) {
       badgeEligible: true,
       expiresAt: q.expiresAt || null,
       scanUrl: `${SCAN_BASE}/?address=${encodeURIComponent(order.mint)}`,
-      // Paid-path metadata (comps never set these)
       issuanceSource: 'paid',
       orderId: order.id
     });
