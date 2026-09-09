@@ -196,7 +196,7 @@ export default async function handler(req, res) {
 
   if (!orderId && !token) return res.status(400).json({ ok: false, error: 'orderId or token required' });
   const order = await loadOrder({ orderId, token });
-  if (!order) return res.status(404).json({ ok: false, error: 'order not found — pass signed token if durable:false' });
+  if (!order) return res.status(404).json({ ok: false, error: 'order not found — pass signed token if missing from store' });
   try {
     assertPaidSource(order);
   } catch (e) {

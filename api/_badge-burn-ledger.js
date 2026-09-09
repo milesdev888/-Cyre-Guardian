@@ -4,39 +4,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { C7_MINT } from './_supply.js';
+import { redisCommand, isDurableRedis } from './_redis.js';
 
 const FILE_STORE = process.env.BADGE_BURN_LEDGER_STORE || '/tmp/guardian-c7-burn-ledger.json';
 const KEY_PREFIX = 'guardian:burn:';
 const INDEX_KEY = 'guardian:burn:index';
 const COUNTER_KEY = 'guardian:burn:counter';
 
-function redisRestConfig() {
-  const url = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '';
-  if (url.startsWith('https://')) {
-    const token =
-      process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || '';
-    return token ? { url: url.replace(/\/$/, ''), token } : null;
-  }
-  return null;
-}
-
-async function redisCommand(cmd) {
-  const cfg = redisRestConfig();
-  if (!cfg) return null;
-  const r = await fetch(cfg.url, {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + cfg.token,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(cmd)
-  });
-  if (!r.ok) {
-    const t = await r.text();
-    throw new Error('redis ' + r.status + ' ' + t.slice(0, 200));
-  }
-  return r.json();
-}
 
 function emptyFileStore() {
   return { byId: {}, counter: 0 };
@@ -68,7 +42,7 @@ function writeFileStore(store) {
 }
 
 async function nextId() {
-  if (redisRestConfig()) {
+  if (isDurableRedis()) {
     const row = await redisCommand(['INCR', COUNTER_KEY]);
     const n = Number(row && row.result) || 1;
     return `BURN-${new Date().getUTCFullYear()}-${String(n).padStart(5, '0')}`;
@@ -102,7 +76,7 @@ export async function recordC7BurnEntry(input) {
     note: 'Queued for weekly published burn per The $C7 Loop.'
   };
 
-  if (redisRestConfig()) {
+  if (isDurableRedis()) {
     await redisCommand(['SET', KEY_PREFIX + id, JSON.stringify(entry)]);
     await redisCommand(['ZADD', INDEX_KEY, String(Date.parse(entry.receivedAt) || Date.now()), id]);
     return entry;
@@ -116,7 +90,7 @@ export async function recordC7BurnEntry(input) {
 export async function getBurnEntry(id) {
   const key = String(id || '').trim().toUpperCase();
   if (!key) return null;
-  if (redisRestConfig()) {
+  if (isDurableRedis()) {
     const row = await redisCommand(['GET', KEY_PREFIX + key]);
     if (!row || !row.result) return null;
     try {
@@ -131,7 +105,7 @@ export async function getBurnEntry(id) {
 
 export async function listBurnLedger({ limit = 100 } = {}) {
   const lim = Math.min(500, Math.max(1, Number(limit) || 100));
-  if (redisRestConfig()) {
+  if (isDurableRedis()) {
     const row = await redisCommand(['ZREVRANGE', INDEX_KEY, '0', String(lim - 1)]);
     const ids = (row && row.result) || [];
     const out = [];
@@ -161,7 +135,7 @@ export async function markWeeklyBurned(id, weeklyBurnTx) {
     weeklyBurnTx: String(weeklyBurnTx),
     weeklyBurnAt: new Date().toISOString()
   };
-  if (redisRestConfig()) {
+  if (isDurableRedis()) {
     await redisCommand(['SET', KEY_PREFIX + next.id, JSON.stringify(next)]);
     return next;
   }

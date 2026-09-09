@@ -19,7 +19,7 @@ import {
   hydrateOrderToken
 } from './_badge-order.js';
 import { qualifyFromScan, QUALIFY_PATHS, extractScanReport } from './_badge-qualify.js';
-import { getBadgeByMint, hasRevocationHistory, isDurableBadgeStore } from './_badge-registry.js';
+import { getBadgeByMint, hasRevocationHistory } from './_badge-registry.js';
 import { watchOrders } from './_badge-pay-watch.js';
 
 const DISCLAIMER =
@@ -90,8 +90,6 @@ async function handleWatch(req, res) {
     return res.status(401).json({ ok: false, error: 'inject requires founder key' });
   }
 
-  const durable = isDurableOrderStore();
-
   try {
     if (orderId) {
       let present = await getOrder(orderId);
@@ -101,14 +99,13 @@ async function handleWatch(req, res) {
       if (!present) {
         return res.status(404).json({
           ok: false,
-          error: durable
+          error: isDurableOrderStore()
             ? 'order not found'
-            : 'order not in this instance — pass signed token from create/status (durable store unset)',
+            : 'order not in this instance — pass signed token from create/status',
           watched: 0,
           results: [],
           order: null,
-          durable,
-          needToken: !durable
+          needToken: !isDurableOrderStore()
         });
       }
     }
@@ -120,12 +117,11 @@ async function handleWatch(req, res) {
       ok: true,
       watched: results.length,
       results,
-      order: order ? publicOrderView(order) : null,
-      durable
+      order: order ? publicOrderView(order) : null
     });
   } catch (e) {
     console.error('order-watch failed', e && e.message);
-    return res.status(500).json({ ok: false, error: (e && e.message) || 'watch failed', durable });
+    return res.status(500).json({ ok: false, error: (e && e.message) || 'watch failed' });
   }
 }
 
@@ -158,7 +154,7 @@ export default async function handler(req, res) {
         create: 'POST /api/badge/order { mint } — only when live scan qualifies and mint is unissued',
         status: 'GET /api/badge/order?id=ORD-YYYY-NNNNN',
         checkout: `${SITE}/order?mint=<mint>`,
-        watch: 'POST /api/badge/order/watch { orderId, token? } — include signed token when durable:false',
+        watch: 'POST /api/badge/order/watch { orderId, token? } — include signed token when order is not in store',
         founder: 'POST /api/badge/founder { action: approve|reject|list, orderId }',
         comp: 'POST /api/badge/register — founder comps bypass payment; never creates an order'
       },
@@ -170,7 +166,6 @@ export default async function handler(req, res) {
         c7TreasurySolana: C7_TREASURY
       },
       paths: QUALIFY_PATHS,
-      durable: isDurableBadgeStore() || isDurableOrderStore(),
       disclaimer: DISCLAIMER
     });
   }
