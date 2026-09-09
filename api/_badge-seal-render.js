@@ -43,10 +43,11 @@ const TROPHY_YELLOW_PULL = 0.55;
 const TROPHY_BLUE_KEEP = 0.42;
 const TROPHY_PIVOT = 142;
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
-/** Full-res QR target: 12–14% of seal width (~220–250px on 1800 master). */
-const QR_PCT_MIN = 0.12;
-const QR_PCT_MAX = 0.14;
-const QR_PCT_TARGET = 0.13;
+/**
+ * Full-res QR — one-touch hard lock at 14% of seal width (252px on 1800 master).
+ * Was undersizing (~12% / earlier 9.8%) and failing phone decode at social thumbs.
+ */
+export const QR_PCT = 0.14;
 /** Spec quiet-zone modules on each side (opaque dark plate, not transparent). */
 const QR_QUIET_MODULES = 4;
 /** ECC M keeps module count low; Q only if payload needs it. */
@@ -403,12 +404,12 @@ function drawBandText(rgba, W, H, cx, cy, radius, text, atlas, opts = {}) {
 
 /**
  * Camera-scannable QR for full-res seals only.
- * - Size ~12–14% of canvas width (220–250px on 1800)
+ * - Module field ≥ QR_PCT (14%) of canvas via integer module scale (no shrink-blit)
  * - Opaque dark backing plate + pure-white quiet zone + pure-black modules
  * - No transparency through the QR, no gold tint
  * - Bottom-right; may sit on the outer dark field but stays outside the band radius
  *
- * @returns {{ dim: number, x: number, y: number, modules: number, scale: number, url: string }}
+ * @returns {{ dim: number, qrDim: number, x: number, y: number, modules: number, scale: number, url: string, pad: number, pct: number }}
  */
 async function drawQr(rgba, W, H, url) {
   const matrix = await QRCode.create(url, { errorCorrectionLevel: QR_ECC });
@@ -416,24 +417,17 @@ async function drawQr(rgba, W, H, url) {
   const size = modules.size;
   const quiet = QR_QUIET_MODULES;
   const cells = size + quiet * 2;
-  const minPx = Math.round(W * QR_PCT_MIN);
-  const maxPx = Math.round(W * QR_PCT_MAX);
-  let scale = Math.max(1, Math.floor(maxPx / cells));
-  if (cells * scale < minPx) scale = Math.ceil(minPx / cells);
-  const alt = Math.max(1, Math.round((W * QR_PCT_TARGET) / cells));
-  if (alt !== scale) {
-    const altDim = cells * alt;
-    if (altDim >= minPx && altDim <= maxPx) scale = alt;
-  }
-  const dim = cells * scale;
+  // Never undersize 14%: integer module scale only (shrink-blit softens decode@320).
+  const targetPx = Math.round(W * QR_PCT);
+  const scale = Math.max(1, Math.ceil(targetPx / cells));
+  const modulePx = cells * scale; // >= 14%, crisp module grid
   const pad = Math.max(4, Math.round(scale)); // dark plate rim outside white quiet zone
-  const plate = dim + pad * 2;
+  const plate = modulePx + pad * 2;
 
   const DARK = [11, 18, 16];
   const WHITE = [255, 255, 255];
   const BLACK = [0, 0, 0];
 
-  // Opaque dark quiet-zone patch behind the QR (no alpha, no gold bleed-through).
   const plateRgba = Buffer.alloc(plate * plate * 4, 0);
   for (let i = 0; i < plateRgba.length; i += 4) {
     plateRgba[i] = DARK[0];
@@ -441,9 +435,9 @@ async function drawQr(rgba, W, H, url) {
     plateRgba[i + 2] = DARK[2];
     plateRgba[i + 3] = 255;
   }
-  // Pure white light field (quiet zone + light modules).
-  for (let y = 0; y < dim; y++) {
-    for (let x = 0; x < dim; x++) {
+  // White quiet zone + light modules.
+  for (let y = 0; y < modulePx; y++) {
+    for (let x = 0; x < modulePx; x++) {
       const i = ((y + pad) * plate + (x + pad)) * 4;
       plateRgba[i] = WHITE[0];
       plateRgba[i + 1] = WHITE[1];
@@ -451,7 +445,7 @@ async function drawQr(rgba, W, H, url) {
       plateRgba[i + 3] = 255;
     }
   }
-  // Pure black data modules (max contrast, no gold tint).
+  // Black dark modules at integer scale.
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       if (!modules.get(x, y)) continue;
@@ -473,7 +467,17 @@ async function drawQr(rgba, W, H, url) {
   const x0 = W - plate - margin;
   const y0 = H - plate - margin;
   blitScaled(rgba, W, H, { rgba: plateRgba, width: plate, height: plate }, x0, y0, plate, plate);
-  return { dim: plate, qrDim: dim, x: x0, y: y0, modules: size, scale, url, pad };
+  return {
+    dim: plate,
+    qrDim: modulePx,
+    x: x0,
+    y: y0,
+    modules: size,
+    scale,
+    url,
+    pad,
+    pct: modulePx / W
+  };
 }
 
 function applyRevoked(rgba, W, H) {
