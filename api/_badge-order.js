@@ -2,7 +2,8 @@
 // Comp issuance (badge-register) NEVER creates orders; paid orders NEVER look like comps.
 // Status machine:
 //   AWAITING_PAYMENT → (expire) EXPIRED
-//   AWAITING_PAYMENT → (watcher match + re-qualify) PAID → PENDING_FOUNDER_APPROVAL
+//   AWAITING_PAYMENT → (watcher match + re-qualify) PAID → name-screen
+//     → ISSUED (AUTO_APPROVED) | PENDING_FOUNDER_APPROVAL (flagged / auto-off)
 //   PENDING_FOUNDER_APPROVAL → APPROVED → ISSUED | REJECTED → REFUND_PENDING → REFUNDED
 // Price lock: 30 minutes. Unique USDC cent-amount for Base matching; Solana Pay reference for C7.
 
@@ -585,12 +586,14 @@ export function publicOrderView(order) {
     paymentLane: o.paymentLane,
     paymentTx: o.paymentTx,
     qualifySnapshot: o.qualifySnapshot,
+    screenFlags: o.screenFlags || null,
     issuance: o.issuance,
     approval: o.approval
       ? {
           status: o.approval.status,
           decidedAt: o.approval.decidedAt,
-          reason: o.approval.reason || null
+          reason: o.approval.reason || null,
+          holdReason: o.approval.holdReason || null
         }
       : null,
     refund: o.refund

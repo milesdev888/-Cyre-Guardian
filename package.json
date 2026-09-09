@@ -9,6 +9,7 @@
     "qrcode": "^1.5.4"
   },
   "scripts": {
-    "test:badge-order": "node api/_badge-order.test.js && node scripts/badge-order-forbidden-words.test.js"
+    "test:badge-order": "node api/_badge-order.test.js && node scripts/badge-order-forbidden-words.test.js",
+    "test:badge-name-screen": "node api/_badge-name-screen.test.js"
   }
 }

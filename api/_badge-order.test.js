@@ -119,7 +119,8 @@ const kept = preferOrderState(pendingPastLock, expired);
 assert.equal(kept.status, ORDER_STATUSES.PENDING_FOUNDER_APPROVAL);
 assert.equal(kept.paymentTx, 'FakeTx');
 
-// Accept payment → pending founder + burn ledger for C7
+// Accept payment → name-screen clean + auto-approve (default ON) → ISSUED + burn ledger for C7
+delete process.env.BADGE_AUTO_APPROVE; // default ON
 const paid = await acceptPayment(
   order,
   {
@@ -130,9 +131,66 @@ const paid = await acceptPayment(
   },
   qualify
 );
-assert.equal(paid.status, ORDER_STATUSES.PENDING_FOUNDER_APPROVAL);
+assert.equal(paid.status, ORDER_STATUSES.ISSUED);
+assert.equal(paid.approval && paid.approval.status, 'AUTO_APPROVED');
+assert.ok(paid.issuance && paid.issuance.serial);
 assert.equal(paid.paymentLane, 'c7_solana');
 assert.ok(paid.burnLedgerId);
+
+// Flagged name → hold in founder queue (even with auto-approve ON)
+const flaggedQualify = {
+  ...qualify,
+  mint: 'FlagMint3333333333333333333333333333333333333',
+  name: 'Bitcoin Clone',
+  symbol: 'BTCX'
+};
+const flaggedOrder = await createPaidOrder({
+  mint: flaggedQualify.mint,
+  chainId: 'solana',
+  qualify: flaggedQualify,
+  siteUrl: 'https://cyre.dev'
+});
+const held = await acceptPayment(
+  flaggedOrder,
+  {
+    lane: 'usdc_base',
+    tx: '0xflaggedpaymenttx',
+    from: '0xbuyer',
+    amountAtomic: flaggedOrder.locked.usdcAtomic
+  },
+  flaggedQualify
+);
+assert.equal(held.status, ORDER_STATUSES.PENDING_FOUNDER_APPROVAL);
+assert.ok(held.screenFlags && held.screenFlags.flags && held.screenFlags.flags.length);
+assert.ok(held.screenFlags.flags.some((f) => f.includes('bitcoin') || f.includes('btc')));
+
+// Auto-approve OFF → always pending even when clean
+process.env.BADGE_AUTO_APPROVE = '0';
+const manualQualify = {
+  ...qualify,
+  mint: 'ManualMint444444444444444444444444444444444444',
+  name: 'Manual Hold Token',
+  symbol: 'MAN'
+};
+const manualOrder = await createPaidOrder({
+  mint: manualQualify.mint,
+  chainId: 'solana',
+  qualify: manualQualify,
+  siteUrl: 'https://cyre.dev'
+});
+const manual = await acceptPayment(
+  manualOrder,
+  {
+    lane: 'usdc_base',
+    tx: '0xmanualpaymenttx',
+    from: '0xbuyer2',
+    amountAtomic: manualOrder.locked.usdcAtomic
+  },
+  manualQualify
+);
+assert.equal(manual.status, ORDER_STATUSES.PENDING_FOUNDER_APPROVAL);
+assert.equal(manual.screenFlags, null);
+delete process.env.BADGE_AUTO_APPROVE;
 
 const ledger = await listBurnLedger({ limit: 10 });
 assert.ok(ledger.some((e) => e.orderId === order.id && e.id === paid.burnLedgerId));

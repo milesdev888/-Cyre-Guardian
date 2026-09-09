@@ -1,7 +1,8 @@
 // api/_badge-pay-watch.js — Match Base USDC / Solana $C7 payments to open orders.
 // No wallet-connect — watches on-chain transfers only.
 // On match: re-scan qualify; if lost, do NOT accept payment (QUALIFY_LOST).
-// If still eligible → PAID → PENDING_FOUNDER_APPROVAL (+ burn ledger for C7).
+// If still eligible → payment accepted → name-screen → AUTO ISSUED or PENDING_FOUNDER_APPROVAL.
+// Auto-approve when BADGE_AUTO_APPROVE !== '0' (default ON).
 
 import {
   ORDER_STATUSES,
@@ -15,12 +16,68 @@ import {
 } from './_badge-order.js';
 import { recordC7BurnEntry } from './_badge-burn-ledger.js';
 import { qualifyFromScan } from './_badge-qualify.js';
-import { getBadgeByMint, hasRevocationHistory } from './_badge-registry.js';
+import { getBadgeByMint, hasRevocationHistory, registerBadge } from './_badge-registry.js';
+import { screenBadgeName } from './_badge-name-screen.js';
+import { notifyBadgeAutoIssued, notifyBadgeFlaggedHold } from './_badge-notify.js';
 import { C7_MINT } from './_supply.js';
 
 const SCAN_BASE = process.env.GUARDIAN_SCAN_URL || 'https://scan.cyre.dev';
+const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
 const BASE_RPC = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
 const SOLANA_RPC = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
+
+/** Default ON — set BADGE_AUTO_APPROVE=0 to force founder queue for every paid order. */
+export function isBadgeAutoApproveEnabled() {
+  return process.env.BADGE_AUTO_APPROVE !== '0';
+}
+
+/**
+ * Issue a paid serial from an order (same path as founder approve).
+ * @param {object} order
+ * @param {object} qualify
+ * @param {{ status: string, decidedAt?: string, reason?: string|null, queuedAt?: string }} approval
+ */
+export async function issuePaidOrderBadge(order, qualify, approval) {
+  const q = qualify || order.qualifyAtPayment || order.qualifySnapshot || {};
+  const badge = await registerBadge({
+    mint: order.mint,
+    chainId: order.chainId || 'solana',
+    symbol: order.symbol || q.symbol,
+    name: order.name || q.name,
+    grade: q.grade || 'U',
+    score: q.score ?? null,
+    lpTier: q.lpTier || 'UNVERIFIED',
+    qualifyPath: q.path,
+    pathLabel: q.pathLabel,
+    pathFamily: q.pathFamily,
+    lifetimeEligible: Boolean(q.lifetimeEligible),
+    badgeEligible: true,
+    expiresAt: q.expiresAt || null,
+    scanUrl: `${SCAN_BASE}/?address=${encodeURIComponent(order.mint)}`,
+    issuanceSource: 'paid',
+    orderId: order.id
+  });
+
+  const issued = await updateOrder(order, {
+    status: ORDER_STATUSES.ISSUED,
+    approval: {
+      status: approval.status || 'APPROVED',
+      decidedAt: approval.decidedAt || new Date().toISOString(),
+      reason: approval.reason != null ? approval.reason : null,
+      ...(approval.queuedAt ? { queuedAt: approval.queuedAt } : {}),
+      ...(approval.auto ? { auto: true } : {})
+    },
+    issuance: {
+      serial: badge.serial,
+      issuedAt: badge.issuedAt,
+      verifyUrl: `${SITE}/verify/${badge.serial}`,
+      sealUrl: `${SITE}/api/seal/${badge.serial}.png`,
+      source: 'paid',
+      orderId: order.id
+    }
+  });
+  return { order: issued, badge };
+}
 
 const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 
@@ -214,6 +271,7 @@ function extractC7Transfer(tx, amountAtomic) {
 
 /**
  * Apply a matched payment to an order (after re-qualify).
+ * Name-screens token name/symbol; auto-issues when clean and BADGE_AUTO_APPROVE !== '0'.
  * @param {object} order
  * @param {{ lane: 'usdc_base'|'c7_solana', tx: string, from?: string|null, amountAtomic: string }} match
  * @param {object} qualify
@@ -231,29 +289,98 @@ export async function acceptPayment(order, match, qualify) {
     burnLedgerId = entry.id;
   }
 
-  return updateOrder(order, {
-    status: ORDER_STATUSES.PENDING_FOUNDER_APPROVAL,
-    paidAt: new Date().toISOString(),
+  const paidAt = new Date().toISOString();
+  const qualifyAtPayment = {
+    path: qualify.path,
+    pathLabel: qualify.pathLabel,
+    pathFamily: qualify.pathFamily,
+    grade: qualify.grade,
+    score: qualify.score,
+    lpTier: qualify.lpTier,
+    lifetimeEligible: qualify.lifetimeEligible,
+    badgeEligible: qualify.badgeEligible,
+    expiresAt: qualify.expiresAt || null,
+    reason: qualify.reason,
+    symbol: qualify.symbol,
+    name: qualify.name
+  };
+
+  const screenName = order.name || qualify.name || null;
+  const screenSymbol = order.symbol || qualify.symbol || null;
+  const screen = screenBadgeName({ name: screenName, symbol: screenSymbol });
+  const autoOn = isBadgeAutoApproveEnabled();
+
+  // Payment accepted base patch (always recorded before auto-issue or hold).
+  const basePatch = {
+    paidAt,
     paymentLane: match.lane,
     paymentTx: match.tx,
     paymentFrom: match.from || null,
     burnLedgerId,
-    qualifyAtPayment: {
-      path: qualify.path,
-      pathLabel: qualify.pathLabel,
-      pathFamily: qualify.pathFamily,
-      grade: qualify.grade,
-      score: qualify.score,
-      lpTier: qualify.lpTier,
-      reason: qualify.reason
-    },
-    // Keep PAID as intermediate trail in history field
+    qualifyAtPayment,
     paidStatusTrail: ORDER_STATUSES.PAID,
+    name: screenName,
+    symbol: screenSymbol
+  };
+
+  if (autoOn && screen.ok) {
+    const queued = await updateOrder(order, {
+      ...basePatch,
+      status: ORDER_STATUSES.PENDING_FOUNDER_APPROVAL,
+      screenFlags: null,
+      approval: {
+        status: 'PENDING_FOUNDER_APPROVAL',
+        queuedAt: paidAt
+      }
+    });
+    const { order: issued, badge } = await issuePaidOrderBadge(queued, qualifyAtPayment, {
+      status: 'AUTO_APPROVED',
+      decidedAt: new Date().toISOString(),
+      reason: 'name-screen clean',
+      queuedAt: paidAt,
+      auto: true
+    });
+    try {
+      await notifyBadgeAutoIssued({
+        order: issued,
+        badge,
+        verifyUrl: issued.issuance && issued.issuance.verifyUrl
+      });
+    } catch (_) {}
+    return issued;
+  }
+
+  const screenFlags = screen.ok
+    ? null
+    : {
+        ok: false,
+        flags: screen.flags,
+        reason: screen.reason,
+        screenedAt: paidAt
+      };
+
+  const held = await updateOrder(order, {
+    ...basePatch,
+    status: ORDER_STATUSES.PENDING_FOUNDER_APPROVAL,
+    screenFlags,
     approval: {
       status: 'PENDING_FOUNDER_APPROVAL',
-      queuedAt: new Date().toISOString()
+      queuedAt: paidAt,
+      ...(screenFlags ? { holdReason: screen.reason } : {})
     }
   });
+
+  if (screenFlags) {
+    try {
+      await notifyBadgeFlaggedHold({
+        order: held,
+        flags: screen.flags,
+        reason: screen.reason
+      });
+    } catch (_) {}
+  }
+
+  return held;
 }
 
 /**
@@ -352,7 +479,10 @@ export async function watchOrders(opts = {}) {
       accepted: true,
       paymentLane: match.lane,
       paymentTx: match.tx,
-      burnLedgerId: accepted.burnLedgerId
+      burnLedgerId: accepted.burnLedgerId,
+      autoApproved: accepted.approval && accepted.approval.status === 'AUTO_APPROVED',
+      serial: accepted.issuance && accepted.issuance.serial,
+      screenFlags: accepted.screenFlags || null
     });
   }
   return results;
