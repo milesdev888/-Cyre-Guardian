@@ -86,6 +86,11 @@ function redisRestConfig() {
   return null;
 }
 
+/** True when orders persist across serverless instances (Redis/KV configured). */
+export function isDurableOrderStore() {
+  return !!redisRestConfig();
+}
+
 async function redisCommand(cmd) {
   const cfg = redisRestConfig();
   if (!cfg) return null;
@@ -262,15 +267,17 @@ export function buildSolanaPayUrl({ recipient, amount, splToken, reference, labe
 }
 
 export async function saveOrder(order) {
+  const id = String(order.id || '').trim().toUpperCase();
+  const row = id && id !== order.id ? { ...order, id } : order;
   if (redisRestConfig()) {
-    await redisCommand(['SET', KEY_PREFIX + order.id, JSON.stringify(order)]);
-    await redisCommand(['ZADD', INDEX_KEY, String(Date.parse(order.createdAt) || Date.now()), order.id]);
-    return order;
+    await redisCommand(['SET', KEY_PREFIX + id, JSON.stringify(row)]);
+    await redisCommand(['ZADD', INDEX_KEY, String(Date.parse(row.createdAt) || Date.now()), id]);
+    return row;
   }
   const store = readFileStore();
-  store.byId[order.id] = order;
+  store.byId[id] = row;
   writeFileStore(store);
-  return order;
+  return row;
 }
 
 export async function getOrder(id) {
@@ -377,7 +384,8 @@ export async function createPaidOrder({ mint, chainId, qualify, siteUrl }) {
     id,
     source: 'paid',
     mint: m,
-    chainId: String(chainId || qualify.chainId || 'solana'),
+    // Token's chain from live scan (e.g. ethereum for AAVE) — not the USDC payment chain.
+    chainId: String(qualify.chainId || chainId || 'solana'),
     symbol: qualify.symbol || null,
     name: qualify.name || null,
     status: ORDER_STATUSES.AWAITING_PAYMENT,

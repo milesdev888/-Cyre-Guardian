@@ -346,7 +346,7 @@
     },
     {
       "source": "/api/badge/order/watch",
-      "destination": "/api/badge-order-watch"
+      "destination": "/api/badge-order?watch=1"
     },
     {
       "source": "/api/badge/order",

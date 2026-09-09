@@ -232,6 +232,16 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
       document.getElementById('startBtn').disabled = false;
     }
   }
+  async function ensureToken(id){
+    if (boot.token) return boot.token;
+    if (!id) return null;
+    try {
+      var r = await fetch('/api/badge/order?id=' + encodeURIComponent(id), { headers: { accept: 'application/json' } });
+      var j = await r.json();
+      if (r.ok && j.token){ boot = j; return j.token; }
+    } catch (e) {}
+    return null;
+  }
   async function refresh(){
     if (!boot.id && !(document.getElementById('mintOut').textContent)) return;
     var id = boot.id || document.getElementById('heading').textContent;
@@ -244,16 +254,22 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
   async function watch(){
     var id = boot.id || document.getElementById('heading').textContent;
     setMsg('Watching for matching transfer…');
+    var tok = await ensureToken(id);
     var r = await fetch('/api/badge/order/watch', {
       method: 'POST',
       headers: { 'content-type': 'application/json', accept: 'application/json' },
-      body: JSON.stringify({ orderId: id, token: boot.token || null })
+      body: JSON.stringify({ orderId: id, token: tok || boot.token || null })
     });
     var j = await r.json();
     if (j.order){ boot = j.order; render(j.order); }
+    if (!j.ok && j.needToken){
+      setMsg(j.error || 'Order not registered in watcher — reopen checkout from the create response (signed token).', true);
+      return;
+    }
     var hit = (j.results || []).find(function(x){ return x.matched; });
     if (hit && hit.accepted) setMsg('Payment matched · queued for founder approval.');
     else if (hit && !hit.accepted) setMsg(hit.reason || 'Payment seen but mint no longer qualifies — refund path.', true);
+    else if (j.watched === 0 && !j.order) setMsg(j.error || 'Watcher could not load this order. Refresh status, then check matching again.', true);
     else setMsg('No matching transfer yet. Pay the exact locked amount, then check again.');
   }
   document.getElementById('startBtn').addEventListener('click', createOrder);
@@ -270,10 +286,17 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
     var qt = new URLSearchParams(location.search).get('token');
     if (qt && boot) boot.token = qt;
   } catch (e) {}
-  if (boot && boot.id) render(boot);
-  else if (boot && boot.mint){
-    document.getElementById('mintInput').value = boot.mint;
-  }
+  (async function bootLoad(){
+    if (boot && boot.id){ render(boot); return; }
+    var pathId = (location.pathname.match(/\/order\/(ORD-[A-Za-z0-9-]+)/i) || [])[1];
+    if (pathId){
+      var tok = await ensureToken(pathId);
+      if (tok || (boot && boot.id)){ render(boot); return; }
+    }
+    if (boot && boot.mint){
+      document.getElementById('mintInput').value = boot.mint;
+    }
+  })();
 })();
 </script>
 </body>
