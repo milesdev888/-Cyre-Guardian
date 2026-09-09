@@ -10,6 +10,7 @@ import {
   createPaidOrder,
   getOrder,
   applyExpiry,
+  preferOrderState,
   publicOrderView,
   ORDER_STATUSES,
   ORDER_TTL_MS,
@@ -101,6 +102,22 @@ const expired = applyExpiry({
   expiresAt: new Date(Date.now() - 1000).toISOString()
 });
 assert.equal(expired.status, ORDER_STATUSES.EXPIRED);
+
+// Paid / pending never expire — lock is price-only
+const pendingPastLock = applyExpiry({
+  ...order,
+  status: ORDER_STATUSES.PENDING_FOUNDER_APPROVAL,
+  paidAt: new Date().toISOString(),
+  paymentTx: 'FakeTx',
+  paymentLane: 'c7_solana',
+  expiresAt: new Date(Date.now() - 60_000).toISOString()
+});
+assert.equal(pendingPastLock.status, ORDER_STATUSES.PENDING_FOUNDER_APPROVAL);
+
+// Stale EXPIRED token must not clobber pending
+const kept = preferOrderState(pendingPastLock, expired);
+assert.equal(kept.status, ORDER_STATUSES.PENDING_FOUNDER_APPROVAL);
+assert.equal(kept.paymentTx, 'FakeTx');
 
 // Accept payment → pending founder + burn ledger for C7
 const paid = await acceptPayment(
