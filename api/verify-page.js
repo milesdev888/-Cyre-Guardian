@@ -181,7 +181,14 @@ export default async function handler(req, res) {
 </head>
 <body>
   <div class="wrap">
-    <div class="brand">Guardian</div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap">
+      <div class="brand">Guardian</div>
+      <nav style="display:flex;gap:14px;font-size:14px;color:var(--dim)" aria-label="Primary">
+        <a href="/builders" style="color:var(--gold);text-decoration:none">Builders</a>
+        <a href="/order" style="color:var(--gold);text-decoration:none">Get Verified</a>
+        <a href="/" style="color:var(--dim);text-decoration:none">Home</a>
+      </nav>
+    </div>
     <h1>Badge verify</h1>
     <p class="sub">Issued path + live qualifying-path re-check. Dates in UTC.</p>
     <div class="verify-layout">

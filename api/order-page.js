@@ -125,7 +125,10 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
 <div class="wrap">
   <nav>
     <a class="brand" href="/">Guardian <span>Verified</span></a>
-    <a href="/verify">Verify</a>
+    <span style="display:flex;gap:16px;font-size:14px">
+      <a href="/builders">Builders</a>
+      <a href="/verify">Verify</a>
+    </span>
   </nav>
   <p class="cta-line" id="cta">Get Guardian Verified — $${USDC_USD} USDC or $${C7_USD} in $C7.</p>
   <h1 id="heading">${order ? esc(order.id) : 'Checkout'}</h1>
