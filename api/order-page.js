@@ -288,7 +288,8 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
   } catch (e) {}
   (async function bootLoad(){
     if (boot && boot.id){ render(boot); return; }
-    var pathId = (location.pathname.match(/\/order\/(ORD-[A-Za-z0-9-]+)/i) || [])[1];
+    // Use RegExp ctor — \/ inside the outer template literal collapses to / and yields //order/… (parse error, dead page).
+    var pathId = (location.pathname.match(new RegExp('/order/(ORD-[A-Za-z0-9-]+)', 'i')) || [])[1];
     if (pathId){
       var tok = await ensureToken(pathId);
       if (tok || (boot && boot.id)){ render(boot); return; }
