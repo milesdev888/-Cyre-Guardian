@@ -14,7 +14,8 @@ import {
   publicOrderView,
   ORDER_STATUSES,
   ORDER_TTL_MS,
-  C7_TREASURY,
+  c7Treasury,
+  isC7LaneLive,
   USDC_USD,
   C7_USD,
   assertPaidSource
@@ -27,6 +28,8 @@ process.env.BADGE_ORDER_STORE = '/tmp/guardian-badge-orders-test.json';
 process.env.BADGE_BURN_LEDGER_STORE = '/tmp/guardian-c7-burn-ledger-test.json';
 process.env.BADGE_REGISTRY_STORE = '/tmp/guardian-badge-registry-order-test.json';
 process.env.BADGE_C7_PRICE_USD_FALLBACK = '0.00025';
+/** Dedicated burn-receive wallet for tests — never the x402 payTo. */
+process.env.BADGE_C7_TREASURY = 'BurnTreasury1111111111111111111111111111111';
 try {
   fs.unlinkSync(process.env.BADGE_ORDER_STORE);
 } catch (_) {}
@@ -130,7 +133,7 @@ await assert.rejects(
 
 // With explicit Solana USDC treasury → live
 {
-  process.env.BADGE_USDC_TREASURY_SOLANA = C7_TREASURY;
+  process.env.BADGE_USDC_TREASURY_SOLANA = c7Treasury();
   const o = await createPaidOrder({
     mint: qualify.mint + 'solusdc',
     chainId: 'solana',
@@ -142,7 +145,7 @@ await assert.rejects(
   assert.equal(o.payment.usdc.family, 'solana');
   assert.ok(o.payment.usdc.reference);
   assert.match(o.payment.usdc.solanaPayUrl, /spl-token=EPjFWdd5/);
-  assert.equal(o.payment.usdc.to, C7_TREASURY);
+  assert.equal(o.payment.usdc.to, c7Treasury());
   delete process.env.BADGE_USDC_TREASURY_SOLANA;
 }
 

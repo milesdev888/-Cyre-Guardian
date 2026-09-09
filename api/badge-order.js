@@ -13,7 +13,7 @@ import {
   USDC_USD,
   C7_USD,
   BASE_TREASURY,
-  C7_TREASURY,
+  c7Treasury,
   EVM_USDC_TREASURY,
   SOLANA_USDC_TREASURY,
   USDC_CHAINS,
@@ -179,7 +179,7 @@ export default async function handler(req, res) {
         usdcTreasuryEvm: EVM_USDC_TREASURY,
         usdcTreasurySolana: solanaUsdcTreasury() || null,
         usdcTreasuryBase: BASE_TREASURY,
-        c7TreasurySolana: C7_TREASURY,
+        c7TreasurySolana: c7Treasury(),
         canonicalUsdc: Object.fromEntries(
           USDC_CHAIN_IDS.map((id) => [
             id,

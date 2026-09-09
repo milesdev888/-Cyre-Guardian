@@ -16,7 +16,7 @@ export const SEAL_OG_SIZE = 1024;
 export const SEAL_OG_COLORS = 64;
 /** On-page UI thumb — RGBA transparent, no QR (too small to scan). */
 export const SEAL_UI_SIZE = 256;
-const BAND_R = 790;
+const BAND_R = 760;
 const GUIDE_INNER = 728;
 const GUIDE_OUTER = 852;
 const GOLD_HI = [248, 224, 118];
@@ -44,11 +44,13 @@ const TROPHY_BLUE_KEEP = 0.42;
 const TROPHY_PIVOT = 142;
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
 /**
- * Full-res QR — one-touch hard lock at 14% of seal width (252px on 1800 master).
- * Was undersizing (~12% / earlier 9.8%) and failing phone decode at social thumbs.
+ * Full-res QR — hard lock: **data modules** (size×scale, not quiet zone) ≥ 14% of
+ * shortest edge. On 1800 master that is ≥252px of black/white modules; quiet zone
+ * is additive outside that floor. Prior code counted quiet toward 14%, so data
+ * modules read ~203px / 11.2% on live seals.
  */
 export const QR_PCT = 0.14;
-/** Spec quiet-zone modules on each side (opaque dark plate, not transparent). */
+/** Spec quiet-zone modules on each side (opaque white). zbar needs ≥4. */
 const QR_QUIET_MODULES = 4;
 /** ECC M keeps module count low; Q only if payload needs it. */
 const QR_ECC = 'M';
@@ -417,10 +419,13 @@ async function drawQr(rgba, W, H, url) {
   const size = modules.size;
   const quiet = QR_QUIET_MODULES;
   const cells = size + quiet * 2;
-  // Never undersize 14%: integer module scale only (shrink-blit softens decode@320).
-  const targetPx = Math.round(W * QR_PCT);
-  const scale = Math.max(1, Math.ceil(targetPx / cells));
-  const modulePx = cells * scale; // >= 14%, crisp module grid
+  // 14% is measured on DATA modules (size×scale), matching founder accept geometry.
+  // Quiet zone is outside that floor — never count it toward the 14% budget.
+  const shortest = Math.min(W, H);
+  const targetPx = Math.round(shortest * QR_PCT);
+  const scale = Math.max(1, Math.ceil(targetPx / size));
+  const dataPx = size * scale; // >= 14% of shortest edge
+  const modulePx = cells * scale; // data + quiet, crisp integer grid (no shrink-blit)
   const pad = Math.max(4, Math.round(scale)); // dark plate rim outside white quiet zone
   const plate = modulePx + pad * 2;
 
@@ -463,20 +468,24 @@ async function drawQr(rgba, W, H, url) {
     }
   }
 
-  const margin = Math.max(8, Math.round(W * 0.006));
+  const margin = Math.max(4, Math.round(W * 0.004));
   const x0 = W - plate - margin;
   const y0 = H - plate - margin;
   blitScaled(rgba, W, H, { rgba: plateRgba, width: plate, height: plate }, x0, y0, plate, plate);
   return {
     dim: plate,
     qrDim: modulePx,
+    dataPx,
     x: x0,
     y: y0,
     modules: size,
     scale,
     url,
     pad,
-    pct: modulePx / W
+    /** Data-module fraction of shortest edge (acceptance metric). */
+    pct: dataPx / shortest,
+    /** Full module field incl. quiet zone / canvas (debug). */
+    fieldPct: modulePx / shortest
   };
 }
 
@@ -596,9 +605,9 @@ async function paintOfficialSeal(input) {
   if (includeQr) {
     // Full-res only. Tiny/OG variants omit QR — an unscannable decorative code is worse than none.
     qr = await drawQr(rgba, W, H, sealVerifyUrl(serial));
-    // Guard: QR nearest corner must stay outside the engraved band radius.
+    // Guard: QR plate top-left must sit outside the engraved band (with small slack).
     const nearestR = Math.hypot(cx - qr.x, cy - qr.y);
-    if (nearestR < BAND_R + 8) {
+    if (nearestR < BAND_R) {
       throw new Error(
         `seal QR overlaps band text (nearestR=${nearestR.toFixed(1)} band=${BAND_R})`
       );

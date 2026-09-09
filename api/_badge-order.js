@@ -112,11 +112,31 @@ export const BASE_TREASURY =
   '0x9Ff25C4acf1DcDDf15fD2702C127A285f1dFa712';
 export const EVM_USDC_TREASURY = BASE_TREASURY;
 
-/** Solana wallet receiving $C7 badge payments (burned weekly from burn ledger). */
-export const C7_TREASURY =
-  process.env.BADGE_C7_TREASURY ||
-  process.env.X402_PAY_TO ||
-  '9iubApKktcxphCVgBg9CPRPhSH8nkzVRSapxhYwxfCVS';
+/** Solana wallet receiving $C7 badge payments (burned weekly from burn ledger).
+ * Must be the dedicated burn-receive wallet (Sep 6 decision) — never silently
+ * fall back to the x402 payTo address (9iub…fCVS). Set BADGE_C7_TREASURY in prod.
+ * Read at call-time so tests / runtime env flips work without reload.
+ */
+export function c7Treasury() {
+  return String(process.env.BADGE_C7_TREASURY || '').trim();
+}
+
+/** @deprecated Prefer c7Treasury() — snapshot at module load (may be empty). */
+export const C7_TREASURY = String(process.env.BADGE_C7_TREASURY || '').trim();
+
+/** x402 payTo — agents / paid API only. Not the $C7 badge burn lane. */
+export const X402_SOLANA_PAY_TO =
+  process.env.X402_PAY_TO || '9iubApKktcxphCVgBg9CPRPhSH8nkzVRSapxhYwxfCVS';
+
+/**
+ * True when c7_solana lane may collect — requires an explicit dedicated treasury.
+ * Using the x402 wallet here breaks burn-ledger provenance.
+ */
+export function isC7LaneLive() {
+  const to = c7Treasury();
+  return Boolean(to) && to !== X402_SOLANA_PAY_TO;
+}
+
 /**
  * Solana USDC treasury — only live when explicitly set.
  * Do not silently reuse the $C7 burn wallet for USDC unless founder confirms.
@@ -736,26 +756,35 @@ export async function createPaidOrder({ mint, chainId, qualify, siteUrl, usdcCha
               })
             }
           : usdcPayment,
-      c7Solana: {
-        lane: 'c7_solana',
-        chain: 'solana',
-        asset: C7_MINT,
-        assetSymbol: 'C7',
-        to: C7_TREASURY,
-        amountAtomic: c7.amountAtomic,
-        amountDisplay: c7.amountDisplay,
-        amountUsd: C7_USD,
-        reference: c7Reference,
-        solanaPayUrl: buildSolanaPayUrl({
-          recipient: C7_TREASURY,
-          amount: c7.amountDisplay,
-          splToken: C7_MINT,
-          reference: c7Reference,
-          label: 'Guardian Verified',
-          message: `Order ${id}`
-        }),
-        note: `Send ${c7.amountDisplay} $C7 (locked ≈ $${C7_USD} at order time) to the Solana treasury. Include the Solana Pay reference for exact matching. $C7 payments are recorded in the burn ledger and burned weekly.`
-      }
+      c7Solana: isC7LaneLive()
+        ? {
+            lane: 'c7_solana',
+            chain: 'solana',
+            asset: C7_MINT,
+            assetSymbol: 'C7',
+            to: c7Treasury(),
+            amountAtomic: c7.amountAtomic,
+            amountDisplay: c7.amountDisplay,
+            amountUsd: C7_USD,
+            decimals: 6,
+            reference: c7Reference,
+            solanaPayUrl: buildSolanaPayUrl({
+              recipient: c7Treasury(),
+              amount: c7.amountDisplay,
+              splToken: C7_MINT,
+              reference: c7Reference,
+              label: 'Guardian Verified',
+              message: `Order ${id}`
+            }),
+            note: `Send ${c7.amountDisplay} $C7 (locked ≈ $${C7_USD} at order time) to the Solana burn-receive treasury. Include the Solana Pay reference for exact matching. $C7 payments are recorded in the burn ledger and burned weekly.`
+          }
+        : {
+            lane: 'c7_solana',
+            chain: 'solana',
+            held: true,
+            reason:
+              'C7 lane blocked: set BADGE_C7_TREASURY to the dedicated burn-receive wallet (must not be the x402 payTo 9iub…fCVS).'
+          }
     },
     paidAt: null,
     paymentLane: null,
