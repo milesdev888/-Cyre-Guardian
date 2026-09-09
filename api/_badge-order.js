@@ -1,11 +1,14 @@
-// api/_badge-order.js — Paid Guardian Verified orders (USDC Base | $C7 Solana Pay).
+// api/_badge-order.js — Paid Guardian Verified orders (multi-chain USDC | $C7 Solana Pay).
 // Comp issuance (badge-register) NEVER creates orders; paid orders NEVER look like comps.
 // Status machine:
 //   AWAITING_PAYMENT → (expire) EXPIRED
 //   AWAITING_PAYMENT → (watcher match + re-qualify) PAID → name-screen
 //     → ISSUED (AUTO_APPROVED) | PENDING_FOUNDER_APPROVAL (flagged / auto-off)
 //   PENDING_FOUNDER_APPROVAL → APPROVED → ISSUED | REJECTED → REFUND_PENDING → REFUNDED
-// Price lock: 30 minutes. Unique USDC cent-amount for Base matching; Solana Pay reference for C7.
+// Price lock: 30 minutes.
+// USDC: chain chosen at create (ethereum|base|arbitrum|solana). EVM = unique cent-amount;
+// Solana USDC = Solana Pay reference (same pattern as C7). Robinhood Chain excluded until
+// canonical USDC is confirmed. Canonical USDC contracts are hardcoded — never token-list lookup.
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,17 +25,185 @@ const COUNTER_KEY = 'guardian:order:counter';
 export const ORDER_TTL_MS = 30 * 60 * 1000;
 export const USDC_USD = 25;
 export const C7_USD = 20;
-/** Base USDC (6 decimals). */
-export const BASE_USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+
+/**
+ * Canonical Circle USDC per chain (hardcoded). Robinhood Chain intentionally omitted.
+ * @type {Readonly<Record<string, {
+ *   id: string, name: string, family: 'evm'|'solana', lane: string,
+ *   chainId: number|null, asset: string, decimals: number,
+ *   rpcEnv: string, rpcDefault: string,
+ *   explorerName: string,
+ *   explorerAddress: (a: string) => string,
+ *   explorerTx: (t: string) => string
+ * }>>}
+ */
+export const USDC_CHAINS = Object.freeze({
+  ethereum: Object.freeze({
+    id: 'ethereum',
+    name: 'Ethereum',
+    family: 'evm',
+    lane: 'usdc_ethereum',
+    chainId: 1,
+    asset: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    decimals: 6,
+    rpcEnv: 'ETHEREUM_RPC_URL',
+    rpcDefault: 'https://ethereum.publicnode.com',
+    explorerName: 'Etherscan',
+    explorerAddress: (a) => `https://etherscan.io/address/${a}`,
+    explorerTx: (t) => `https://etherscan.io/tx/${t}`
+  }),
+  base: Object.freeze({
+    id: 'base',
+    name: 'Base',
+    family: 'evm',
+    lane: 'usdc_base',
+    chainId: 8453,
+    asset: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    decimals: 6,
+    rpcEnv: 'BASE_RPC_URL',
+    rpcDefault: 'https://mainnet.base.org',
+    explorerName: 'Basescan',
+    explorerAddress: (a) => `https://basescan.org/address/${a}`,
+    explorerTx: (t) => `https://basescan.org/tx/${t}`
+  }),
+  arbitrum: Object.freeze({
+    id: 'arbitrum',
+    name: 'Arbitrum',
+    family: 'evm',
+    lane: 'usdc_arbitrum',
+    chainId: 42161,
+    // Native Circle USDC on Arbitrum One (not bridged USDC.e).
+    asset: '0xaf88d065e77c8cC2239327C5EDb3A432268e5831',
+    decimals: 6,
+    rpcEnv: 'ARBITRUM_RPC_URL',
+    rpcDefault: 'https://arb1.arbitrum.io/rpc',
+    explorerName: 'Arbiscan',
+    explorerAddress: (a) => `https://arbiscan.io/address/${a}`,
+    explorerTx: (t) => `https://arbiscan.io/tx/${t}`
+  }),
+  solana: Object.freeze({
+    id: 'solana',
+    name: 'Solana',
+    family: 'solana',
+    lane: 'usdc_solana',
+    chainId: null,
+    asset: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    decimals: 6,
+    rpcEnv: 'SOLANA_RPC_URL',
+    rpcDefault: 'https://api.mainnet-beta.solana.com',
+    explorerName: 'Solscan',
+    explorerAddress: (a) => `https://solscan.io/account/${a}`,
+    explorerTx: (t) => `https://solscan.io/tx/${t}`
+  })
+});
+
+export const USDC_CHAIN_IDS = Object.freeze(Object.keys(USDC_CHAINS));
+export const DEFAULT_USDC_CHAIN = 'base';
+
+/** @deprecated Prefer USDC_CHAINS.base.asset — kept for older imports. */
+export const BASE_USDC = USDC_CHAINS.base.asset;
+/** Solana mainnet USDC (canonical). */
+export const SOLANA_USDC = USDC_CHAINS.solana.asset;
+
+/** Shared EVM treasury — same address on Ethereum, Base, and Arbitrum. */
 export const BASE_TREASURY =
   process.env.BADGE_USDC_TREASURY_BASE ||
   process.env.X402_PAY_TO_BASE ||
   '0x9Ff25C4acf1DcDDf15fD2702C127A285f1dFa712';
+export const EVM_USDC_TREASURY = BASE_TREASURY;
+
 /** Solana wallet receiving $C7 badge payments (burned weekly from burn ledger). */
 export const C7_TREASURY =
   process.env.BADGE_C7_TREASURY ||
   process.env.X402_PAY_TO ||
   '9iubApKktcxphCVgBg9CPRPhSH8nkzVRSapxhYwxfCVS';
+/**
+ * Solana USDC treasury — only live when explicitly set.
+ * Do not silently reuse the $C7 burn wallet for USDC unless founder confirms.
+ * Read at call-time so tests / runtime env flips work without reload.
+ */
+export function solanaUsdcTreasury() {
+  return String(process.env.BADGE_USDC_TREASURY_SOLANA || '').trim();
+}
+/** @deprecated Prefer solanaUsdcTreasury() — snapshot at module load. */
+export const SOLANA_USDC_TREASURY = process.env.BADGE_USDC_TREASURY_SOLANA || '';
+
+/**
+ * USDC settlement lanes that may appear as selectable (not Robinhood).
+ * Held lanes stay in the dropdown as disabled — never point buyers at an unverified treasury.
+ *
+ * Defaults:
+ * - base: LIVE (confirmed EVM treasury, existing paid path)
+ * - ethereum / arbitrum: LIVE when EVM_USDC_TREASURY is set (same EOA as Base on all EVM chains)
+ * - solana: LIVE only when BADGE_USDC_TREASURY_SOLANA is set (dedicated USDC receive address)
+ *
+ * Override: BADGE_USDC_LIVE_CHAINS=base,ethereum (allowlist)
+ *           BADGE_USDC_DISABLE_CHAINS=ethereum,arbitrum (denylist)
+ */
+export function isUsdcChainLive(raw) {
+  const meta = typeof raw === 'string' ? resolveUsdcChain(raw) : raw;
+  if (!meta || !USDC_CHAINS[meta.id]) return false;
+
+  const disable = new Set(
+    String(process.env.BADGE_USDC_DISABLE_CHAINS || '')
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean)
+  );
+  if (disable.has(meta.id)) return false;
+
+  const allowRaw = process.env.BADGE_USDC_LIVE_CHAINS;
+  if (allowRaw != null && String(allowRaw).trim() !== '') {
+    const allow = new Set(
+      String(allowRaw)
+        .split(',')
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean)
+    );
+    return allow.has(meta.id);
+  }
+
+  if (meta.id === 'base') return Boolean(EVM_USDC_TREASURY);
+  if (meta.id === 'ethereum' || meta.id === 'arbitrum') return Boolean(EVM_USDC_TREASURY);
+  if (meta.id === 'solana') return Boolean(solanaUsdcTreasury());
+  return false;
+}
+
+export function liveUsdcChainIds() {
+  return USDC_CHAIN_IDS.filter((id) => isUsdcChainLive(id));
+}
+
+export function heldUsdcChainIds() {
+  return USDC_CHAIN_IDS.filter((id) => !isUsdcChainLive(id));
+}
+
+/**
+ * @param {string} raw
+ * @returns {typeof USDC_CHAINS[keyof typeof USDC_CHAINS]|null}
+ */
+export function resolveUsdcChain(raw) {
+  const id = String(raw || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '');
+  if (!id) return USDC_CHAINS[DEFAULT_USDC_CHAIN];
+  // Accept aliases
+  const aliases = {
+    eth: 'ethereum',
+    mainnet: 'ethereum',
+    arb: 'arbitrum',
+    arb1: 'arbitrum',
+    sol: 'solana'
+  };
+  const key = aliases[id] || id;
+  return USDC_CHAINS[key] || null;
+}
+
+export function usdcRpcUrl(chain) {
+  const meta = typeof chain === 'string' ? resolveUsdcChain(chain) : chain;
+  if (!meta) return null;
+  return process.env[meta.rpcEnv] || meta.rpcDefault;
+}
 
 export const ORDER_STATUSES = Object.freeze({
   AWAITING_PAYMENT: 'AWAITING_PAYMENT',
@@ -407,11 +578,24 @@ export async function listAwaitingPayment() {
 /**
  * Build a new paid-path order. Caller must have already verified qualify.eligible
  * and that the mint has no existing badge. source is always 'paid'.
+ * @param {{ mint: string, chainId?: string, qualify: object, siteUrl?: string, usdcChain?: string }} opts
  */
-export async function createPaidOrder({ mint, chainId, qualify, siteUrl }) {
+export async function createPaidOrder({ mint, chainId, qualify, siteUrl, usdcChain }) {
   const m = String(mint || '').trim();
   if (!m) throw new Error('mint required');
   if (!qualify || !qualify.eligible) throw new Error('not badge eligible');
+
+  const usdcMeta = resolveUsdcChain(usdcChain || DEFAULT_USDC_CHAIN);
+  if (!usdcMeta) {
+    throw new Error(
+      `unsupported USDC chain — choose one of: ${USDC_CHAIN_IDS.join(', ')} (Robinhood Chain excluded until canonical USDC is confirmed)`
+    );
+  }
+  if (!isUsdcChainLive(usdcMeta)) {
+    throw new Error(
+      `USDC on ${usdcMeta.name} is not live yet — receiving treasury not confirmed. Live: ${liveUsdcChainIds().join(', ') || '(none)'}`
+    );
+  }
 
   let n;
   try {
@@ -430,8 +614,61 @@ export async function createPaidOrder({ mint, chainId, qualify, siteUrl }) {
   const usdcDisplay = formatUsdcDisplay(usdcAtomic);
   const { priceUsd, source: priceSource } = await fetchC7PriceUsd();
   const c7 = lockC7Amount(priceUsd, C7_USD);
-  const reference = newSolanaPayReference();
+  const c7Reference = newSolanaPayReference();
   const SITE = siteUrl || process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
+
+  /** @type {object} */
+  let usdcPayment;
+  if (usdcMeta.family === 'evm') {
+    const to = EVM_USDC_TREASURY;
+    usdcPayment = {
+      lane: usdcMeta.lane,
+      chain: usdcMeta.id,
+      chainId: usdcMeta.chainId,
+      chainName: usdcMeta.name,
+      family: 'evm',
+      asset: usdcMeta.asset,
+      assetSymbol: 'USDC',
+      to,
+      amountAtomic: usdcAtomic,
+      amountDisplay: usdcDisplay,
+      amountUsd: USDC_USD,
+      explorerName: usdcMeta.explorerName,
+      explorerAddressUrl: usdcMeta.explorerAddress(to),
+      note: `Send exactly ${usdcDisplay} USDC on ${usdcMeta.name} to the treasury. The unique cent-amount matches your order. Confirm the network before sending.`
+    };
+  } else {
+    const to = solanaUsdcTreasury();
+    if (!to) {
+      throw new Error('Solana USDC treasury not configured — set BADGE_USDC_TREASURY_SOLANA');
+    }
+    const usdcReference = newSolanaPayReference();
+    usdcPayment = {
+      lane: usdcMeta.lane,
+      chain: usdcMeta.id,
+      chainId: null,
+      chainName: usdcMeta.name,
+      family: 'solana',
+      asset: usdcMeta.asset,
+      assetSymbol: 'USDC',
+      to,
+      amountAtomic: usdcAtomic,
+      amountDisplay: usdcDisplay,
+      amountUsd: USDC_USD,
+      reference: usdcReference,
+      solanaPayUrl: buildSolanaPayUrl({
+        recipient: to,
+        amount: usdcDisplay,
+        splToken: usdcMeta.asset,
+        reference: usdcReference,
+        label: 'Guardian Verified',
+        message: `Order ${id} USDC`
+      }),
+      explorerName: usdcMeta.explorerName,
+      explorerAddressUrl: usdcMeta.explorerAddress(to),
+      note: `Send exactly ${usdcDisplay} USDC on Solana to the treasury with the Solana Pay reference for exact matching. Confirm the network before sending.`
+    };
+  }
 
   const order = {
     schema: 'guardian.order.v1',
@@ -463,6 +700,8 @@ export async function createPaidOrder({ mint, chainId, qualify, siteUrl }) {
       usdcUsd: USDC_USD,
       usdcAtomic,
       usdcDisplay,
+      usdcChain: usdcMeta.id,
+      usdcChainName: usdcMeta.name,
       c7Usd: C7_USD,
       c7Atomic: c7.amountAtomic,
       c7Amount: c7.amountDisplay,
@@ -471,24 +710,32 @@ export async function createPaidOrder({ mint, chainId, qualify, siteUrl }) {
       lockedUntil: expiresAt
     },
     payment: {
-      usdcBase: {
-        lane: 'usdc_base',
-        chain: 'base',
-        chainId: 8453,
-        asset: BASE_USDC,
-        assetSymbol: 'USDC',
-        to: BASE_TREASURY,
-        amountAtomic: usdcAtomic,
-        amountDisplay: usdcDisplay,
-        amountUsd: USDC_USD,
-        eip681Url: buildEip681Erc20Transfer({
-          token: BASE_USDC,
-          chainId: 8453,
-          to: BASE_TREASURY,
-          amountAtomic: usdcAtomic
-        }),
-        note: `Send exactly ${usdcDisplay} USDC on Base to the treasury. The unique cent-amount matches your order.`
-      },
+      /** Selected USDC settlement chain — watcher watches ONLY this chain for USDC. */
+      usdcChain: usdcMeta.id,
+      usdc: usdcMeta.family === 'evm'
+        ? {
+            ...usdcPayment,
+            eip681Url: buildEip681Erc20Transfer({
+              token: usdcPayment.asset,
+              chainId: usdcPayment.chainId,
+              to: usdcPayment.to,
+              amountAtomic: usdcPayment.amountAtomic
+            })
+          }
+        : usdcPayment,
+      /** @deprecated Alias of payment.usdc (Base-era field name). */
+      usdcBase:
+        usdcMeta.family === 'evm'
+          ? {
+              ...usdcPayment,
+              eip681Url: buildEip681Erc20Transfer({
+                token: usdcPayment.asset,
+                chainId: usdcPayment.chainId,
+                to: usdcPayment.to,
+                amountAtomic: usdcPayment.amountAtomic
+              })
+            }
+          : usdcPayment,
       c7Solana: {
         lane: 'c7_solana',
         chain: 'solana',
@@ -498,12 +745,12 @@ export async function createPaidOrder({ mint, chainId, qualify, siteUrl }) {
         amountAtomic: c7.amountAtomic,
         amountDisplay: c7.amountDisplay,
         amountUsd: C7_USD,
-        reference,
+        reference: c7Reference,
         solanaPayUrl: buildSolanaPayUrl({
           recipient: C7_TREASURY,
           amount: c7.amountDisplay,
           splToken: C7_MINT,
-          reference,
+          reference: c7Reference,
           label: 'Guardian Verified',
           message: `Order ${id}`
         }),
@@ -542,6 +789,7 @@ export function publicOrderView(order) {
   if (!order) return null;
   const o = applyExpiry(order);
   const token = signOrder(o);
+  const usdc = (o.payment && (o.payment.usdc || o.payment.usdcBase)) || null;
   return {
     ok: true,
     id: o.id,
@@ -556,6 +804,7 @@ export function publicOrderView(order) {
     expiresAt: o.expiresAt,
     locked: o.locked,
     payment: o.payment,
+    usdcChain: (o.payment && o.payment.usdcChain) || (usdc && usdc.chain) || null,
     paidAt: o.paidAt,
     paymentLane: o.paymentLane,
     paymentTx: o.paymentTx,

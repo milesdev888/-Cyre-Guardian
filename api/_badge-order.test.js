@@ -14,6 +14,7 @@ import {
   publicOrderView,
   ORDER_STATUSES,
   ORDER_TTL_MS,
+  C7_TREASURY,
   USDC_USD,
   C7_USD,
   assertPaidSource
@@ -89,9 +90,71 @@ assert.match(order.locked.usdcDisplay, /^25\./);
 assert.ok(BigInt(order.locked.usdcAtomic) > 25000000n);
 assert.ok(BigInt(order.locked.usdcAtomic) < 26000000n);
 assert.ok(order.payment.usdcBase.to.startsWith('0x'));
+assert.equal(order.payment.usdcChain, 'base');
+assert.equal(order.payment.usdc.chain, 'base');
+assert.equal(order.payment.usdc.lane, 'usdc_base');
+assert.ok(order.payment.usdc.explorerAddressUrl.includes('basescan'));
 assert.ok(order.payment.c7Solana.reference);
 assert.match(order.payment.c7Solana.solanaPayUrl, /solana:/);
 assert.ok(Date.parse(order.expiresAt) - Date.parse(order.createdAt) === ORDER_TTL_MS);
+
+// Multi-chain USDC create — live EVM lanes
+for (const chain of ['ethereum', 'arbitrum']) {
+  const o = await createPaidOrder({
+    mint: qualify.mint + chain,
+    chainId: 'solana',
+    qualify,
+    siteUrl: 'https://cyre.dev',
+    usdcChain: chain
+  });
+  assert.equal(o.payment.usdcChain, chain);
+  assert.equal(o.payment.usdc.chain, chain);
+  assert.equal(o.locked.usdcChain, chain);
+  assert.equal(o.payment.usdc.family, 'evm');
+  assert.ok(o.payment.usdc.to.startsWith('0x'));
+  assert.ok(!o.payment.usdc.reference);
+  assert.ok(o.payment.usdc.eip681Url);
+}
+
+// Solana USDC held until BADGE_USDC_TREASURY_SOLANA is set
+await assert.rejects(
+  () =>
+    createPaidOrder({
+      mint: qualify.mint + 'solheld',
+      chainId: 'solana',
+      qualify,
+      usdcChain: 'solana'
+    }),
+  /not live|treasury not confirmed/i
+);
+
+// With explicit Solana USDC treasury → live
+{
+  process.env.BADGE_USDC_TREASURY_SOLANA = C7_TREASURY;
+  const o = await createPaidOrder({
+    mint: qualify.mint + 'solusdc',
+    chainId: 'solana',
+    qualify,
+    siteUrl: 'https://cyre.dev',
+    usdcChain: 'solana'
+  });
+  assert.equal(o.payment.usdcChain, 'solana');
+  assert.equal(o.payment.usdc.family, 'solana');
+  assert.ok(o.payment.usdc.reference);
+  assert.match(o.payment.usdc.solanaPayUrl, /spl-token=EPjFWdd5/);
+  assert.equal(o.payment.usdc.to, C7_TREASURY);
+  delete process.env.BADGE_USDC_TREASURY_SOLANA;
+}
+
+await assert.rejects(
+  () =>
+    createPaidOrder({
+      mint: 'x',
+      qualify,
+      usdcChain: 'robinhood'
+    }),
+  /unsupported USDC chain/
+);
 
 const loaded = await getOrder(order.id);
 assert.equal(loaded.id, order.id);
@@ -230,6 +293,9 @@ assert.equal(byMint.serial, badge.serial);
 const page = fs.readFileSync(new URL('./order-page.js', import.meta.url), 'utf8');
 assert.match(page, /locked/i);
 assert.match(page, /not investment advice/);
+assert.match(page, /Pay with USDC on/i);
+assert.match(page, /wrong chain/i);
+assert.match(page, /funds are safe/i);
 assert.equal(
   page.match(/\b(profit|profits|returns|moon|mooning)\b/i),
   null,

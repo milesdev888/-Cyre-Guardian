@@ -1,10 +1,21 @@
 // api/order-page.js — Checkout + order-status UI for paid Guardian Verified.
-// /order?mint=… creates (via API) when qualifying; /order/:id shows status + both payment lanes.
+// /order?mint=… creates (via API) when qualifying; /order/:id shows status + USDC + $C7 lanes.
+// USDC chain chosen at create via "Pay with USDC on…" (ethereum|base|arbitrum|solana).
 // Footer disclaimer; locked vocabulary; no investment-speak.
 
-import { resolveOrder, publicOrderView, USDC_USD, C7_USD, applyExpiry } from './_badge-order.js';
+import {
+  resolveOrder,
+  publicOrderView,
+  USDC_USD,
+  C7_USD,
+  applyExpiry,
+  USDC_CHAIN_IDS,
+  USDC_CHAINS,
+  isUsdcChainLive
+} from './_badge-order.js';
 
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
+const CONTACT_URL = process.env.BADGE_SUPPORT_URL || 'https://x.com/cyre';
 
 function esc(s) {
   return String(s == null ? '' : s)
@@ -14,11 +25,25 @@ function esc(s) {
     .replace(/"/g, '&quot;');
 }
 
+function usdcOptionsHtml(selected) {
+  return USDC_CHAIN_IDS.map((id) => {
+    const m = USDC_CHAINS[id];
+    const live = isUsdcChainLive(id);
+    const sel = live && id === selected ? ' selected' : '';
+    const dis = live ? '' : ' disabled';
+    const label = live ? m.name : `${m.name} (coming soon)`;
+    return `<option value="${esc(id)}"${sel}${dis}>${esc(label)}</option>`;
+  }).join('');
+}
+
 export default async function handler(req, res) {
   const q = req.query || {};
   const orderId = String(q.id || q.order || '').trim().toUpperCase();
   const mintParam = String(q.mint || '').trim();
   const tokenParam = String(q.token || '').trim();
+  const usdcChainParam = String(q.usdcChain || q.chain || 'base')
+    .trim()
+    .toLowerCase();
   let order = null;
   if (orderId || tokenParam) {
     order = await resolveOrder({ id: orderId, token: tokenParam });
@@ -28,9 +53,11 @@ export default async function handler(req, res) {
   const title = order
     ? `Order ${order.id} · Guardian Verified`
     : 'Get Guardian Verified · Checkout';
-  const desc = `Pay $${USDC_USD} USDC on Base or $${C7_USD} in $C7 on Solana. Amounts locked 30 minutes. Founder brand-safety approval required after payment.`;
+  const desc = `Pay $${USDC_USD} USDC on Ethereum, Base, Arbitrum, or Solana — or $${C7_USD} in $C7 on Solana. Amounts locked 30 minutes. Founder brand-safety approval required after payment.`;
 
-  const boot = order ? publicOrderView(order) : { mint: mintParam || null };
+  const boot = order
+    ? publicOrderView(order)
+    : { mint: mintParam || null, usdcChain: usdcChainParam || 'base' };
 
   const html = `<!doctype html>
 <html lang="en">
@@ -67,6 +94,8 @@ h1{font-family:"Cormorant Garamond",serif;font-weight:700;font-size:clamp(26px,5
 .lane .amt{font-size:22px;font-weight:600;margin:4px 0 8px}
 .lane .amt span{font-size:13px;color:var(--dim);font-weight:500}
 .lane p{font-size:13px;color:var(--dim);line-height:1.5}
+.chain-chip{display:inline-flex;align-items:center;gap:8px;margin:6px 0 10px;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,162,39,.35);background:rgba(201,162,39,.08);font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--gold)}
+.help{margin-top:12px;padding:10px 12px;border-radius:8px;border:1px dashed rgba(138,154,144,.45);color:var(--dim);font-size:12.5px;line-height:1.55}
 .btn{display:inline-flex;align-items:center;justify-content:center;margin-top:14px;padding:12px 18px;border-radius:8px;border:0;background:var(--gold);color:var(--ink);font:600 14px/1 "IBM Plex Sans",system-ui,sans-serif;cursor:pointer;text-decoration:none}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-ghost{background:transparent;color:var(--gold);border:1px solid rgba(201,162,39,.45);margin-left:8px}
@@ -82,10 +111,14 @@ h1{font-family:"Cormorant Garamond",serif;font-weight:700;font-size:clamp(26px,5
 .status.wait{border-color:rgba(201,162,39,.45);color:var(--gold)}
 .status.bad{border-color:rgba(217,106,94,.45);color:var(--bad)}
 .copy{cursor:pointer;text-decoration:underline;text-underline-offset:2px}
+select.field,input.field{width:100%;padding:12px 14px;border-radius:8px;border:1px solid var(--line);background:#0a100e;color:var(--text);font:500 14px/1.4 "IBM Plex Sans",system-ui,sans-serif}
+select.field{margin-top:8px;cursor:pointer}
+label.field-label{display:block;margin-top:14px;font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;color:var(--gold)}
 #msg{margin-top:14px;color:var(--dim);font-size:13.5px;min-height:1.2em}
 .issued a{display:inline-block;margin-top:8px;margin-right:12px}
 footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);font-size:12.5px;line-height:1.65}
 .lock-note{margin-top:10px;font-size:12.5px;color:var(--dim)}
+#usdcRefRow{display:none}
 </style>
 </head>
 <body>
@@ -99,12 +132,19 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
   <p class="sub" id="sub">${
     order
       ? 'Amounts are locked for 30 minutes. Pay from any wallet — no wallet-connect. After payment, the order enters founder brand-safety approval before a serial is issued.'
-      : 'Enter a mint that already passed Guardian qualifying-path gates on a live scan. Non-qualifying tokens cannot open checkout.'
+      : 'Enter a mint that already passed Guardian qualifying-path gates on a live scan. Choose the USDC network before locking — the watcher matches only that chain.'
   }</p>
 
   <div class="panel" id="startPanel" style="${order ? 'display:none' : ''}">
     <h2>MINT</h2>
-    <input id="mintInput" class="mono" style="width:100%;padding:12px 14px;border-radius:8px;border:1px solid var(--line);background:#0a100e;color:var(--text)" placeholder="Token mint address" value="${esc(mintParam)}" />
+    <input id="mintInput" class="field mono" placeholder="Token mint address" value="${esc(mintParam)}" />
+    <label class="field-label" for="usdcChainSelect">PAY WITH USDC ON…</label>
+    <select id="usdcChainSelect" class="field" aria-label="Pay with USDC on">
+      ${usdcOptionsHtml(
+        isUsdcChainLive(usdcChainParam) ? usdcChainParam : 'base'
+      )}
+    </select>
+    <p class="lock-note">Disabled networks are held until a receiving treasury is confirmed. $C7 on Solana remains available after the order locks.</p>
     <button class="btn" id="startBtn" type="button">Create locked order</button>
     <p class="lock-note">Price and $C7 amount lock for 30 minutes at order creation. Unpaid orders expire.</p>
   </div>
@@ -119,16 +159,21 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
 
     <div class="lanes" id="lanes">
       <div class="lane" id="laneUsdc">
-        <h3>LANE A · USDC ON BASE</h3>
+        <h3 id="usdcLaneTitle">LANE A · USDC</h3>
+        <div class="chain-chip" id="usdcChainChip">—</div>
         <div class="amt" id="usdcAmt">— <span>USDC</span></div>
-        <p>Tap Pay to open your wallet with Base USDC prefilled. Or copy address + amount.</p>
+        <p id="usdcNote">Tap Pay to open your wallet with USDC prefilled on the locked network. Or copy address + amount.</p>
         <a class="btn btn-pay" id="usdcPayBtn" href="#" rel="noopener">Pay USDC</a>
         <div class="pay-fallback">
           <button type="button" class="btn-copy" data-copy-from="usdcTo">Copy address</button>
           <button type="button" class="btn-copy" data-copy-from="usdcDisplay">Copy amount</button>
         </div>
-        <p class="mono" style="margin-top:10px">To: <span class="copy" id="usdcTo">—</span></p>
+        <p class="mono" style="margin-top:10px">Network: <span id="usdcNetwork">—</span> · <a id="usdcExplorer" href="#" target="_blank" rel="noreferrer">Explorer</a></p>
+        <p class="mono">Treasury: <span class="copy" id="usdcTo">—</span></p>
         <p class="mono">Amount: <span class="copy" id="usdcDisplay">—</span></p>
+        <p class="mono" id="usdcRefRow">Reference: <span class="copy" id="usdcRef">—</span></p>
+        <p class="mono" id="usdcAssetRow" style="display:none">USDC: <span class="copy" id="usdcAsset">—</span></p>
+        <p class="help" id="usdcWrongChainHelp">Sent on the wrong chain? Contact us — funds are safe at the shared treasury address; we match only the locked network.</p>
       </div>
       <div class="lane" id="laneC7">
         <h3>LANE B · $C7 ON SOLANA</h3>
@@ -150,6 +195,10 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
       </div>
     </div>
 
+    <p class="help" id="wrongChainHelp">
+      Sent on the wrong chain? <a href="${esc(CONTACT_URL)}" target="_blank" rel="noreferrer">Contact us</a> — funds are safe at our treasury address on each supported network.
+    </p>
+
     <button class="btn" id="watchBtn" type="button">I paid — check matching</button>
     <button class="btn btn-ghost" id="refreshBtn" type="button">Refresh status</button>
 
@@ -169,6 +218,7 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
     Guardian Verified is a measured qualifying-path seal with live re-check — patterns and lock evidence, not investment advice.
     Digital assets are volatile. Payment locks an amount for matching only; it does not guarantee issuance.
     Founder brand-safety approval is required after payment. Unpaid orders expire after 30 minutes.
+    USDC is accepted on Ethereum, Base, Arbitrum, and Solana (chain chosen when the order locks). Robinhood Chain is excluded until canonical USDC is confirmed.
     $C7 payments are recorded in the burn ledger and burned weekly (tx published).
     Verify serials only at cyre.dev/verify. Comp issuance uses a separate registry path and never appears as a paid order.
   </footer>
@@ -220,14 +270,44 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
     document.getElementById('tokenOut').textContent = [o.name, o.symbol ? ('$'+o.symbol) : ''].filter(Boolean).join(' · ');
     document.getElementById('pathOut').textContent = (o.qualifySnapshot && (o.qualifySnapshot.pathLabel || o.qualifySnapshot.path)) || '';
     document.getElementById('lockOut').textContent = o.expiresAt || (o.locked && o.locked.lockedUntil) || '';
-    var usdc = o.payment && o.payment.usdcBase;
+    var usdc = (o.payment && (o.payment.usdc || o.payment.usdcBase)) || null;
     var c7 = o.payment && o.payment.c7Solana;
     var awaiting = st === 'AWAITING_PAYMENT';
     if (usdc){
+      var chainName = usdc.chainName || usdc.chain || 'USDC';
+      document.getElementById('usdcLaneTitle').textContent = 'LANE A · USDC ON ' + String(chainName).toUpperCase();
+      document.getElementById('usdcChainChip').textContent = chainName + ' · watch this network only';
       document.getElementById('usdcAmt').innerHTML = (usdc.amountDisplay || '') + ' <span>USDC</span>';
+      document.getElementById('usdcNote').innerHTML = usdc.note || ('Send the <b>exact</b> locked amount on ' + chainName + ' to the treasury.');
+      document.getElementById('usdcNetwork').textContent = chainName;
       document.getElementById('usdcTo').textContent = usdc.to || '';
       document.getElementById('usdcDisplay').textContent = usdc.amountDisplay || '';
-      setPayLink(document.getElementById('usdcPayBtn'), eip681Usdc(usdc), awaiting);
+      document.getElementById('usdcDisplay').textContent = usdc.amountDisplay || '';
+      setPayLink(document.getElementById('usdcPayBtn'), usdc.eip681Url || eip681Usdc(usdc), awaiting && usdc.family !== 'solana');
+      var exp = document.getElementById('usdcExplorer');
+      if (usdc.explorerAddressUrl){
+        exp.href = usdc.explorerAddressUrl;
+        exp.textContent = (usdc.explorerName || 'Explorer') + ' · treasury';
+        exp.style.display = '';
+      } else {
+        exp.style.display = 'none';
+      }
+      var refRow = document.getElementById('usdcRefRow');
+      if (usdc.reference){
+        refRow.style.display = '';
+        document.getElementById('usdcRef').textContent = usdc.reference;
+      } else {
+        refRow.style.display = 'none';
+      }
+      var assetRow = document.getElementById('usdcAssetRow');
+      if (usdc.asset){
+        assetRow.style.display = '';
+        document.getElementById('usdcAsset').textContent = usdc.asset;
+      }
+      // Solana USDC: use Solana Pay link instead of EIP-681
+      if (usdc.family === 'solana'){
+        setPayLink(document.getElementById('usdcPayBtn'), usdc.solanaPayUrl || '', awaiting && !!usdc.solanaPayUrl);
+      }
     }
     if (c7){
       document.getElementById('c7Amt').innerHTML = (c7.amountDisplay || '') + ' <span>$C7</span>';
@@ -264,6 +344,7 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
   }
   async function createOrder(){
     var mint = (document.getElementById('mintInput').value || '').trim();
+    var usdcChain = (document.getElementById('usdcChainSelect').value || 'base').trim();
     if (!mint){ setMsg('Mint required.', true); return; }
     setMsg('Checking qualifying-path gates…');
     document.getElementById('startBtn').disabled = true;
@@ -271,7 +352,7 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
       var r = await fetch('/api/badge/order', {
         method: 'POST',
         headers: { 'content-type': 'application/json', accept: 'application/json' },
-        body: JSON.stringify({ mint: mint })
+        body: JSON.stringify({ mint: mint, usdcChain: usdcChain })
       });
       var j = await r.json();
       if (!r.ok){
@@ -279,7 +360,7 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
         document.getElementById('startBtn').disabled = false;
         return;
       }
-      setMsg('Order locked for 30 minutes.');
+      setMsg('Order locked for 30 minutes · USDC on ' + ((j.payment && j.payment.usdc && j.payment.usdc.chainName) || usdcChain) + '.');
       boot = j;
       if (j.token) {
         try { history.replaceState(null, '', '/order/' + j.id + '?token=' + encodeURIComponent(j.token)); } catch (e) {}
@@ -311,7 +392,7 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
   }
   async function watch(){
     var id = boot.id || document.getElementById('heading').textContent;
-    setMsg('Watching for matching transfer…');
+    setMsg('Watching for matching transfer on the locked USDC network (or $C7)…');
     var tok = await ensureToken(id);
     var r = await fetch('/api/badge/order/watch', {
       method: 'POST',
@@ -328,7 +409,7 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
     if (hit && hit.accepted) setMsg('Payment matched · queued for founder approval.');
     else if (hit && !hit.accepted) setMsg(hit.reason || 'Payment seen but mint no longer qualifies — refund path.', true);
     else if (j.watched === 0 && !j.order) setMsg(j.error || 'Watcher could not load this order. Refresh status, then check matching again.', true);
-    else setMsg('No matching transfer yet. Pay the exact locked amount, then check again.');
+    else setMsg('No matching transfer yet. Pay the exact locked amount on the selected network, then check again.');
   }
   document.getElementById('startBtn').addEventListener('click', createOrder);
   document.getElementById('watchBtn').addEventListener('click', watch);
@@ -377,6 +458,7 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
     }
     if (boot && boot.mint){
       document.getElementById('mintInput').value = boot.mint;
+      if (boot.usdcChain) document.getElementById('usdcChainSelect').value = boot.usdcChain;
     }
   })();
 })();

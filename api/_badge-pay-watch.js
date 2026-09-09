@@ -1,5 +1,8 @@
-// api/_badge-pay-watch.js — Match Base USDC / Solana $C7 payments to open orders.
+// api/_badge-pay-watch.js — Match multi-chain USDC / Solana $C7 payments to open orders.
 // No wallet-connect — watches on-chain transfers only.
+// USDC: watches ONLY the chain selected at order creation (ethereum|base|arbitrum|solana).
+// EVM lanes: unique cent-amount Transfer to shared treasury on that chain's canonical USDC.
+// Solana USDC: Solana Pay reference + USDC mint (same pattern as C7).
 // On match: re-scan qualify; if lost, do NOT accept payment (QUALIFY_LOST).
 // If still eligible → payment accepted → name-screen → AUTO ISSUED or PENDING_FOUNDER_APPROVAL.
 // Auto-approve when BADGE_AUTO_APPROVE !== '0' (default ON).
@@ -12,7 +15,14 @@ import {
   updateOrder,
   BASE_USDC,
   BASE_TREASURY,
-  C7_TREASURY
+  EVM_USDC_TREASURY,
+  C7_TREASURY,
+  SOLANA_USDC,
+  SOLANA_USDC_TREASURY,
+  solanaUsdcTreasury,
+  USDC_CHAINS,
+  resolveUsdcChain,
+  usdcRpcUrl
 } from './_badge-order.js';
 import { recordC7BurnEntry } from './_badge-burn-ledger.js';
 import { qualifyFromScan } from './_badge-qualify.js';
@@ -23,7 +33,6 @@ import { C7_MINT } from './_supply.js';
 
 const SCAN_BASE = process.env.GUARDIAN_SCAN_URL || 'https://scan.cyre.dev';
 const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
-const BASE_RPC = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
 const SOLANA_RPC = process.env.SOLANA_RPC_URL || 'https://api.mainnet-beta.solana.com';
 
 /** Default ON — set BADGE_AUTO_APPROVE=0 to force founder queue for every paid order. */
@@ -119,22 +128,51 @@ function padTopicAddress(addr) {
   return '0x' + a.padStart(64, '0');
 }
 
+async function rpcEvm(rpcUrl, method, params) {
+  const r = await fetch(rpcUrl, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
+  });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error.message || 'evm rpc error');
+  return j.result;
+}
+
+async function rpcSolana(method, params, rpcUrl = SOLANA_RPC) {
+  const r = await fetch(rpcUrl, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
+  });
+  const j = await r.json();
+  if (j.error) throw new Error(j.error.message || 'solana rpc error');
+  return j.result;
+}
+
 /**
- * Find Base USDC Transfer logs to treasury with exact atomic amount.
- * @param {string} amountAtomic
- * @param {number} [fromBlockLookback]
+ * Find ERC-20 Transfer logs to treasury with exact atomic amount on a given EVM USDC.
+ * @param {{ rpcUrl: string, usdcAddress: string, treasury: string, amountAtomic: string, fromBlockLookback?: number }} opts
  */
-export async function findBaseUsdcPayment(amountAtomic, fromBlockLookback = 5000) {
+export async function findEvmUsdcPayment(opts) {
+  const {
+    rpcUrl,
+    usdcAddress,
+    treasury = EVM_USDC_TREASURY,
+    amountAtomic,
+    fromBlockLookback = 5000
+  } = opts;
+  if (!rpcUrl || !usdcAddress || !amountAtomic) return null;
   const amountHex = '0x' + BigInt(String(amountAtomic)).toString(16);
-  const blockHex = await rpcBase('eth_blockNumber', []);
+  const blockHex = await rpcEvm(rpcUrl, 'eth_blockNumber', []);
   const latest = parseInt(blockHex, 16);
   const fromBlock = '0x' + Math.max(0, latest - fromBlockLookback).toString(16);
-  const logs = await rpcBase('eth_getLogs', [
+  const logs = await rpcEvm(rpcUrl, 'eth_getLogs', [
     {
       fromBlock,
       toBlock: 'latest',
-      address: BASE_USDC,
-      topics: [TRANSFER_TOPIC, null, padTopicAddress(BASE_TREASURY)]
+      address: usdcAddress,
+      topics: [TRANSFER_TOPIC, null, padTopicAddress(treasury)]
     }
   ]);
   if (!Array.isArray(logs)) return null;
@@ -147,69 +185,57 @@ export async function findBaseUsdcPayment(amountAtomic, fromBlockLookback = 5000
         from,
         amountAtomic: String(value),
         amountHex,
-        blockNumber: log.blockNumber
+        blockNumber: log.blockNumber,
+        usdcAddress,
+        treasury
       };
     }
   }
   return null;
 }
 
-async function rpcBase(method, params) {
-  const r = await fetch(BASE_RPC, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
+/** @deprecated Prefer findEvmUsdcPayment with Base lane — kept for older callers. */
+export async function findBaseUsdcPayment(amountAtomic, fromBlockLookback = 5000) {
+  return findEvmUsdcPayment({
+    rpcUrl: usdcRpcUrl('base'),
+    usdcAddress: BASE_USDC,
+    treasury: BASE_TREASURY,
+    amountAtomic,
+    fromBlockLookback
   });
-  const j = await r.json();
-  if (j.error) throw new Error(j.error.message || 'base rpc error');
-  return j.result;
-}
-
-async function rpcSolana(method, params) {
-  const r = await fetch(SOLANA_RPC, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
-  });
-  const j = await r.json();
-  if (j.error) throw new Error(j.error.message || 'solana rpc error');
-  return j.result;
 }
 
 /**
- * Match Solana Pay: signatures for reference pubkey that include C7 transfer to treasury.
- * Fallback: exact atomic amount into treasury (plain wallet transfers cannot attach a reference).
- * @param {{ reference?: string, amountAtomic: string, to?: string }} lane
+ * Match Solana Pay: signatures for reference pubkey that include SPL transfer to treasury.
+ * @param {{ reference: string, amountAtomic: string, mint: string, treasury: string }} lane
  */
-export async function findC7SolanaPayment(lane) {
-  const amountAtomic = lane && lane.amountAtomic;
-  if (!amountAtomic) return null;
-
+export async function findSolanaSplPayment(lane, rpcUrl = SOLANA_RPC) {
   const reference = lane.reference;
-  if (reference) {
-    const sigs = await rpcSolana('getSignaturesForAddress', [reference, { limit: 20 }]);
-    if (Array.isArray(sigs) && sigs.length) {
-      for (const s of sigs) {
-        const sig = s.signature;
-        const tx = await rpcSolana('getTransaction', [
-          sig,
-          { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0 }
-        ]);
-        if (!tx || !tx.meta || tx.meta.err) continue;
-        const hit = extractC7Transfer(tx, amountAtomic);
-        if (hit) {
-          return { tx: sig, from: hit.from, amountAtomic: hit.amountAtomic, matchMode: 'reference' };
-        }
-      }
+  const mint = lane.mint;
+  const treasury = lane.treasury;
+  if (!reference || !mint || !treasury) return null;
+  const sigs = await rpcSolana('getSignaturesForAddress', [reference, { limit: 20 }], rpcUrl);
+  if (!Array.isArray(sigs) || !sigs.length) return null;
+
+  for (const s of sigs) {
+    const sig = s.signature;
+    const tx = await rpcSolana(
+      'getTransaction',
+      [sig, { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0 }],
+      rpcUrl
+    );
+    if (!tx || !tx.meta || tx.meta.err) continue;
+    const hit = extractSplTransfer(tx, mint, treasury, lane.amountAtomic);
+    if (hit) {
+      return { tx: sig, from: hit.from, amountAtomic: hit.amountAtomic, matchMode: 'reference' };
     }
   }
-
-  // Plain SPL transfer fallback — unique locked C7 amount is the matcher (same idea as USDC cents).
-  return findC7ByExactAmount(amountAtomic);
+  return null;
 }
 
 /**
  * Scan recent C7 treasury inbound transfers for an exact atomic amount.
+ * Plain wallet sends cannot attach a Solana Pay reference — amount is the matcher.
  * @param {string} amountAtomic
  * @param {number} [limit]
  */
@@ -223,7 +249,7 @@ export async function findC7ByExactAmount(amountAtomic, limit = 40) {
       { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0 }
     ]);
     if (!tx || !tx.meta || tx.meta.err) continue;
-    const hit = extractC7Transfer(tx, amountAtomic);
+    const hit = extractSplTransfer(tx, C7_MINT, C7_TREASURY, amountAtomic);
     if (hit) {
       return { tx: sig, from: hit.from, amountAtomic: hit.amountAtomic, matchMode: 'exact_amount' };
     }
@@ -231,30 +257,61 @@ export async function findC7ByExactAmount(amountAtomic, limit = 40) {
   return null;
 }
 
-function extractC7Transfer(tx, amountAtomic) {
+/**
+ * Match Solana Pay: C7 transfer to treasury.
+ * Reference first; fallback to exact atomic amount (OKX / plain wallet sends).
+ * @param {{ reference?: string, amountAtomic: string }} lane
+ */
+export async function findC7SolanaPayment(lane) {
+  const amountAtomic = lane && lane.amountAtomic;
+  if (!amountAtomic) return null;
+  if (lane.reference) {
+    const hit = await findSolanaSplPayment({
+      reference: lane.reference,
+      amountAtomic,
+      mint: C7_MINT,
+      treasury: C7_TREASURY
+    });
+    if (hit) return hit;
+  }
+  return findC7ByExactAmount(amountAtomic);
+}
+
+/**
+ * Match Solana USDC via Solana Pay reference (same pattern as C7).
+ * @param {{ reference: string, amountAtomic: string, to?: string, asset?: string }} lane
+ */
+export async function findSolanaUsdcPayment(lane) {
+  return findSolanaSplPayment({
+    reference: lane.reference,
+    amountAtomic: lane.amountAtomic,
+    mint: lane.asset || SOLANA_USDC,
+    treasury: lane.to || solanaUsdcTreasury()
+  });
+}
+
+function extractSplTransfer(tx, mint, treasury, amountAtomic) {
   const meta = tx.meta;
   const message = tx.transaction && tx.transaction.message;
   const accountKeys = (message && message.accountKeys) || [];
   const keys = accountKeys.map((k) => (typeof k === 'string' ? k : k.pubkey));
 
-  // Prefer parsed SPL token balance changes
   const pre = meta.preTokenBalances || [];
   const post = meta.postTokenBalances || [];
   for (const postBal of post) {
-    if (postBal.mint !== C7_MINT) continue;
+    if (postBal.mint !== mint) continue;
     const owner = postBal.owner;
-    if (owner !== C7_TREASURY) continue;
+    if (owner !== treasury) continue;
     const preBal = pre.find(
-      (p) => p.accountIndex === postBal.accountIndex || (p.owner === owner && p.mint === C7_MINT)
+      (p) => p.accountIndex === postBal.accountIndex || (p.owner === owner && p.mint === mint)
     );
     const preAmt = BigInt((preBal && preBal.uiTokenAmount && preBal.uiTokenAmount.amount) || '0');
     const postAmt = BigInt((postBal.uiTokenAmount && postBal.uiTokenAmount.amount) || '0');
     const delta = postAmt - preAmt;
     if (delta === BigInt(String(amountAtomic))) {
-      // Find a decreasing C7 balance as sender
       let from = null;
       for (const p of pre) {
-        if (p.mint !== C7_MINT) continue;
+        if (p.mint !== mint) continue;
         const q = post.find((x) => x.accountIndex === p.accountIndex);
         const preA = BigInt((p.uiTokenAmount && p.uiTokenAmount.amount) || '0');
         const postA = BigInt((q && q.uiTokenAmount && q.uiTokenAmount.amount) || '0');
@@ -269,11 +326,21 @@ function extractC7Transfer(tx, amountAtomic) {
   return null;
 }
 
+function orderUsdcLane(order) {
+  return (order.payment && (order.payment.usdc || order.payment.usdcBase)) || null;
+}
+
+function orderUsdcChainMeta(order) {
+  const lane = orderUsdcLane(order);
+  const id = (order.payment && order.payment.usdcChain) || (lane && lane.chain) || 'base';
+  return resolveUsdcChain(id) || USDC_CHAINS.base;
+}
+
 /**
  * Apply a matched payment to an order (after re-qualify).
  * Name-screens token name/symbol; auto-issues when clean and BADGE_AUTO_APPROVE !== '0'.
  * @param {object} order
- * @param {{ lane: 'usdc_base'|'c7_solana', tx: string, from?: string|null, amountAtomic: string }} match
+ * @param {{ lane: string, tx: string, from?: string|null, amountAtomic: string }} match
  * @param {object} qualify
  */
 export async function acceptPayment(order, match, qualify) {
@@ -384,6 +451,58 @@ export async function acceptPayment(order, match, qualify) {
 }
 
 /**
+ * Watch USDC on the order's selected chain only, then $C7 Solana.
+ * @param {object} order
+ */
+export async function matchOrderPayment(order) {
+  const usdcLane = orderUsdcLane(order);
+  const meta = orderUsdcChainMeta(order);
+  const amountAtomic = (order.locked && order.locked.usdcAtomic) || (usdcLane && usdcLane.amountAtomic);
+
+  if (usdcLane && amountAtomic) {
+    if (meta.family === 'evm') {
+      const hit = await findEvmUsdcPayment({
+        rpcUrl: usdcRpcUrl(meta),
+        usdcAddress: usdcLane.asset || meta.asset,
+        treasury: usdcLane.to || EVM_USDC_TREASURY,
+        amountAtomic
+      });
+      if (hit) {
+        return {
+          lane: meta.lane || usdcLane.lane || 'usdc_base',
+          tx: hit.tx,
+          from: hit.from,
+          amountAtomic: hit.amountAtomic
+        };
+      }
+    } else if (meta.family === 'solana' && usdcLane.reference) {
+      const hit = await findSolanaUsdcPayment(usdcLane);
+      if (hit) {
+        return {
+          lane: 'usdc_solana',
+          tx: hit.tx,
+          from: hit.from,
+          amountAtomic: hit.amountAtomic
+        };
+      }
+    }
+  }
+
+  if (order.payment && order.payment.c7Solana) {
+    const c7 = await findC7SolanaPayment(order.payment.c7Solana);
+    if (c7) {
+      return {
+        lane: 'c7_solana',
+        tx: c7.tx,
+        from: c7.from,
+        amountAtomic: c7.amountAtomic
+      };
+    }
+  }
+  return null;
+}
+
+/**
  * Watch one order or all awaiting payments.
  * @param {{ orderId?: string, inject?: { lane: string, tx: string, from?: string }|null }} opts
  * inject requires founder/test auth at the HTTP layer.
@@ -413,36 +532,33 @@ export async function watchOrders(opts = {}) {
 
     let match = null;
     if (opts.inject && opts.inject.lane && opts.inject.tx) {
+      const lane = String(opts.inject.lane);
+      const usdcLane = orderUsdcLane(order);
+      const amountAtomic =
+        lane === 'c7_solana'
+          ? order.locked.c7Atomic
+          : (usdcLane && usdcLane.amountAtomic) || order.locked.usdcAtomic;
       match = {
-        lane: opts.inject.lane,
+        lane,
         tx: opts.inject.tx,
         from: opts.inject.from || null,
-        amountAtomic:
-          opts.inject.lane === 'c7_solana' ? order.locked.c7Atomic : order.locked.usdcAtomic
+        amountAtomic
       };
     } else {
       try {
-        const usdc = await findBaseUsdcPayment(order.locked.usdcAtomic);
-        if (usdc) {
-          match = { lane: 'usdc_base', tx: usdc.tx, from: usdc.from, amountAtomic: usdc.amountAtomic };
-        }
+        match = await matchOrderPayment(order);
       } catch (e) {
-        results.push({ id: order.id, watchError: `base: ${(e && e.message) || e}` });
-      }
-      if (!match) {
-        try {
-          const c7 = await findC7SolanaPayment(order.payment.c7Solana);
-          if (c7) {
-            match = { lane: 'c7_solana', tx: c7.tx, from: c7.from, amountAtomic: c7.amountAtomic };
-          }
-        } catch (e) {
-          results.push({ id: order.id, watchError: `solana: ${(e && e.message) || e}` });
-        }
+        results.push({ id: order.id, watchError: (e && e.message) || String(e) });
       }
     }
 
     if (!match) {
-      results.push({ id: order.id, status: order.status, matched: false });
+      results.push({
+        id: order.id,
+        status: order.status,
+        matched: false,
+        usdcChain: (order.payment && order.payment.usdcChain) || null
+      });
       continue;
     }
 
@@ -482,7 +598,8 @@ export async function watchOrders(opts = {}) {
       burnLedgerId: accepted.burnLedgerId,
       autoApproved: accepted.approval && accepted.approval.status === 'AUTO_APPROVED',
       serial: accepted.issuance && accepted.issuance.serial,
-      screenFlags: accepted.screenFlags || null
+      screenFlags: accepted.screenFlags || null,
+      usdcChain: (order.payment && order.payment.usdcChain) || null
     });
   }
   return results;
