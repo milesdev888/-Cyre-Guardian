@@ -121,14 +121,44 @@ async function rpcSolana(method, params) {
 
 /**
  * Match Solana Pay: signatures for reference pubkey that include C7 transfer to treasury.
- * @param {{ reference: string, amountAtomic: string }} lane
+ * Fallback: exact atomic amount into treasury (plain wallet transfers cannot attach a reference).
+ * @param {{ reference?: string, amountAtomic: string, to?: string }} lane
  */
 export async function findC7SolanaPayment(lane) {
-  const reference = lane.reference;
-  if (!reference) return null;
-  const sigs = await rpcSolana('getSignaturesForAddress', [reference, { limit: 20 }]);
-  if (!Array.isArray(sigs) || !sigs.length) return null;
+  const amountAtomic = lane && lane.amountAtomic;
+  if (!amountAtomic) return null;
 
+  const reference = lane.reference;
+  if (reference) {
+    const sigs = await rpcSolana('getSignaturesForAddress', [reference, { limit: 20 }]);
+    if (Array.isArray(sigs) && sigs.length) {
+      for (const s of sigs) {
+        const sig = s.signature;
+        const tx = await rpcSolana('getTransaction', [
+          sig,
+          { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0 }
+        ]);
+        if (!tx || !tx.meta || tx.meta.err) continue;
+        const hit = extractC7Transfer(tx, amountAtomic);
+        if (hit) {
+          return { tx: sig, from: hit.from, amountAtomic: hit.amountAtomic, matchMode: 'reference' };
+        }
+      }
+    }
+  }
+
+  // Plain SPL transfer fallback — unique locked C7 amount is the matcher (same idea as USDC cents).
+  return findC7ByExactAmount(amountAtomic);
+}
+
+/**
+ * Scan recent C7 treasury inbound transfers for an exact atomic amount.
+ * @param {string} amountAtomic
+ * @param {number} [limit]
+ */
+export async function findC7ByExactAmount(amountAtomic, limit = 40) {
+  const sigs = await rpcSolana('getSignaturesForAddress', [C7_TREASURY, { limit }]);
+  if (!Array.isArray(sigs) || !sigs.length) return null;
   for (const s of sigs) {
     const sig = s.signature;
     const tx = await rpcSolana('getTransaction', [
@@ -136,9 +166,9 @@ export async function findC7SolanaPayment(lane) {
       { encoding: 'jsonParsed', maxSupportedTransactionVersion: 0 }
     ]);
     if (!tx || !tx.meta || tx.meta.err) continue;
-    const hit = extractC7Transfer(tx, lane.amountAtomic);
+    const hit = extractC7Transfer(tx, amountAtomic);
     if (hit) {
-      return { tx: sig, from: hit.from, amountAtomic: hit.amountAtomic };
+      return { tx: sig, from: hit.from, amountAtomic: hit.amountAtomic, matchMode: 'exact_amount' };
     }
   }
   return null;
