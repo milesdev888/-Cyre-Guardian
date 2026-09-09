@@ -1,8 +1,13 @@
 // api/_badge-qualify.js — Phase 2: qualifying paths for Guardian badges.
 // Paths: lifetime | timed | established | none
 // ESTABLISHED (all required; age alone never qualifies):
-//   deployed ≥2y, ≥3 independent pools, no single-pool majority, ≥$100k liquidity,
-//   no mint/freeze/owner powers, no revocation history in the registry.
+//   deployed ≥2y, ≥3 independent pools, liquidity-scaled max-pool-share ceiling,
+//   ≥$100k liquidity, no mint/freeze/owner powers, no revocation history.
+//
+// Majority-pool ceiling scales with absolute liquidity (see majorityShareCeiling):
+//   total < $1M  → ≤50%
+//   $1M…$5M      → linear 50%→80%
+//   total ≥ $5M  → ≤80%
 
 /** @typedef {'lifetime'|'timed'|'established'|'none'} QualifyPath */
 
@@ -32,6 +37,40 @@ const ESTABLISHED_MIN_AGE_DAYS = 730; // ≥ 2 years
 const ESTABLISHED_MIN_POOLS = 3;
 const ESTABLISHED_MIN_LIQUIDITY_USD = 100_000;
 
+/** Strict flat majority bar applies below this total liquidity (USD). */
+export const ESTABLISHED_MAJORITY_STRICT_USD = 1_000_000;
+/** Above this total liquidity (USD), ceiling is fully relaxed to ESTABLISHED_MAJORITY_SHARE_RELAXED. */
+export const ESTABLISHED_MAJORITY_RELAX_USD = 5_000_000;
+/** Max single-pool share when total liquidity is below ESTABLISHED_MAJORITY_STRICT_USD. */
+export const ESTABLISHED_MAJORITY_SHARE_STRICT = 0.5;
+/** Max single-pool share when total liquidity is at/above ESTABLISHED_MAJORITY_RELAX_USD. */
+export const ESTABLISHED_MAJORITY_SHARE_RELAXED = 0.8;
+
+/**
+ * Liquidity-scaled single-pool share ceiling for Established.
+ * Flat &lt;50% is correct for small books; majors with deep absolute liquidity
+ * may concentrate more in the deepest venue without the same rug shape.
+ *
+ * @param {number} totalLiquidityUsd
+ * @returns {number} ceiling in [0.5, 0.8]
+ */
+export function majorityShareCeiling(totalLiquidityUsd) {
+  const total = Number(totalLiquidityUsd);
+  if (!Number.isFinite(total) || total < ESTABLISHED_MAJORITY_STRICT_USD) {
+    return ESTABLISHED_MAJORITY_SHARE_STRICT;
+  }
+  if (total >= ESTABLISHED_MAJORITY_RELAX_USD) {
+    return ESTABLISHED_MAJORITY_SHARE_RELAXED;
+  }
+  const t =
+    (total - ESTABLISHED_MAJORITY_STRICT_USD) /
+    (ESTABLISHED_MAJORITY_RELAX_USD - ESTABLISHED_MAJORITY_STRICT_USD);
+  return (
+    ESTABLISHED_MAJORITY_SHARE_STRICT +
+    (ESTABLISHED_MAJORITY_SHARE_RELAXED - ESTABLISHED_MAJORITY_SHARE_STRICT) * t
+  );
+}
+
 export const QUALIFY_PATHS = {
   lifetime: {
     id: 'lifetime',
@@ -50,7 +89,7 @@ export const QUALIFY_PATHS = {
     label: 'Established',
     family: 'established',
     detail:
-      'Deployed ≥2 years, ≥3 independent pools with no single majority, ≥$100K liquidity, no mint/freeze/owner powers, no revocation history. Age alone never qualifies.'
+      'Deployed ≥2 years, ≥3 independent pools, max pool share within the liquidity-scaled ceiling (≤50% below $1M total liquidity; linear to ≤80% at/above $5M), ≥$100K liquidity, no mint/freeze/owner powers, no revocation history. Age alone never qualifies.'
   }
 };
 
@@ -85,11 +124,15 @@ function daysAgo(ts) {
   if (ts == null) return null;
   let ms;
   if (typeof ts === 'number') {
+    if (!Number.isFinite(ts) || ts <= 0) return null;
     ms = ts < 10_000_000_000 ? ts * 1000 : ts;
+  } else if (typeof ts === 'string' && /^0x[0-9a-f]+$/i.test(ts.trim())) {
+    return null;
   } else {
     ms = Date.parse(String(ts));
   }
   if (!Number.isFinite(ms)) return null;
+  if (ms < Date.parse('2015-01-01') || ms > Date.now() + DAY_MS) return null;
   return (Date.now() - ms) / DAY_MS;
 }
 
@@ -130,23 +173,34 @@ export function extractScanReport(payload) {
 }
 
 function tokenAgeDays(report) {
+  // Prefer explorer contract_age evidence — never pool age for Established.
+  const ageCheck = (report.checks || []).find((c) => c && c.id === 'contract_age');
+  if (ageCheck && typeof ageCheck.evidence?.ageDays === 'number' && Number.isFinite(ageCheck.evidence.ageDays)) {
+    const src = String(ageCheck.evidence?.source || '');
+    // Reject known-bad / pool-sourced ages if labeled; accept explorer or unlabeled pass grades.
+    if (src !== 'dexscreener' && ageCheck.evidence.ageDays >= 0) {
+      return ageCheck.evidence.ageDays;
+    }
+  }
+  if (ageCheck && ageCheck.evidence?.createdAt != null) {
+    const fromCreated = daysAgo(ageCheck.evidence.createdAt);
+    if (fromCreated != null && fromCreated < 20000) return fromCreated; // reject hex-garbage ages
+  }
+  if (ageCheck && typeof ageCheck.summary === 'string') {
+    const years = ageCheck.summary.match(/([\d.]+)\s*years?\s*old/i);
+    if (years) return Number(years[1]) * 365;
+    const days = ageCheck.summary.match(/(\d+)\s*days?\s*old/i);
+    if (days) return Number(days[1]);
+  }
+  // Last resort: oldest pool — only when contract_age is absent entirely.
   const pools = Array.isArray(report.pools) ? report.pools : [];
   const created = pools
     .map((p) => p && p.createdAt)
     .filter((v) => v != null)
     .map((v) => (typeof v === 'number' ? (v < 10_000_000_000 ? v * 1000 : v) : Date.parse(String(v))))
-    .filter((n) => Number.isFinite(n));
+    .filter((n) => Number.isFinite(n) && n > Date.parse('2015-01-01') && n < Date.now() + DAY_MS);
   if (created.length) {
     return daysAgo(Math.min(...created));
-  }
-  const ageCheck = (report.checks || []).find((c) => c && c.id === 'contract_age');
-  if (ageCheck && typeof ageCheck.evidence?.ageDays === 'number') {
-    return ageCheck.evidence.ageDays;
-  }
-  // Parse "First pool is N days old" as fallback only for diagnostics — not for sole qualification.
-  if (ageCheck && typeof ageCheck.summary === 'string') {
-    const m = ageCheck.summary.match(/(\d+)\s*days?\s*old/i);
-    if (m) return Number(m[1]);
   }
   return null;
 }
@@ -177,11 +231,13 @@ export function analyzePools(report) {
 
   const total = independent.reduce((s, r) => s + r.liquidityUsd, 0);
   const maxShare = total > 0 ? Math.max(...independent.map((r) => r.liquidityUsd / total)) : 1;
+  const shareCeiling = majorityShareCeiling(total);
   return {
     poolCount: independent.length,
     totalLiquidityUsd: total,
     maxPoolShare: maxShare,
-    noSingleMajority: independent.length >= 2 && maxShare <= 0.5,
+    majorityShareCeiling: shareCeiling,
+    noSingleMajority: independent.length >= 2 && maxShare <= shareCeiling,
     pools: independent
   };
 }
@@ -209,6 +265,7 @@ export function evaluateEstablished(report, opts = {}) {
     totalLiquidityUsd: pools.totalLiquidityUsd,
     liqOk,
     maxPoolShare: pools.maxPoolShare,
+    majorityShareCeiling: pools.majorityShareCeiling,
     majorityOk,
     authoritiesClean,
     revocationOk
