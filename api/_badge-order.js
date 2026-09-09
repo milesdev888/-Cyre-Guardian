@@ -266,6 +266,19 @@ export function buildSolanaPayUrl({ recipient, amount, splToken, reference, labe
   return u.toString();
 }
 
+/**
+ * EIP-681 ERC-20 transfer URI for mobile wallets (MetaMask / Rainbow / etc).
+ * ethereum:<token>@<chainId>/transfer?address=<to>&uint256=<atomic>
+ */
+export function buildEip681Erc20Transfer({ token, chainId, to, amountAtomic }) {
+  const asset = String(token || '').trim();
+  const recipient = String(to || '').trim();
+  const atomic = String(amountAtomic || '').trim();
+  const cid = Number(chainId);
+  if (!asset || !recipient || !atomic || !Number.isFinite(cid)) return null;
+  return `ethereum:${asset}@${cid}/transfer?address=${recipient}&uint256=${atomic}`;
+}
+
 export async function saveOrder(order) {
   const id = String(order.id || '').trim().toUpperCase();
   const row = id && id !== order.id ? { ...order, id } : order;
@@ -427,6 +440,12 @@ export async function createPaidOrder({ mint, chainId, qualify, siteUrl }) {
         amountAtomic: usdcAtomic,
         amountDisplay: usdcDisplay,
         amountUsd: USDC_USD,
+        eip681Url: buildEip681Erc20Transfer({
+          token: BASE_USDC,
+          chainId: 8453,
+          to: BASE_TREASURY,
+          amountAtomic: usdcAtomic
+        }),
         note: `Send exactly ${usdcDisplay} USDC on Base to the treasury. The unique cent-amount matches your order.`
       },
       c7Solana: {

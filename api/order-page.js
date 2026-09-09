@@ -67,9 +67,16 @@ h1{font-family:"Cormorant Garamond",serif;font-weight:700;font-size:clamp(26px,5
 .lane .amt{font-size:22px;font-weight:600;margin:4px 0 8px}
 .lane .amt span{font-size:13px;color:var(--dim);font-weight:500}
 .lane p{font-size:13px;color:var(--dim);line-height:1.5}
-.btn{display:inline-flex;align-items:center;justify-content:center;margin-top:14px;padding:12px 18px;border-radius:8px;border:0;background:var(--gold);color:var(--ink);font:600 14px/1 "IBM Plex Sans",system-ui,sans-serif;cursor:pointer}
+.btn{display:inline-flex;align-items:center;justify-content:center;margin-top:14px;padding:12px 18px;border-radius:8px;border:0;background:var(--gold);color:var(--ink);font:600 14px/1 "IBM Plex Sans",system-ui,sans-serif;cursor:pointer;text-decoration:none}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 .btn-ghost{background:transparent;color:var(--gold);border:1px solid rgba(201,162,39,.45);margin-left:8px}
+.btn-pay{display:flex;width:100%;margin-top:12px;padding:14px 16px;font-size:15px}
+.btn-copy{display:inline-flex;align-items:center;margin:4px 6px 0 0;padding:6px 10px;border-radius:6px;border:1px solid rgba(201,162,39,.4);background:transparent;color:var(--gold);font:500 12px/1 "IBM Plex Sans",system-ui,sans-serif;cursor:pointer}
+.pay-fallback{margin-top:10px;display:flex;flex-wrap:wrap;gap:6px}
+.qr-wrap{display:none;margin-top:14px;text-align:center}
+.qr-wrap img{width:180px;height:180px;border-radius:8px;background:#fff;padding:8px;box-sizing:border-box}
+.qr-wrap p{margin-top:8px;font-size:12px;color:var(--dim)}
+@media(min-width:641px){.qr-wrap{display:block}}
 .status{display:inline-block;padding:3px 10px;border-radius:999px;border:1px solid var(--line);font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em}
 .status.live{border-color:rgba(61,220,132,.45);color:var(--live)}
 .status.wait{border-color:rgba(201,162,39,.45);color:var(--gold)}
@@ -114,17 +121,32 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
       <div class="lane" id="laneUsdc">
         <h3>LANE A · USDC ON BASE</h3>
         <div class="amt" id="usdcAmt">— <span>USDC</span></div>
-        <p>Send the <b>exact</b> locked amount (unique cent-amount) to the Base treasury from any wallet.</p>
-        <p class="mono"><span class="copy" data-copy-id="usdcTo" id="usdcTo">—</span></p>
-        <p class="mono">Amount: <span class="copy" data-copy-id="usdcDisplay" id="usdcDisplay">—</span></p>
+        <p>Tap Pay to open your wallet with Base USDC prefilled. Or copy address + amount.</p>
+        <a class="btn btn-pay" id="usdcPayBtn" href="#" rel="noopener">Pay USDC</a>
+        <div class="pay-fallback">
+          <button type="button" class="btn-copy" data-copy-from="usdcTo">Copy address</button>
+          <button type="button" class="btn-copy" data-copy-from="usdcDisplay">Copy amount</button>
+        </div>
+        <p class="mono" style="margin-top:10px">To: <span class="copy" id="usdcTo">—</span></p>
+        <p class="mono">Amount: <span class="copy" id="usdcDisplay">—</span></p>
       </div>
       <div class="lane" id="laneC7">
         <h3>LANE B · $C7 ON SOLANA</h3>
         <div class="amt" id="c7Amt">— <span>$C7</span></div>
-        <p>Send the locked $C7 amount (≈ $${C7_USD} at order time) with the Solana Pay reference for exact matching. Recorded in the burn ledger · burned weekly.</p>
-        <p class="mono">Treasury: <span class="copy" data-copy-id="c7To" id="c7To">—</span></p>
-        <p class="mono">Amount: <span class="copy" data-copy-id="c7Display" id="c7Display">—</span></p>
-        <p class="mono">Reference: <span class="copy" data-copy-id="c7Ref" id="c7Ref">—</span></p>
+        <p>Tap Pay to open a Solana wallet with treasury, amount, $C7 mint, and reference attached — matching is deterministic.</p>
+        <a class="btn btn-pay" id="c7PayBtn" href="#" rel="noopener">Pay $C7</a>
+        <div class="qr-wrap" id="c7QrWrap">
+          <img id="c7Qr" alt="Solana Pay QR" width="180" height="180" />
+          <p>Desktop: scan with Phantom / Solflare</p>
+        </div>
+        <div class="pay-fallback">
+          <button type="button" class="btn-copy" data-copy-from="c7To">Copy treasury</button>
+          <button type="button" class="btn-copy" data-copy-from="c7Display">Copy amount</button>
+          <button type="button" class="btn-copy" data-copy-from="c7Ref">Copy reference</button>
+        </div>
+        <p class="mono" style="margin-top:10px">Treasury: <span class="copy" id="c7To">—</span></p>
+        <p class="mono">Amount: <span class="copy" id="c7Display">—</span></p>
+        <p class="mono">Reference: <span class="copy" id="c7Ref">—</span></p>
       </div>
     </div>
 
@@ -161,6 +183,30 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
     if (st === 'EXPIRED' || st === 'REJECTED' || st === 'QUALIFY_LOST' || st === 'REFUNDED') return 'status bad';
     return 'status wait';
   }
+  function eip681Usdc(usdc){
+    if (!usdc) return '';
+    if (usdc.eip681Url) return usdc.eip681Url;
+    var token = usdc.asset || '';
+    var to = usdc.to || '';
+    var atomic = usdc.amountAtomic || '';
+    var chainId = usdc.chainId || 8453;
+    if (!token || !to || !atomic) return '';
+    return 'ethereum:' + token + '@' + chainId + '/transfer?address=' + to + '&uint256=' + atomic;
+  }
+  function setPayLink(el, href, enabled){
+    if (!el) return;
+    if (href && enabled){
+      el.href = href;
+      el.removeAttribute('aria-disabled');
+      el.style.pointerEvents = '';
+      el.style.opacity = '';
+    } else {
+      el.href = '#';
+      el.setAttribute('aria-disabled', 'true');
+      el.style.pointerEvents = 'none';
+      el.style.opacity = '0.5';
+    }
+  }
   function render(o){
     if (!o || !o.id) return;
     document.getElementById('startPanel').style.display = 'none';
@@ -176,18 +222,30 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
     document.getElementById('lockOut').textContent = o.expiresAt || (o.locked && o.locked.lockedUntil) || '';
     var usdc = o.payment && o.payment.usdcBase;
     var c7 = o.payment && o.payment.c7Solana;
+    var awaiting = st === 'AWAITING_PAYMENT';
     if (usdc){
       document.getElementById('usdcAmt').innerHTML = (usdc.amountDisplay || '') + ' <span>USDC</span>';
       document.getElementById('usdcTo').textContent = usdc.to || '';
       document.getElementById('usdcDisplay').textContent = usdc.amountDisplay || '';
+      setPayLink(document.getElementById('usdcPayBtn'), eip681Usdc(usdc), awaiting);
     }
     if (c7){
       document.getElementById('c7Amt').innerHTML = (c7.amountDisplay || '') + ' <span>$C7</span>';
       document.getElementById('c7To').textContent = c7.to || '';
       document.getElementById('c7Display').textContent = c7.amountDisplay || '';
       document.getElementById('c7Ref').textContent = c7.reference || '';
+      var payUrl = c7.solanaPayUrl || '';
+      setPayLink(document.getElementById('c7PayBtn'), payUrl, awaiting && !!payUrl);
+      var qr = document.getElementById('c7Qr');
+      var qrWrap = document.getElementById('c7QrWrap');
+      if (qr && payUrl && awaiting){
+        qr.src = 'https://quickchart.io/qr?size=180&margin=1&text=' + encodeURIComponent(payUrl);
+        qr.alt = 'Solana Pay QR for ' + (o.id || 'order');
+        if (qrWrap) qrWrap.style.display = '';
+      } else if (qrWrap) {
+        qrWrap.style.display = 'none';
+      }
     }
-    var awaiting = st === 'AWAITING_PAYMENT';
     document.getElementById('lanes').style.opacity = awaiting ? '1' : '.55';
     document.getElementById('watchBtn').disabled = !awaiting;
     if (o.issuance && o.issuance.serial){
@@ -201,7 +259,7 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
         'https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText);
     }
     if (o.id && location.pathname.indexOf(o.id) < 0){
-      try { history.replaceState(null, '', '/order/' + o.id); } catch (e) {}
+      try { history.replaceState(null, '', '/order/' + o.id + (o.token ? ('?token=' + encodeURIComponent(o.token)) : '')); } catch (e) {}
     }
   }
   async function createOrder(){
@@ -275,12 +333,35 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
   document.getElementById('startBtn').addEventListener('click', createOrder);
   document.getElementById('watchBtn').addEventListener('click', watch);
   document.getElementById('refreshBtn').addEventListener('click', refresh);
+  function copyText(t){
+    if (!t || t === '—') return;
+    if (navigator.clipboard) navigator.clipboard.writeText(t).then(function(){ setMsg('Copied.'); });
+  }
   document.querySelectorAll('.copy').forEach(function(el){
+    el.addEventListener('click', function(){ copyText(el.textContent); });
+  });
+  document.querySelectorAll('.btn-copy').forEach(function(el){
     el.addEventListener('click', function(){
-      var t = el.textContent;
-      if (!t || t === '—') return;
-      if (navigator.clipboard) navigator.clipboard.writeText(t).then(function(){ setMsg('Copied.'); });
+      var id = el.getAttribute('data-copy-from');
+      var src = id && document.getElementById(id);
+      copyText(src ? src.textContent : '');
     });
+  });
+  document.getElementById('usdcPayBtn').addEventListener('click', function(ev){
+    if (this.getAttribute('aria-disabled') === 'true' || this.href === '#' || this.href.endsWith('/#')) {
+      ev.preventDefault();
+      setMsg('Order not ready for payment.', true);
+    } else {
+      setMsg('Opening wallet for Base USDC…');
+    }
+  });
+  document.getElementById('c7PayBtn').addEventListener('click', function(ev){
+    if (this.getAttribute('aria-disabled') === 'true' || !String(this.getAttribute('href') || '').startsWith('solana:')) {
+      ev.preventDefault();
+      setMsg('Order not ready for $C7 payment.', true);
+    } else {
+      setMsg('Opening Solana wallet with reference attached…');
+    }
   });
   try {
     var qt = new URLSearchParams(location.search).get('token');
@@ -288,7 +369,7 @@ footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:v
   } catch (e) {}
   (async function bootLoad(){
     if (boot && boot.id){ render(boot); return; }
-    // Use RegExp ctor — \/ inside the outer template literal collapses to / and yields //order/… (parse error, dead page).
+    // RegExp ctor: a \\/ regex inside this outer template literal collapses to //order/... and kills the page script.
     var pathId = (location.pathname.match(new RegExp('/order/(ORD-[A-Za-z0-9-]+)', 'i')) || [])[1];
     if (pathId){
       var tok = await ensureToken(pathId);
