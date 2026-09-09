@@ -204,6 +204,20 @@ export function verifyOrderToken(token) {
   }
 }
 
+/**
+ * Hydrate store from a signed token without clobbering a more advanced status.
+ * @param {string} token
+ * @returns {Promise<object|null>}
+ */
+export async function hydrateOrderToken(token) {
+  const fromTok = verifyOrderToken(token);
+  if (!fromTok) return null;
+  const existing = await getOrder(fromTok.id);
+  const merged = preferOrderState(existing, fromTok);
+  await saveOrder(merged);
+  return merged;
+}
+
 export function formatUsdcDisplay(atomic) {
   const n = BigInt(String(atomic));
   const whole = n / 1000000n;
@@ -310,26 +324,78 @@ export async function getOrder(id) {
   return order ? applyExpiry(order) : null;
 }
 
-/** Resolve order from id and/or signed token (token wins for serverless durability). */
+/** Resolve order from id and/or signed token (token hydrates store — never clobber newer state). */
 export async function resolveOrder({ id, token } = {}) {
+  let fromTok = null;
   if (token) {
-    const fromTok = verifyOrderToken(token);
-    if (fromTok) {
-      // Refresh durable store when possible so watchers see updates.
-      try {
-        await saveOrder(fromTok);
-      } catch (_) {}
-      return fromTok;
-    }
+    fromTok = verifyOrderToken(token);
   }
-  if (id) return getOrder(id);
+  const fromId = id ? await getOrder(id) : null;
+  // When token present, also peek store by token id so we don't overwrite paid with stale EXPIRED.
+  let fromStore = fromId;
+  if (fromTok && !fromStore) {
+    fromStore = await getOrder(fromTok.id);
+  }
+  const merged = preferOrderState(fromStore, fromTok);
+  if (merged) {
+    try {
+      await saveOrder(merged);
+    } catch (_) {}
+    return merged;
+  }
   return null;
 }
 
-/** Mark unpaid orders past lock window as EXPIRED. */
+/** Status rank — higher wins when merging store vs signed-token hydrate. */
+const STATUS_RANK = Object.freeze({
+  AWAITING_PAYMENT: 10,
+  EXPIRED: 20,
+  QUALIFY_LOST: 30,
+  PAID: 40,
+  PENDING_FOUNDER_APPROVAL: 50,
+  APPROVED: 55,
+  REFUND_PENDING: 60,
+  REJECTED: 60,
+  REFUNDED: 70,
+  ISSUED: 80
+});
+
+/**
+ * Prefer the more advanced order state. Never let an unpaid lock-expiry
+ * (EXPIRED from AWAITING_PAYMENT) clobber a paid / pending / issued order.
+ * Stale signed tokens still decode as AWAITING_PAYMENT past expiresAt → EXPIRED;
+ * saving that blindly wiped PENDING_FOUNDER_APPROVAL (ORD-2026-00002).
+ */
+export function preferOrderState(existing, incoming) {
+  if (!incoming) return existing || null;
+  if (!existing) return incoming;
+  if (String(existing.id).toUpperCase() !== String(incoming.id).toUpperCase()) return incoming;
+
+  const rExist = STATUS_RANK[existing.status] || 0;
+  const rIn = STATUS_RANK[incoming.status] || 0;
+
+  // Paid-path protection: anything with paidAt / paymentTx beats unpaid EXPIRED/AWAITING.
+  const existPaid = !!(existing.paidAt || existing.paymentTx || existing.paymentLane);
+  const inPaid = !!(incoming.paidAt || incoming.paymentTx || incoming.paymentLane);
+  if (existPaid && !inPaid) return existing;
+  if (inPaid && !existPaid) return incoming;
+
+  if (rIn > rExist) return incoming;
+  if (rExist > rIn) return existing;
+
+  // Same rank — prefer newer updatedAt / paidAt.
+  const tExist = Date.parse(existing.updatedAt || existing.paidAt || existing.createdAt) || 0;
+  const tIn = Date.parse(incoming.updatedAt || incoming.paidAt || incoming.createdAt) || 0;
+  return tIn >= tExist ? incoming : existing;
+}
+
+/** Mark unpaid orders past lock window as EXPIRED. Never touches paid / pending / issued. */
 export function applyExpiry(order) {
   if (!order || typeof order !== 'object') return order;
+  // Lock protects the *price*, not the approval window.
   if (order.status !== ORDER_STATUSES.AWAITING_PAYMENT) return order;
+  // If payment was already recorded, never expire (defensive).
+  if (order.paidAt || order.paymentTx || order.paymentLane) return order;
   const exp = Date.parse(order.expiresAt);
   if (Number.isFinite(exp) && Date.now() > exp) {
     return { ...order, status: ORDER_STATUSES.EXPIRED, expiredAt: new Date().toISOString() };

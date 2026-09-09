@@ -11,8 +11,7 @@ import {
   ORDER_STATUSES,
   assertPaidSource,
   resolveOrder,
-  saveOrder,
-  verifyOrderToken
+  hydrateOrderToken
 } from './_badge-order.js';
 import { registerBadge } from './_badge-registry.js';
 
@@ -42,9 +41,8 @@ function founderAuthorized(req) {
 
 async function loadOrder({ orderId, token }) {
   if (token) {
-    const hydrated = verifyOrderToken(token);
+    const hydrated = await hydrateOrderToken(token);
     if (hydrated) {
-      await saveOrder(hydrated);
       if (!orderId || String(hydrated.id).toUpperCase() === String(orderId).toUpperCase()) {
         return hydrated;
       }

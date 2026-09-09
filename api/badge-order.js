@@ -15,8 +15,8 @@ import {
   C7_TREASURY,
   isDurableOrderStore,
   saveOrder,
-  verifyOrderToken,
-  getOrder
+  getOrder,
+  hydrateOrderToken
 } from './_badge-order.js';
 import { qualifyFromScan, QUALIFY_PATHS, extractScanReport } from './_badge-qualify.js';
 import { getBadgeByMint, hasRevocationHistory, isDurableBadgeStore } from './_badge-registry.js';
@@ -76,8 +76,7 @@ async function handleWatch(req, res) {
   const token = String((body.token || (req.query && req.query.token) || '')).trim();
 
   if (token) {
-    const hydrated = verifyOrderToken(token);
-    if (hydrated) await saveOrder(hydrated);
+    await hydrateOrderToken(token);
   }
 
   let inject = null;
@@ -97,11 +96,7 @@ async function handleWatch(req, res) {
     if (orderId) {
       let present = await getOrder(orderId);
       if (!present && token) {
-        const hydrated = verifyOrderToken(token);
-        if (hydrated) {
-          await saveOrder(hydrated);
-          present = hydrated;
-        }
+        present = await hydrateOrderToken(token);
       }
       if (!present) {
         return res.status(404).json({
