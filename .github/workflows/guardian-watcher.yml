@@ -1,30 +1,16 @@
-# DISABLED 2026-09-09 — zombie fail mail.
-# Root cause was package.json "type":"module" vs CommonJS require (fixed via .cjs).
-# Render cron guardian-watcher is SUSPENDED. Re-enable schedule only after
-# founder review + WATCHLIST / SOLANA_RPC secrets are set.
-name: Guardian watcher
+# KILLED 2026-09-10 — X account suspension / appeal.
+# Render cron deleted. Do NOT re-enable schedule or live posting.
+name: Guardian watcher (DISABLED)
 
 on:
   workflow_dispatch:
 
-concurrency:
-  group: guardian-watcher
-  cancel-in-progress: false
-
 jobs:
   watch-chain:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Run on-chain watcher
-        env:
-          BRIDGE_URL: ${{ secrets.BRIDGE_URL }}
-          WATCHLIST: ${{ secrets.WATCHLIST }}
-          RPC: ${{ secrets.SOLANA_RPC }}
-          INTERVAL_MIN: '15'
-          DRY_RUN: ${{ vars.BOT_LIVE == 'true' && 'false' || 'true' }}
-        run: node watcher.cjs
+      - name: Refuse — X automation disabled
+        run: |
+          echo "DISABLED 2026-09-10: X write automation killed for @Cyredev888 appeal."
+          echo "Render cron guardian-watcher deleted."
+          exit 0

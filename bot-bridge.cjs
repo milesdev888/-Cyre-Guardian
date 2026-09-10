@@ -38,6 +38,10 @@ async function callBridgeTool(name, args) {
 }
 
 async function postTweet(text, inReplyToTweetId) {
+  // Kill-switch: cron/bots must never write to X unless founder sets X_WRITE_ENABLED=true.
+  if (String(process.env.X_WRITE_ENABLED || "").toLowerCase() !== "true") {
+    return "REFUSED: X writes disabled (X_WRITE_ENABLED!=true)";
+  }
   const args = { text: String(text).slice(0, 280) };
   if (inReplyToTweetId) args.in_reply_to_tweet_id = String(inReplyToTweetId);
   return callBridgeTool("post_tweet", args);
