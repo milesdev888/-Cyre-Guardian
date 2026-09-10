@@ -156,7 +156,8 @@ const TOOLS = [
   },
   {
     name: 'post_tweet',
-    description: 'Post a tweet from the connected account. Primary path for Claude custom connectors — use ONLY when the human has explicitly approved the exact text in this conversation. Cron bots may also call this tool via the same MCP endpoint; posting remains founder-approval-gated.',
+    description:
+      'DISABLED by default (X_WRITE_ENABLED must be "true"). Post a tweet from the connected account — founder-gated only. Automated cron/bot writes are prohibited while the account appeal is open.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -167,6 +168,11 @@ const TOOLS = [
       additionalProperties: false,
     },
     run: async (args) => {
+      // Hard kill-switch: any write requires explicit X_WRITE_ENABLED=true in env.
+      // Default / unset / "false" → refuse. Read tools remain available.
+      if (String(process.env.X_WRITE_ENABLED || '').toLowerCase() !== 'true') {
+        return 'REFUSED: X writes are disabled (X_WRITE_ENABLED!=true). Bridge is read-only until the founder re-enables.';
+      }
       const payload = { text: String(args.text).slice(0, 280) };
       if (args.in_reply_to_tweet_id) payload.reply = { in_reply_to_tweet_id: args.in_reply_to_tweet_id };
       const r = await xPost('/2/tweets', payload);

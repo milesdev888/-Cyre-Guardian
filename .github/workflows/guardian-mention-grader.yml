@@ -1,32 +1,17 @@
-# DISABLED 2026-09-09 — zombie fail mail.
-# Root cause was package.json "type":"module" vs CommonJS require (fixed via .cjs).
-# Render cron guardian-mention-grader is SUSPENDED. Re-enable schedule only after
-# founder review + BRIDGE_URL secret is set on both GHA and Render.
-name: Guardian mention grader
+# KILLED 2026-09-10 — X account suspension / appeal.
+# Render cron deleted. Do NOT re-enable schedule or live posting.
+# Manual dispatch only runs a no-op so nothing can write to X.
+name: Guardian mention grader (DISABLED)
 
 on:
   workflow_dispatch:
 
-concurrency:
-  group: guardian-mention-grader
-  cancel-in-progress: false
-
 jobs:
   grade-mentions:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Run mention grader
-        env:
-          BRIDGE_URL: ${{ secrets.BRIDGE_URL }}
-          CYRE_API: https://cyre.dev/api/address
-          INTERVAL_MIN: '10'
-          MAX_PER_RUN: '5'
-          DRY_RUN: ${{ vars.BOT_LIVE == 'true' && 'false' || 'true' }}
-          BRAIN: ${{ vars.BRAIN || 'false' }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: node mention-grader.cjs
+      - name: Refuse — X automation disabled
+        run: |
+          echo "DISABLED 2026-09-10: X write automation killed for @Cyredev888 appeal."
+          echo "Render cron guardian-mention-grader deleted."
+          exit 0

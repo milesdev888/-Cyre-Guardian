@@ -16,8 +16,12 @@
 const BRIDGE = process.env.BRIDGE_URL;
 const CYRE_API = process.env.CYRE_API || "https://cyre.dev/api/address";
 const INTERVAL_MIN = parseInt(process.env.INTERVAL_MIN || "10", 10);
-const DRY_RUN = (process.env.DRY_RUN || "true").toLowerCase() !== "false";
+// HARD OFF: never live-post. Founder must delete this kill-switch to re-arm automation.
+const DRY_RUN = true;
 const MAX_PER_RUN = parseInt(process.env.MAX_PER_RUN || "5", 10);
+if (String(process.env.X_WRITE_ENABLED || "").toLowerCase() === "true") {
+  console.log("[grader] X_WRITE_ENABLED ignored — mention-grader is permanently dry-run until code is changed.");
+}
 const B58 = /[1-9A-HJ-NP-Za-km-z]{32,44}/g;
 let brain = { voiceLine: async () => null, _enabled: () => false };
 try { brain = require("./guardian-brain.cjs"); } catch (e) { console.log("[grader] brain module absent — template voice only"); }

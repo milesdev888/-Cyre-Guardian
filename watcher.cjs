@@ -20,7 +20,8 @@ const { postTweet: bridgePostTweet, bridgeConfigured } = require('./bot-bridge.c
 const RPC = process.env.RPC || 'https://api.mainnet-beta.solana.com';
 const WATCHLIST = (process.env.WATCHLIST || '').split(',').map(s => s.trim()).filter(Boolean);
 const INTERVAL = (parseInt(process.env.INTERVAL_MIN, 10) || 15) * 60; // seconds
-const DRY_RUN = (process.env.DRY_RUN || 'true').toLowerCase() !== 'false';
+// HARD OFF: never live-post to X (appeal / suspension kill-switch).
+const DRY_RUN = true;
 const DAY = 86400, HOUR = 3600;
 
 async function rpc(method, params) {
@@ -92,6 +93,9 @@ function pctEnc(s) {
   return encodeURIComponent(s).replace(/[!*'()]/g, c => '%' + c.charCodeAt(0).toString(16).toUpperCase());
 }
 async function postTweetDirect(text) {
+  if (String(process.env.X_WRITE_ENABLED || '').toLowerCase() !== 'true') {
+    throw new Error('REFUSED: X writes disabled (X_WRITE_ENABLED!=true)');
+  }
   const url = 'https://api.twitter.com/2/tweets';
   const oauth = {
     oauth_consumer_key: process.env.X_API_KEY,
