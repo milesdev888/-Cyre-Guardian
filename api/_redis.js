@@ -93,11 +93,31 @@ export async function redisCommand(cmd) {
     case 'get':
       result = await client.get(args[0]);
       break;
-    case 'set':
-      result = await client.set(args[0], args[1]);
+    case 'set': {
+      // Support SET key val [NX] used by traffic firstSeen
+      const opts = {};
+      const flags = args.slice(2).map((a) => String(a).toUpperCase());
+      if (flags.includes('NX')) opts.NX = true;
+      if (flags.includes('XX')) opts.XX = true;
+      result = Object.keys(opts).length
+        ? await client.set(args[0], args[1], opts)
+        : await client.set(args[0], args[1]);
       break;
+    }
     case 'incr':
       result = await client.incr(args[0]);
+      break;
+    case 'hincrby':
+      result = await client.hIncrBy(args[0], args[1], Number(args[2]));
+      break;
+    case 'lpush':
+      result = await client.lPush(args[0], args.slice(1).map(String));
+      break;
+    case 'ltrim':
+      result = await client.lTrim(args[0], Number(args[1]), Number(args[2]));
+      break;
+    case 'lrange':
+      result = await client.lRange(args[0], Number(args[1]), Number(args[2]));
       break;
     case 'hsetnx': {
       // HSETNX key field value → 1 if set, 0 if existed
