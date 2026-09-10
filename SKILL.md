@@ -313,7 +313,40 @@ RWA feed patterns: stale / spike / divergence on NestUSD Lazer seeds.
 
 `https://cyre.dev/check` (address) · `https://cyre.dev/scan` (token) · site origin stays free on the APIs above.
 
+## Guardian Verified · Established methodology
+
+Two equal-prestige paths issue the same seal: **Secured** (Lifetime / Timed locks) and **Established** (Battle-Tested). Age alone never qualifies Established.
+
+### Established hard gates (all required)
+
+| Gate | Threshold |
+|------|-----------|
+| On-chain age | ≥ **730 days** (2 years) — **explorer contract-creation**, not pool age |
+| Independent pools | ≥ **3** (unique pair addresses) |
+| Total liquidity | ≥ **$100,000** USD across those pools |
+| Authorities | mint / freeze / owner powers clean |
+| Revocation history | none on the mint in the badge registry |
+| Max pool share | ≤ **50%**, **waived** when liquidity **outside the largest pool ≥ $2,000,000** and **poolCount ≥ 3** |
+
+### Majority-pool waiver (outside-largest liquidity)
+
+Total liquidity alone is **not** enough — a $5M book with 99% in one pool (Mog-shaped) must still fail the majority gate.
+
+| Condition | Majority check |
+|-----------|----------------|
+| `outsideLargestPoolUsd ≥ $2,000,000` **and** `poolCount ≥ 3` | **Waived** (deep multi-venue residual) |
+| Otherwise | Enforce **maxPoolShare ≤ 50%** |
+
+**Calibration anchors:** LINK (~57% / ~$15M outside) passes; Mog (~99% / ~$43K outside) refuses and surfaces authority when live; pepeCoin-class thin books refuse; AAVE-class distributed majors pass.
+
+### Contract age vs pool age
+
+EVM **contract age** uses the explorer’s contract-creation timestamp only. DexScreener `pairCreatedAt` is a separate **pool age** signal and must never drive the Young Token chip or AA/Established age gate.
+
+Qualify probe: `GET https://cyre.dev/api/badge/qualify?mint=<address>&chainId=<chain>`.
+
 ## Links
 
 - Site: https://cyre.dev · Listing: https://agentic.market (search "guardian") · Updates: https://x.com/Cyredev888
 - CYRE token: **$C7 — the CYRE token.** CA only at https://cyre.dev/tokenomics and @Cyredev888.
+- Badges: https://cyre.dev/badges · Builder Hub: https://cyre.dev/builders

@@ -1,8 +1,12 @@
 // api/_badge-qualify.js — Phase 2: qualifying paths for Guardian badges.
 // Paths: lifetime | timed | established | none
 // ESTABLISHED (all required; age alone never qualifies):
-//   deployed ≥2y, ≥3 independent pools, no single-pool majority, ≥$100k liquidity,
-//   no mint/freeze/owner powers, no revocation history in the registry.
+//   deployed ≥2y, ≥3 independent pools, ≥$100k liquidity,
+//   maxPoolShare ≤50% UNLESS liquidity outside the largest pool ≥ $2M
+//   (and poolCount ≥ 3) — then the majority-pool check is waived,
+//   no mint/freeze/owner powers, no revocation history.
+//
+// Age source: explorer contract_age (never DexScreener pool age).
 
 /** @typedef {'lifetime'|'timed'|'established'|'none'} QualifyPath */
 
@@ -32,6 +36,35 @@ const ESTABLISHED_MIN_AGE_DAYS = 730; // ≥ 2 years
 const ESTABLISHED_MIN_POOLS = 3;
 const ESTABLISHED_MIN_LIQUIDITY_USD = 100_000;
 
+/** Max single-pool share when the outside-largest waiver does not apply. */
+export const ESTABLISHED_MAX_POOL_SHARE = 0.5;
+/**
+ * Waive maxPoolShare ≤ 50% only when liquidity OUTSIDE the largest pool
+ * is at least this USD amount AND poolCount ≥ ESTABLISHED_MIN_POOLS.
+ * Total liquidity alone is not enough (Mog-shaped books stay refused).
+ */
+export const ESTABLISHED_MAJORITY_WAIVER_OUTSIDE_USD = 2_000_000;
+
+function formatUsdShort(n) {
+  const v = Number(n) || 0;
+  if (v >= 1_000_000) {
+    const m = v / 1_000_000;
+    return `$${m >= 10 ? m.toFixed(0) : m.toFixed(1)}M`;
+  }
+  if (v >= 1_000) return `$${Math.round(v / 1_000)}K`;
+  return `$${Math.round(v)}`;
+}
+
+/**
+ * Whether the majority-pool check is waived for this book.
+ * @param {{ poolCount: number, outsideLargestPoolUsd: number }} stats
+ */
+export function majorityShareWaived(stats) {
+  const pools = Number(stats?.poolCount) || 0;
+  const outside = Number(stats?.outsideLargestPoolUsd) || 0;
+  return pools >= ESTABLISHED_MIN_POOLS && outside >= ESTABLISHED_MAJORITY_WAIVER_OUTSIDE_USD;
+}
+
 export const QUALIFY_PATHS = {
   lifetime: {
     id: 'lifetime',
@@ -50,7 +83,7 @@ export const QUALIFY_PATHS = {
     label: 'Established',
     family: 'established',
     detail:
-      'Deployed ≥2 years, ≥3 independent pools with no single majority, ≥$100K liquidity, no mint/freeze/owner powers, no revocation history. Age alone never qualifies.'
+      'Deployed ≥2 years, ≥3 independent pools, ≥$100K liquidity, max pool share ≤50% unless ≥$2M sits outside the largest pool (then majority check waived), no mint/freeze/owner powers, no revocation history. Age alone never qualifies.'
   }
 };
 
@@ -85,11 +118,15 @@ function daysAgo(ts) {
   if (ts == null) return null;
   let ms;
   if (typeof ts === 'number') {
+    if (!Number.isFinite(ts) || ts <= 0) return null;
     ms = ts < 10_000_000_000 ? ts * 1000 : ts;
+  } else if (typeof ts === 'string' && /^0x[0-9a-f]+$/i.test(ts.trim())) {
+    return null;
   } else {
     ms = Date.parse(String(ts));
   }
   if (!Number.isFinite(ms)) return null;
+  if (ms < Date.parse('2015-01-01') || ms > Date.now() + DAY_MS) return null;
   return (Date.now() - ms) / DAY_MS;
 }
 
@@ -130,23 +167,34 @@ export function extractScanReport(payload) {
 }
 
 function tokenAgeDays(report) {
+  // Prefer explorer contract_age evidence — never pool age for Established.
+  const ageCheck = (report.checks || []).find((c) => c && c.id === 'contract_age');
+  if (ageCheck && typeof ageCheck.evidence?.ageDays === 'number' && Number.isFinite(ageCheck.evidence.ageDays)) {
+    const src = String(ageCheck.evidence?.source || '');
+    // Reject known-bad / pool-sourced ages if labeled; accept explorer or unlabeled pass grades.
+    if (src !== 'dexscreener' && ageCheck.evidence.ageDays >= 0) {
+      return ageCheck.evidence.ageDays;
+    }
+  }
+  if (ageCheck && ageCheck.evidence?.createdAt != null) {
+    const fromCreated = daysAgo(ageCheck.evidence.createdAt);
+    if (fromCreated != null && fromCreated < 20000) return fromCreated; // reject hex-garbage ages
+  }
+  if (ageCheck && typeof ageCheck.summary === 'string') {
+    const years = ageCheck.summary.match(/([\d.]+)\s*years?\s*old/i);
+    if (years) return Number(years[1]) * 365;
+    const days = ageCheck.summary.match(/(\d+)\s*days?\s*old/i);
+    if (days) return Number(days[1]);
+  }
+  // Last resort: oldest pool — only when contract_age is absent entirely.
   const pools = Array.isArray(report.pools) ? report.pools : [];
   const created = pools
     .map((p) => p && p.createdAt)
     .filter((v) => v != null)
     .map((v) => (typeof v === 'number' ? (v < 10_000_000_000 ? v * 1000 : v) : Date.parse(String(v))))
-    .filter((n) => Number.isFinite(n));
+    .filter((n) => Number.isFinite(n) && n > Date.parse('2015-01-01') && n < Date.now() + DAY_MS);
   if (created.length) {
     return daysAgo(Math.min(...created));
-  }
-  const ageCheck = (report.checks || []).find((c) => c && c.id === 'contract_age');
-  if (ageCheck && typeof ageCheck.evidence?.ageDays === 'number') {
-    return ageCheck.evidence.ageDays;
-  }
-  // Parse "First pool is N days old" as fallback only for diagnostics — not for sole qualification.
-  if (ageCheck && typeof ageCheck.summary === 'string') {
-    const m = ageCheck.summary.match(/(\d+)\s*days?\s*old/i);
-    if (m) return Number(m[1]);
   }
   return null;
 }
@@ -176,12 +224,23 @@ export function analyzePools(report) {
   }
 
   const total = independent.reduce((s, r) => s + r.liquidityUsd, 0);
-  const maxShare = total > 0 ? Math.max(...independent.map((r) => r.liquidityUsd / total)) : 1;
+  const maxPoolLiquidityUsd =
+    independent.length > 0 ? Math.max(...independent.map((r) => r.liquidityUsd)) : 0;
+  const outsideLargestPoolUsd = Math.max(0, total - maxPoolLiquidityUsd);
+  const maxShare = total > 0 ? maxPoolLiquidityUsd / total : 1;
+  const waived = majorityShareWaived({
+    poolCount: independent.length,
+    outsideLargestPoolUsd
+  });
+  const underCap = independent.length >= 2 && maxShare <= ESTABLISHED_MAX_POOL_SHARE;
   return {
     poolCount: independent.length,
     totalLiquidityUsd: total,
+    maxPoolLiquidityUsd,
+    outsideLargestPoolUsd,
     maxPoolShare: maxShare,
-    noSingleMajority: independent.length >= 2 && maxShare <= 0.5,
+    majorityWaived: waived,
+    noSingleMajority: waived || underCap,
     pools: independent
   };
 }
@@ -208,7 +267,10 @@ export function evaluateEstablished(report, opts = {}) {
     poolsOk,
     totalLiquidityUsd: pools.totalLiquidityUsd,
     liqOk,
+    maxPoolLiquidityUsd: pools.maxPoolLiquidityUsd,
+    outsideLargestPoolUsd: pools.outsideLargestPoolUsd,
     maxPoolShare: pools.maxPoolShare,
+    majorityWaived: pools.majorityWaived,
     majorityOk,
     authoritiesClean,
     revocationOk
@@ -218,17 +280,23 @@ export function evaluateEstablished(report, opts = {}) {
   const eligible =
     ageOk && poolsOk && liqOk && majorityOk && authoritiesClean && revocationOk;
 
-  // Path B fail copy — never "LP unlocked" / lock-centric wording
+  // Path B fail copy — never "LP unlocked" / lock-centric wording.
+  // Authorities before majority so Mog-shaped authority flags surface first.
   let reason = 'established path';
   if (!eligible) {
-    if (!majorityOk) reason = 'liquidity concentration exceeded threshold';
-    else if (!liqOk) reason = `total liquidity below $${ESTABLISHED_MIN_LIQUIDITY_USD.toLocaleString('en-US')}`;
-    else if (!poolsOk) reason = `fewer than ${ESTABLISHED_MIN_POOLS} independent pools`;
-    else if (!authoritiesClean) reason = 'mint or freeze authority restored';
+    if (!authoritiesClean) reason = 'mint or freeze authority still live';
     else if (!revocationOk) reason = 'revocation history on record';
-    else if (!ageOk)
-      reason = `on-chain age below ${ESTABLISHED_MIN_AGE_DAYS} days`;
-    else reason = 'established path criteria not met';
+    else if (!majorityOk) {
+      const pct = Math.round((pools.maxPoolShare || 0) * 100);
+      reason = `largest pool ${pct}% of ${formatUsdShort(pools.totalLiquidityUsd)} liquidity (outside largest ${formatUsdShort(pools.outsideLargestPoolUsd)}; need ≥${formatUsdShort(ESTABLISHED_MAJORITY_WAIVER_OUTSIDE_USD)} outside to waive ≤50% cap)`;
+    } else if (!liqOk)
+      reason = `total liquidity below $${ESTABLISHED_MIN_LIQUIDITY_USD.toLocaleString('en-US')} (have ${formatUsdShort(pools.totalLiquidityUsd)})`;
+    else if (!poolsOk)
+      reason = `fewer than ${ESTABLISHED_MIN_POOLS} independent pools (have ${pools.poolCount})`;
+    else if (!ageOk) {
+      const have = ageDays == null ? 'unknown' : `${Math.floor(ageDays)}d`;
+      reason = `on-chain age below ${ESTABLISHED_MIN_AGE_DAYS} days (have ${have})`;
+    } else reason = 'established path criteria not met';
   }
 
   return { eligible, reason, checks, pools };
