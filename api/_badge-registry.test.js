@@ -13,7 +13,16 @@ import {
   revokeBadge,
   hasRevocationHistory
 } from './_badge-registry.js';
-import { qualifyFromScan, evaluateEstablished, analyzePools, pathMark, recheckIssuedPath } from './_badge-qualify.js';
+import {
+  qualifyFromScan,
+  evaluateEstablished,
+  analyzePools,
+  pathMark,
+  recheckIssuedPath,
+  majorityShareWaived,
+  ESTABLISHED_MAJORITY_WAIVER_OUTSIDE_USD,
+  ESTABLISHED_MAX_POOL_SHARE
+} from './_badge-qualify.js';
 import { renderBadgeOg, encodePng, decodePng, loadSealImage, blitImage, renderVerifyOg, formatVerifiedOgTitle } from './_badge-og-render.js';
 import { renderOfficialSeal, renderOfficialSealOg, renderOfficialSealUi, renderOfficialSealWithMeta, sealVerifyUrl, SEAL_CANVAS, SEAL_UI_SIZE } from './_badge-seal-render.js';
 
@@ -110,7 +119,7 @@ const estFail = recheckIssuedPath(
   { pathFamily: 'established' }
 );
 assert.equal(estFail.eligible, false);
-assert.match(estFail.reason, /liquidity concentration/i);
+assert.match(estFail.reason, /largest pool/i);
 assert.doesNotMatch(estFail.reason, /unlock|expired|missing lock/i);
 
 // Seal band includes path mark
@@ -167,7 +176,7 @@ assert.equal(uiDecoded.width, SEAL_UI_SIZE);
 assert.equal(uiDecoded.rgba[3], 0, 'UI seal corner alpha must be 0 (no black square)');
 assert.equal(uiDecoded.rgba[(SEAL_UI_SIZE * SEAL_UI_SIZE - 1) * 4 + 3], 0);
 
-// Majority fails established
+// Majority fails established — thin book keeps strict ≤50% ceiling
 const majorityFail = qualifyFromScan({
   ...estReport,
   pools: [
@@ -177,6 +186,141 @@ const majorityFail = qualifyFromScan({
   ]
 });
 assert.equal(majorityFail.eligible, false);
+
+// Outside-largest waiver (≥$2M outside + ≥3 pools)
+assert.equal(ESTABLISHED_MAX_POOL_SHARE, 0.5);
+assert.equal(ESTABLISHED_MAJORITY_WAIVER_OUTSIDE_USD, 2_000_000);
+assert.equal(
+  majorityShareWaived({ poolCount: 6, outsideLargestPoolUsd: 15_200_000 }),
+  true
+);
+assert.equal(
+  majorityShareWaived({ poolCount: 6, outsideLargestPoolUsd: 43_000 }),
+  false,
+  'Mog-shaped outside must not waive'
+);
+assert.equal(
+  majorityShareWaived({ poolCount: 2, outsideLargestPoolUsd: 5_000_000 }),
+  false,
+  'need ≥3 pools to waive'
+);
+
+// LINK-shaped: ~$36M total, ~57% deepest, ~$15.2M outside → Established PASS
+const linkLike = qualifyFromScan({
+  schema: 'guardian.report.v2',
+  grade: 'A',
+  score: 89,
+  token: {
+    address: '0x514910771AF9Ca656af840dff83E8264EcF986CA',
+    symbol: 'LINK',
+    name: 'ChainLink Token'
+  },
+  chain: { id: 'ethereum' },
+  lp: { tier: 'UNVERIFIED', lifetimeEligible: false, badgeEligible: false },
+  checks: [
+    { id: 'owner_privileges', status: 'pass' },
+    { id: 'contract_age', status: 'pass', grade: 'A', summary: 'Contract is 8.7 years old.', evidence: { ageDays: 3180, source: 'explorer' } }
+  ],
+  pools: [
+    { dex: 'uniswap', pairAddress: 'link1', liquidityUsd: 20_587_731, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'link2', liquidityUsd: 13_172_728, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'link3', liquidityUsd: 907_589, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'link4', liquidityUsd: 856_186, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'link5', liquidityUsd: 360_426, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'link6', liquidityUsd: 116_919, createdAt: old }
+  ]
+});
+assert.equal(linkLike.eligible, true, 'LINK-shaped deep book must pass Established');
+assert.equal(linkLike.path, 'established');
+assert.ok(linkLike.established.maxPoolShare > 0.5);
+assert.equal(linkLike.established.majorityWaived, true);
+assert.ok(linkLike.established.outsideLargestPoolUsd >= 2_000_000);
+assert.ok(linkLike.established.ageDays > 3000);
+
+// pepeCoin-shaped: ~$1.9M total, ~99.7% single pool (~$5K outside) → still refused
+const pepeLike = qualifyFromScan({
+  schema: 'guardian.report.v2',
+  grade: 'A',
+  score: 91,
+  token: {
+    address: '0xA9E8aCf069C58aEc8825542845Fd754e41a9489A',
+    symbol: 'pepecoin',
+    name: 'pepeCoin'
+  },
+  chain: { id: 'ethereum' },
+  lp: { tier: 'UNVERIFIED', lifetimeEligible: false, badgeEligible: false },
+  checks: [
+    { id: 'owner_privileges', status: 'pass' },
+    { id: 'contract_age', status: 'pass', grade: 'A', evidence: { ageDays: 1200, source: 'explorer' } }
+  ],
+  pools: [
+    { dex: 'uniswap', pairAddress: 'pepe1', liquidityUsd: 1_903_773, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'pepe2', liquidityUsd: 4_966, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'pepe3', liquidityUsd: 103, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'pepe4', liquidityUsd: 1, createdAt: old }
+  ]
+});
+assert.equal(pepeLike.eligible, false, 'pepeCoin-shaped majority must still fail');
+assert.equal(pepeLike.established.majorityWaived, false);
+assert.match(pepeLike.reason, /largest pool/i);
+
+// Mog-shaped: $5.35M total, 99.2% in one pool (~$43K outside) + live authorities → refuse on authority
+const mogLike = qualifyFromScan({
+  schema: 'guardian.report.v2',
+  grade: 'A',
+  score: 80,
+  token: {
+    address: '0xaaee1a9723aadb7afa2810263653a34ba2c21c7a',
+    symbol: 'Mog',
+    name: 'Mog Coin'
+  },
+  chain: { id: 'ethereum' },
+  lp: { tier: 'UNVERIFIED', lifetimeEligible: false, badgeEligible: false },
+  checks: [
+    { id: 'owner_privileges', status: 'flag', summary: 'Owner-linked functions live' },
+    { id: 'contract_age', status: 'pass', grade: 'A', evidence: { ageDays: 1148, source: 'explorer' } }
+  ],
+  pools: [
+    { dex: 'uniswap', pairAddress: 'mog1', liquidityUsd: 5_307_458, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'mog2', liquidityUsd: 20_000, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'mog3', liquidityUsd: 15_000, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'mog4', liquidityUsd: 5_000, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'mog5', liquidityUsd: 2_000, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'mog6', liquidityUsd: 1_301, createdAt: old }
+  ]
+});
+assert.equal(mogLike.eligible, false);
+assert.equal(mogLike.established.majorityWaived, false, 'Mog must not get outside-liq waiver');
+assert.ok(mogLike.established.outsideLargestPoolUsd < 100_000);
+assert.match(mogLike.reason, /mint or freeze authority still live/i);
+
+// AAVE-shaped: deep + already under 50% → still passes
+const aaveLike = qualifyFromScan({
+  schema: 'guardian.report.v2',
+  grade: 'AA',
+  score: 96,
+  token: {
+    address: '0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9',
+    symbol: 'AAVE',
+    name: 'Aave Token'
+  },
+  chain: { id: 'ethereum' },
+  lp: { tier: 'UNVERIFIED', lifetimeEligible: false, badgeEligible: false },
+  checks: [
+    { id: 'owner_privileges', status: 'pass' },
+    { id: 'contract_age', status: 'pass', grade: 'A', evidence: { ageDays: 2000, source: 'explorer' } }
+  ],
+  pools: [
+    { dex: 'uniswap', pairAddress: 'aave1', liquidityUsd: 6_020_000, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'aave2', liquidityUsd: 3_100_000, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'aave3', liquidityUsd: 1_800_000, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'aave4', liquidityUsd: 1_100_000, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'aave5', liquidityUsd: 700_000, createdAt: old },
+    { dex: 'uniswap', pairAddress: 'aave6', liquidityUsd: 376_000, createdAt: old }
+  ]
+});
+assert.equal(aaveLike.eligible, true);
+assert.equal(aaveLike.path, 'established');
 
 // OG render produces PNG header
 const png = renderBadgeOg({
