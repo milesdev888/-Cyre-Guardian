@@ -1,9 +1,10 @@
 // api/_traffic.js — x402 + verify event persistence for /api/monitor/feed
-// Redis (REDIS_URL https Upstash REST, or UPSTASH/KV REST pair) when set; else file store.
+// Durable via shared _redis.js (Upstash/KV REST or redis:// TCP). Else ephemeral file store.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { ROUTE_CATALOG } from './_route-catalog.js';
+import { isDurableRedis, redisCommand } from './_redis.js';
 
 const EVENT_CAP = 500;
 const FILE_STORE = process.env.TRAFFIC_STORE || '/tmp/guardian-traffic.json';
@@ -28,32 +29,6 @@ function uaShort(req) {
   return ua.slice(0, 60);
 }
 
-function redisRestConfig() {
-  const url = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '';
-  if (url.startsWith('https://')) {
-    const token = process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || '';
-    return token ? { url: url.replace(/\/$/, ''), token } : null;
-  }
-  return null;
-}
-
-async function redisCommand(cmd) {
-  const cfg = redisRestConfig();
-  if (!cfg) return null;
-  const r = await fetch(cfg.url, {
-    method: 'POST',
-    headers: {
-      Authorization: 'Bearer ' + cfg.token,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(cmd)
-  });
-  if (!r.ok) {
-    const t = await r.text();
-    throw new Error('redis ' + r.status + ' ' + t.slice(0, 200));
-  }
-  return r.json();
-}
 
 function emptyStore() {
   return {
@@ -156,12 +131,26 @@ async function redisGetStore() {
   return { events, counts, global, firstSeen };
 }
 
-function parseRedisHash(arr) {
-  if (!arr || !Array.isArray(arr) || !arr.length) return null;
+function coerceHashEntries(raw) {
+  if (!raw) return null;
+  if (Array.isArray(raw)) {
+    if (!raw.length) return null;
+    const out = {};
+    for (let i = 0; i < raw.length; i += 2) {
+      if (raw[i] == null) continue;
+      out[String(raw[i])] = raw[i + 1];
+    }
+    return out;
+  }
+  if (typeof raw === 'object') return raw;
+  return null;
+}
+
+function parseRedisHash(raw) {
+  const entries = coerceHashEntries(raw);
+  if (!entries || !Object.keys(entries).length) return null;
   const out = {};
-  for (let i = 0; i < arr.length; i += 2) {
-    const k = arr[i];
-    const v = arr[i + 1];
+  for (const [k, v] of Object.entries(entries)) {
     if (k === 'probes' || k === 'settles' || k === 'internalSettles' || k === 'externalSettles' || k === 'verifies') {
       out[k] = parseInt(v, 10) || 0;
     } else {
@@ -203,7 +192,7 @@ async function redisRecord(event, delta) {
 }
 
 export function isDurableStore() {
-  return !!redisRestConfig();
+  return isDurableRedis();
 }
 
 function internalPayers() {
@@ -252,7 +241,7 @@ export async function recordTrafficEvent(evt) {
     delta.probe = true;
   }
 
-  if (redisRestConfig()) {
+  if (isDurableRedis()) {
     try {
       await redisRecord(evt, delta);
     } catch (e) {
