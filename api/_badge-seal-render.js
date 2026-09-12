@@ -52,20 +52,72 @@ const SITE = process.env.GUARDIAN_SITE_URL || 'https://cyre.dev';
 export const QR_PCT = 0.14;
 /** Spec quiet-zone modules on each side (opaque white). zbar needs ≥4. */
 const QR_QUIET_MODULES = 4;
-/** ECC M keeps module count low; Q only if payload needs it. */
-const QR_ECC = 'M';
+/** ECC Q — phone cameras + partial occlusion / print loss still decode. */
+const QR_ECC = 'Q';
 
 /**
  * Absolute verify URL for QR payloads.
- * Uses `/verify/:serial` (live on cyre.dev today). A shorter `/v/:serial` alias
- * exists in vercel.json for after deploy, but QR must encode a URL that already
- * resolves — iPhone cameras hitting a 404 are worse than one extra path segment.
+ * Prefer the short `/v/:serial` alias (rewrites to /verify) so the QR stays on a
+ * lower version with larger modules. `/verify/:serial` still works in browsers.
  * @param {string} serial
  * @returns {string}
  */
 export function sealVerifyUrl(serial) {
   const s = String(serial || '').trim().toUpperCase();
-  return `${SITE}/verify/${encodeURIComponent(s)}`;
+  return `${SITE}/v/${encodeURIComponent(s)}`;
+}
+
+/**
+ * Phone-scannable QR plate (black modules on white, quiet ≥4).
+ * Used on badge/verify cards and /api/seal/:serial/qr.png — NOT the dime-sized
+ * seal ornament (scaled seal QR falls below ~3px/module and cameras never lock).
+ *
+ * @param {string} url
+ * @param {{ modulePx?: number, quiet?: number, ecc?: 'L'|'M'|'Q'|'H', pad?: number }} [opts]
+ * @returns {Promise<{ png: Buffer, width: number, height: number, modules: number, scale: number, quiet: number, url: string, dataPx: number }>}
+ */
+export async function renderScanQrPng(url, opts = {}) {
+  const modulePx = Math.max(3, Math.round(opts.modulePx ?? 5));
+  const quiet = Math.max(4, Math.round(opts.quiet ?? QR_QUIET_MODULES));
+  const ecc = opts.ecc || 'Q';
+  const pad = Math.max(0, Math.round(opts.pad ?? 0));
+  const matrix = await QRCode.create(String(url || ''), { errorCorrectionLevel: ecc });
+  const modules = matrix.modules;
+  const size = modules.size;
+  const cells = size + quiet * 2;
+  const scale = modulePx;
+  const field = cells * scale;
+  const dim = field + pad * 2;
+  const rgba = Buffer.alloc(dim * dim * 4, 255);
+  for (let i = 3; i < rgba.length; i += 4) rgba[i] = 255;
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (!modules.get(x, y)) continue;
+      const px0 = (x + quiet) * scale + pad;
+      const py0 = (y + quiet) * scale + pad;
+      for (let dy = 0; dy < scale; dy++) {
+        for (let dx = 0; dx < scale; dx++) {
+          const i = ((py0 + dy) * dim + (px0 + dx)) * 4;
+          rgba[i] = 0;
+          rgba[i + 1] = 0;
+          rgba[i + 2] = 0;
+          rgba[i + 3] = 255;
+        }
+      }
+    }
+  }
+  return {
+    png: encodePng(rgba, dim, dim),
+    rgba,
+    width: dim,
+    height: dim,
+    modules: size,
+    scale,
+    quiet,
+    url: String(url || ''),
+    dataPx: size * scale,
+    fieldPx: field
+  };
 }
 
 function assetPath(...parts) {

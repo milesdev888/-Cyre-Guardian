@@ -397,6 +397,14 @@
       "destination": "/api/badge-seal?serial=:serial&ui=1"
     },
     {
+      "source": "/api/seal/:serial/qr.png",
+      "destination": "/api/badge-seal?serial=:serial&qr=1"
+    },
+    {
+      "source": "/api/seal/:serial/qr",
+      "destination": "/api/badge-seal?serial=:serial&qr=1"
+    },
+    {
       "source": "/api/seal/:serial",
       "destination": "/api/badge-seal?serial=:serial"
     },
