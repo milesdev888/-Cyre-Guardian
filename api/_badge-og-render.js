@@ -821,7 +821,7 @@ export function renderVerifyOg(input) {
     drawCurvedSerial(rgba, input.serial || '', sealX, sealY, sealSize * 0.29, 3);
   }
 
-  // Phone-scannable QR plate (separate from dime seal).
+  // Phone-scannable QR plate — left column under dime seal (clear of project text).
   if (input.qrPng) {
     try {
       const qrImg = decodePng(input.qrPng);
