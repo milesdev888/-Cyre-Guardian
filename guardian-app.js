@@ -300,6 +300,67 @@
     setInterval(tick, 30000);
   }
 
+
+  function initGuardianChat() {
+    var log = $('#ga-chat-log');
+    var form = $('#ga-chat-form');
+    var input = $('#ga-chat-input');
+    var send = $('#ga-chat-send');
+    if (!log || !form || !input || !send) return;
+    if (form.dataset.wired) return;
+    form.dataset.wired = '1';
+
+    var history = [];
+
+    function addMsg(text, who) {
+      var m = document.createElement('div');
+      m.className = 'ga-chat-msg ' + who;
+      m.textContent = text;
+      log.appendChild(m);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    addMsg("I'm Guardian. Ask me what I'm watching — patterns, not verdicts.", 'bot');
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var text = (input.value || '').trim();
+      if (!text) return;
+      input.value = '';
+      addMsg(text, 'user');
+      history.push({ role: 'user', content: text });
+      if (history.length > 12) history = history.slice(-12);
+      send.disabled = true;
+      fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ messages: history })
+      })
+        .then(function (r) {
+          if (!r.ok) throw new Error('bad');
+          return r.json();
+        })
+        .then(function (d) {
+          var reply =
+            (d && (d.reply || d.message || d.text)) ||
+            null;
+          if (!reply) throw new Error('empty');
+          history.push({ role: 'assistant', content: reply });
+          addMsg(reply, 'bot');
+        })
+        .catch(function () {
+          addMsg(
+            "I couldn't reach live chat just now. Try again in a moment — I'm still watching.",
+            'bot'
+          );
+        })
+        .finally(function () {
+          send.disabled = false;
+          input.focus();
+        });
+    });
+  }
+
   function wireNav() {
     document.querySelectorAll('[data-view]').forEach(function (el) {
       el.addEventListener('click', function () {
@@ -337,6 +398,7 @@
     buildDashboard();
     buildMoreSheet();
     wireNav();
+    initGuardianChat();
     initPulse();
     initFromHash();
   }
