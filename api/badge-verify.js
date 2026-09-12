@@ -172,10 +172,13 @@ export default async function handler(req, res) {
     stillQualifies,
     verifyUrl: `${SITE}/verify/${badge.serial}`,
     ogImage: withOgArtRev(`${SITE}/api/badge/og?serial=${encodeURIComponent(badge.serial)}&v=5`),
-    // Full-res RGBA (transparent + scannable QR). Indexed /og.png paints a black square.
+    // Full-res RGBA archive. On-page mark uses sealUrlUi (dime, no QR).
     sealUrl: withOgArtRev(`${SITE}/api/seal/${encodeURIComponent(badge.serial)}.png`),
-    // Tiny on-page thumb without QR (scan corners, etc.)
+    // Dime-sized on-page mark — no embedded QR (modules fall below phone lock after scale).
     sealUrlUi: withOgArtRev(`${SITE}/api/seal/${encodeURIComponent(badge.serial)}/ui.png`),
+    // Phone-scannable plate: black/white, quiet≥4, ECC Q, ≥5px/module.
+    qrUrl: withOgArtRev(`${SITE}/api/seal/${encodeURIComponent(badge.serial)}/qr.png`),
+    verifyShortUrl: `${SITE}/v/${badge.serial}`,
     paths: QUALIFY_PATHS,
     disclaimer: DISCLAIMER
   });
