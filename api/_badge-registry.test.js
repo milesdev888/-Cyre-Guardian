@@ -139,7 +139,7 @@ const sealEst = await renderOfficialSeal({
 assert.equal(sealEst[0], 137);
 
 // Full-res QR: hard 14% of seal width (252px on 1800)
-assert.equal(sealVerifyUrl(GENESIS_SERIAL), 'https://cyre.dev/verify/GRD-2026-00001');
+assert.equal(sealVerifyUrl(GENESIS_SERIAL), 'https://cyre.dev/v/GRD-2026-00001');
 const sealMeta = await renderOfficialSealWithMeta({
   serial: GENESIS_SERIAL,
   ca: GENESIS_MINT,
@@ -151,7 +151,7 @@ assert.ok(
   sealMeta.qr.qrDim >= Math.round(SEAL_CANVAS * 0.14),
   `QR module field must be ≥14% of ${SEAL_CANVAS}, got ${sealMeta.qr.qrDim}`
 );
-assert.match(sealMeta.qr.url, /\/verify\/GRD-2026-00001$/);
+assert.match(sealMeta.qr.url, /\/v\/GRD-2026-00001$/);
 
 // OG seal: ~1024px indexed PNG under 300KB — QR omitted (unscannable at that size)
 const sealOg = await renderOfficialSealOg({

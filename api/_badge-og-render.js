@@ -15,7 +15,8 @@ import zlib from 'node:zlib';
 
 const W = 1200;
 const H = 630;
-const SEAL_DISPLAY = 320; // on-card diameter (~2.4× from 768px asset)
+/** Dime-sized mark on the card (~18% of short edge) — ornament only, not the scan target. */
+const SEAL_DISPLAY = 112;
 
 function crc32(buf) {
   let c = ~0;
@@ -500,11 +501,14 @@ function sampleBilinear(src, sw, sh, fx, fy) {
 /**
  * Straight-alpha over-composite of src image onto dst canvas, scaled to dw×dh
  * and centered at (cx,cy).
- * @param {{ keyBlack?: boolean }} [opts] keyBlack treats near-black src as transparent (for seal-on-OG)
+ * @param {{ keyBlack?: boolean, preservePlate?: boolean }} [opts]
+ *   keyBlack — near-black src as transparent (seal-on-OG).
+ *   preservePlate — keep near-white (QR quiet zone); required for scannable QR blits.
  */
 export function blitImage(dst, srcImg, cx, cy, dw, dh, opts = {}) {
   const { rgba: src, width: sw, height: sh } = srcImg;
   const keyBlack = Boolean(opts.keyBlack);
+  const preservePlate = Boolean(opts.preservePlate);
   const x0 = Math.round(cx - dw / 2);
   const y0 = Math.round(cy - dh / 2);
   for (let y = 0; y < dh; y++) {
@@ -519,7 +523,8 @@ export function blitImage(dst, srcImg, cx, cy, dw, dh, opts = {}) {
       if (sa < 1) continue;
       if (keyBlack && sr < 18 && sg < 18 && sb < 18) continue;
       // Safety: never blit opaque near-white fringe (legacy asset failure mode)
-      if (sa > 200 && sr > 230 && sg > 230 && sb > 230) continue;
+      // Skip for QR plates — white quiet zone must survive.
+      if (!preservePlate && sa > 200 && sr > 230 && sg > 230 && sb > 230) continue;
       const i = (dy * W + dx) * 4;
       const srcA = sa / 255;
       const dstA = dst[i + 3] / 255;
@@ -639,7 +644,9 @@ export function loadSealImage(revoked) {
  *  issuedAt?: string|null,
  *  liveGrade?: string|null,
  *  livePath?: string|null,
- *  checkedAt?: string|null
+ *  checkedAt?: string|null,
+ *  sealPng?: Buffer|null,
+ *  qrPng?: Buffer|null
  * }} input
  */
 export function renderBadgeOg(input) {
@@ -688,10 +695,10 @@ export function renderBadgeOg(input) {
   if (issued) drawText(rgba, issued, 72, 450, 2, 138, 154, 144);
   if (checked) drawText(rgba, checked, 72, 490, 2, 138, 154, 144);
 
-  // Ornate seal artwork — right-of-center; serial curved on the flat rim band
+  // Dime-sized seal mark (right) — ornament only; do not rely on embedded seal QR.
   const sealSize = SEAL_DISPLAY;
-  const sealX = Math.round(W * 0.74);
-  const sealY = Math.round(H / 2);
+  const sealX = Math.round(W * 0.88);
+  const sealY = Math.round(H * 0.28);
   if (input.sealPng) {
     try {
       const sealImg = decodePng(input.sealPng);
@@ -703,8 +710,21 @@ export function renderBadgeOg(input) {
   } else {
     const sealImg = loadSealImage(revoked || expired);
     if (sealImg) blitImage(rgba, sealImg, sealX, sealY, sealSize, sealSize);
-    // Legacy fallback only when static asset has no registry band
     drawCurvedSerial(rgba, input.serial || '', sealX, sealY, sealSize * 0.29, 3);
+  }
+
+  // Phone-scannable QR — separate plate, ≥3px/module at card resolution.
+  if (input.qrPng) {
+    try {
+      const qrImg = decodePng(input.qrPng);
+      const qrSize = Math.min(OG_QR_DISPLAY, Math.max(qrImg.width, qrImg.height));
+      const qrX = Math.round(W * 0.78);
+      const qrY = Math.round(H * 0.62);
+      blitImage(rgba, qrImg, qrX, qrY, qrSize, qrSize, { preservePlate: true });
+      drawText(rgba, 'SCAN TO VERIFY', Math.round(qrX - qrSize / 2), Math.round(qrY + qrSize / 2 + 14), 2, 201, 162, 39);
+    } catch {
+      /* omit decorative failure */
+    }
   }
 
   if (revoked) {
@@ -721,7 +741,9 @@ export const VERIFY_OG_H = H;
 /** Long-edge target for compressed verify OG (~1200×630, &lt;300KB). */
 export const VERIFY_OG_LONG_EDGE = 1200;
 export const VERIFY_OG_COLORS = 96;
-const VERIFY_SEAL_DISPLAY = 420; // seal-forward verify unfurl
+const VERIFY_SEAL_DISPLAY = 120; // dime-sized mark on verify unfurl; QR is separate
+/** Dedicated phone-scan QR diameter on OG cards (modulePx≥5 after quiet zone). */
+export const OG_QR_DISPLAY = 200;
 
 /**
  * Verify-page og:title + OG card headline.
@@ -751,7 +773,8 @@ export function formatVerifiedOgTitle(input = {}) {
  *  status: 'VALID'|'REVOKED'|'EXPIRED'|'NOT FOUND',
  *  name?: string|null,
  *  symbol?: string|null,
- *  sealPng?: Buffer|null
+ *  sealPng?: Buffer|null,
+ *  qrPng?: Buffer|null
  * }} input
  * @returns {Buffer} PNG
  */
@@ -781,8 +804,9 @@ export function renderVerifyOg(input) {
   drawText(rgba, headline.slice(0, 52), 64, 64, 2, 201, 162, 39);
 
   const sealSize = VERIFY_SEAL_DISPLAY;
-  const sealX = Math.round(W * 0.28);
-  const sealY = Math.round(H * 0.52);
+  // Dime mark upper-left; phone QR sits below with clear gap (must stay ≥~3px/module).
+  const sealX = Math.round(W * 0.22);
+  const sealY = Math.round(H * 0.38);
   if (input.sealPng) {
     try {
       const sealImg = decodePng(input.sealPng);
@@ -795,6 +819,29 @@ export function renderVerifyOg(input) {
     const sealImg = loadSealImage(revoked || expired || missing);
     if (sealImg) blitImage(rgba, sealImg, sealX, sealY, sealSize, sealSize);
     drawCurvedSerial(rgba, input.serial || '', sealX, sealY, sealSize * 0.29, 3);
+  }
+
+  // Phone-scannable QR plate (separate from dime seal).
+  if (input.qrPng) {
+    try {
+      const qrImg = decodePng(input.qrPng);
+      const qrSize = Math.min(OG_QR_DISPLAY, Math.max(qrImg.width, qrImg.height));
+      const qrX = Math.round(W * 0.22);
+      const qrY = Math.round(H * 0.72);
+      blitImage(rgba, qrImg, qrX, qrY, qrSize, qrSize, { preservePlate: true });
+      drawText(
+        rgba,
+        'SCAN TO VERIFY',
+        Math.round(qrX - qrSize / 2),
+        Math.round(qrY + qrSize / 2 + 14),
+        2,
+        201,
+        162,
+        39
+      );
+    } catch {
+      /* omit decorative failure */
+    }
   }
 
   const textX = 560;

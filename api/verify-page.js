@@ -135,11 +135,11 @@ export default async function handler(req, res) {
   .pulse.off { background: var(--dim); animation: none; } .pulse.bad { background: var(--bad); }
   @keyframes blink { 50% { opacity: 0.35; } }
   @media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
-  /* Transparent seal — full medallion + QR floats; no black square (same as hero crest). */
+  /* Dime-sized seal mark — ornament only; phone scan uses .qr-plate. */
   .seal {
     display: block;
-    width: min(240px, 42vw);
-    max-width: 240px;
+    width: min(88px, 18vw);
+    max-width: 88px;
     height: auto;
     aspect-ratio: 1;
     object-fit: contain;
@@ -149,9 +149,31 @@ export default async function handler(req, res) {
     padding: 0 !important;
     box-shadow: none !important;
     outline: 0;
-    filter: drop-shadow(0 8px 18px rgba(0,0,0,.45));
+    filter: drop-shadow(0 4px 10px rgba(0,0,0,.4));
   }
-  .seal.revoked { filter: grayscale(1) drop-shadow(0 8px 18px rgba(0,0,0,.45)); opacity: .85; }
+  .seal.revoked { filter: grayscale(1) drop-shadow(0 4px 10px rgba(0,0,0,.4)); opacity: .85; }
+  .qr-plate {
+    display: block;
+    margin-top: 14px;
+    width: min(200px, 52vw);
+    max-width: 200px;
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: contain;
+    background: #fff;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    image-rendering: pixelated;
+  }
+  .qr-plate[hidden] { display: none; }
+  .qr-caption {
+    margin-top: 8px;
+    font: 600 12px/1.3 "IBM Plex Sans", system-ui, sans-serif;
+    color: var(--gold);
+    letter-spacing: 0.04em;
+  }
+  .qr-caption[hidden] { display: none; }
   .path-pill {
     display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px;
     border: 1px solid var(--gold); color: var(--gold); font-size: 12px; font-weight: 600;
@@ -200,7 +222,9 @@ export default async function handler(req, res) {
         </div>
       </div>
       <div class="seal-slot">
-        <img id="seal" class="seal" alt="Guardian Verified seal" width="240" height="240" hidden />
+        <img id="seal" class="seal" alt="Guardian Verified seal" width="88" height="88" hidden />
+        <img id="qr" class="qr-plate" alt="Scan to verify" width="200" height="200" hidden />
+        <div id="qrCap" class="qr-caption" hidden>Scan to verify</div>
       </div>
     </div>
     <div class="card" id="out" hidden>
@@ -234,6 +258,8 @@ export default async function handler(req, res) {
   var vintage = document.getElementById('vintage');
   var stamp = document.getElementById('stamp');
   var seal = document.getElementById('seal');
+  var qr = document.getElementById('qr');
+  var qrCap = document.getElementById('qrCap');
   var shareX = document.getElementById('shareX');
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -256,6 +282,7 @@ export default async function handler(req, res) {
     if (!serial) return;
     input.value = serial;
     out.hidden = false; liveBox.hidden = true; stamp.classList.remove('on'); seal.hidden = true;
+    if (qr) qr.hidden = true; if (qrCap) qrCap.hidden = true;
     pathPill.hidden = true; vintage.hidden = true; vintage.innerHTML = '';
     shareX.hidden = true;
     status.className = 'status'; status.textContent = 'Looking up serial…';
@@ -278,9 +305,14 @@ export default async function handler(req, res) {
         ? 'Path earned: Established (Battle-Tested)'
         : ('Path earned: ' + pathText + (b.pathFamily === 'secured' ? ' (Secured)' : ''));
       seal.hidden = false;
-      // Full-res transparent PNG with QR — never indexed /og.png (black field).
-      seal.src = j.sealUrl || ('/api/seal/' + encodeURIComponent(b.serial) + '.png?v=float1');
+      // Dime UI seal (no QR) + separate phone-scannable plate (≥5px/module).
+      seal.src = j.sealUrlUi || ('/api/seal/' + encodeURIComponent(b.serial) + '/ui.png');
       seal.className = 'seal' + (st === 'VALID' ? '' : ' revoked');
+      if (qr) {
+        qr.hidden = false;
+        qr.src = j.qrUrl || ('/api/seal/' + encodeURIComponent(b.serial) + '/qr.png');
+      }
+      if (qrCap) qrCap.hidden = false;
       setShare(b.serial, b);
       var live = j.live;
       var est = (live && live.established) || b.established || null;

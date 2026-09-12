@@ -11,6 +11,8 @@ import {
   renderOfficialSealOg,
   renderOfficialSealUi,
   renderMissingSealPng,
+  renderScanQrPng,
+  sealVerifyUrl,
   SEAL_OG_SIZE,
   SEAL_UI_SIZE
 } from './_badge-seal-render.js';
@@ -27,6 +29,12 @@ function wantsUi(req) {
   return s === '1' || s === 'true' || s === 'ui';
 }
 
+function wantsQr(req) {
+  const q = (req.query && (req.query.qr || req.query.variant)) || '';
+  const s = String(q).toLowerCase();
+  return s === '1' || s === 'true' || s === 'qr';
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
@@ -36,7 +44,8 @@ export default async function handler(req, res) {
   }
 
   const og = wantsOg(req);
-  const ui = !og && wantsUi(req);
+  const qr = !og && wantsQr(req);
+  const ui = !og && !qr && wantsUi(req);
   let raw = String((req.query && (req.query.serial || req.query.id)) || '').trim();
   // Support /api/seal/GRD-2026-00001.png via rewrite query
   raw = raw.replace(/\.png$/i, '');
@@ -49,6 +58,7 @@ export default async function handler(req, res) {
     res.setHeader('X-Guardian-Seal', 'MISSING');
     if (og) res.setHeader('X-Guardian-Seal-Variant', 'og');
     if (ui) res.setHeader('X-Guardian-Seal-Variant', 'ui');
+    if (qr) res.setHeader('X-Guardian-Seal-Variant', 'qr');
     if (req.method === 'HEAD') return res.status(404).end();
     return res.status(404).end(png);
   }
@@ -61,6 +71,7 @@ export default async function handler(req, res) {
     res.setHeader('X-Guardian-Seal', 'MISSING');
     if (og) res.setHeader('X-Guardian-Seal-Variant', 'og');
     if (ui) res.setHeader('X-Guardian-Seal-Variant', 'ui');
+    if (qr) res.setHeader('X-Guardian-Seal-Variant', 'qr');
     if (req.method === 'HEAD') return res.status(404).end();
     return res.status(404).end(png);
   }
@@ -76,6 +87,22 @@ export default async function handler(req, res) {
     qualifyPath: badge.qualifyPath,
     grade: badge.grade || null
   };
+
+  if (qr) {
+    const plate = await renderScanQrPng(sealVerifyUrl(badge.serial), { modulePx: 5, ecc: 'Q', quiet: 4 });
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300, stale-while-revalidate=60');
+    res.setHeader('X-Guardian-Seal', status);
+    res.setHeader('X-Guardian-Seal-Serial', badge.serial);
+    res.setHeader('X-Guardian-Seal-Variant', 'qr');
+    res.setHeader('X-Guardian-Qr-Modules', String(plate.modules));
+    res.setHeader('X-Guardian-Qr-Module-Px', String(plate.scale));
+    res.setHeader('X-Guardian-Qr-Url', plate.url);
+    res.setHeader('Content-Length', String(plate.png.length));
+    if (req.method === 'HEAD') return res.status(200).end();
+    return res.status(200).end(plate.png);
+  }
+
   const png = og
     ? await renderOfficialSealOg(input)
     : ui
