@@ -1,6 +1,8 @@
 /* rwa-widget.js — CYRE 7 live RWA market band
    Upload to the repo root. Mounts itself into #rwa-feed, or falls back to
-   inserting directly after the hero section. Hides itself if the feed is down. */
+   inserting directly after the hero section.
+   Always keeps headers visible; shows an explicit empty/error state when
+   the feed is down or prices are missing (never silent blank rows). */
 
 (function () {
   'use strict';
@@ -16,29 +18,42 @@
     '.cyre-rwa-eyebrow{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#d8bc66}',
     '.cyre-rwa-live{display:inline-flex;align-items:center;gap:6px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:#8892a4}',
     '.cyre-rwa-live i{width:5px;height:5px;border-radius:50%;background:#3ddc84;display:block;animation:cyre-rwa-pulse 2.4s infinite}',
+    '.cyre-rwa-live.is-down i{background:#ff7a7a;animation:none;box-shadow:none}',
     '@keyframes cyre-rwa-pulse{0%{box-shadow:0 0 0 0 rgba(61,220,132,.45)}70%{box-shadow:0 0 0 6px rgba(61,220,132,0)}100%{box-shadow:0 0 0 0 rgba(61,220,132,0)}}',
     '.cyre-rwa-cap{display:flex;align-items:flex-end;gap:12px;margin-bottom:2px}',
     '.cyre-rwa-cap b{font-family:Cormorant Garamond,Inter,sans-serif;font-weight:700;font-size:clamp(28px,7vw,40px);letter-spacing:-.03em;line-height:1}',
     '.cyre-rwa-chg{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;padding-bottom:4px}',
     '.cyre-rwa-label{font-size:12px;color:#8892a4;margin:0 0 20px}',
+    '.cyre-rwa-status{font-size:13px;color:#8892a4;margin:0 0 14px;padding:10px 12px;border:1px solid rgba(255,122,122,.28);border-radius:10px;background:rgba(255,122,122,.06)}',
+    '.cyre-rwa-status.is-degraded{border-color:rgba(216,188,102,.28);background:rgba(216,188,102,.06)}',
     '.cyre-rwa-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}',
-    '#cyre-rwa table{width:100%;border-collapse:collapse;min-width:280px}',
-    '#cyre-rwa th{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#8892a4;text-align:right;font-weight:500;padding:0 0 8px;border-bottom:1px solid #1f2634}',
+    '#cyre-rwa table{width:100%;border-collapse:collapse;table-layout:fixed;min-width:320px}',
+    '#cyre-rwa col.c-asset{width:46%}#cyre-rwa col.c-price{width:27%}#cyre-rwa col.c-chg{width:27%}',
+    '#cyre-rwa th{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#8892a4;text-align:right;font-weight:500;padding:0 0 8px;border-bottom:1px solid #1f2634;white-space:nowrap}',
     '#cyre-rwa th:first-child{text-align:left}',
-    '#cyre-rwa td{padding:11px 0;font-size:13.5px;text-align:right;border-bottom:1px solid rgba(31,38,52,.55)}',
-    '#cyre-rwa td:first-child{text-align:left;font-weight:500}',
+    '#cyre-rwa td{padding:11px 0;font-size:13.5px;text-align:right;border-bottom:1px solid rgba(31,38,52,.55);vertical-align:middle}',
+    '#cyre-rwa td:first-child{text-align:left;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:10px}',
+    '#cyre-rwa td.cyre-rwa-num{font-variant-numeric:tabular-nums;white-space:nowrap}',
     '#cyre-rwa tr:last-child td{border-bottom:none}',
     '.cyre-rwa-sym{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;color:#8892a4;margin-left:7px}',
-    '.cyre-rwa-num{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}',
+    '.cyre-rwa-num{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#ede7d5}',
     '.cyre-rwa-up{color:#3ddc84}.cyre-rwa-down{color:#ff7a7a}',
+    '.cyre-rwa-muted{color:#8892a4}',
     '.cyre-rwa-foot{display:flex;justify-content:space-between;gap:12px;font-size:10.5px;color:#8892a4;margin:14px 0 0}',
     '.cyre-rwa-foot a{color:#8892a4;text-decoration:none;border-bottom:1px solid #1f2634}',
     '.cyre-rwa-foot a:hover{color:#ede7d5}',
     '@media (prefers-reduced-motion:reduce){#cyre-rwa,#cyre-rwa *{animation:none!important;transition:none!important}}'
   ].join('');
 
+  function asNum(n) {
+    if (n == null || n === '') return null;
+    var x = typeof n === 'number' ? n : Number(n);
+    return isFinite(x) ? x : null;
+  }
+
   function money(n) {
-    if (n == null) return '—';
+    n = asNum(n);
+    if (n == null) return '\u2014';
     if (n >= 1e12) return '$' + (n / 1e12).toFixed(2) + 'T';
     if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B';
     if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
@@ -46,14 +61,16 @@
   }
 
   function price(n) {
-    if (n == null) return '—';
+    n = asNum(n);
+    if (n == null) return '\u2014';
     if (n >= 1000) return '$' + n.toLocaleString('en-US', { maximumFractionDigits: 0 });
     if (n >= 1) return '$' + n.toFixed(2);
     return '$' + n.toFixed(4);
   }
 
   function pct(n) {
-    if (n == null) return { text: '—', cls: '' };
+    n = asNum(n);
+    if (n == null) return { text: '\u2014', cls: 'cyre-rwa-muted' };
     var s = (n >= 0 ? '+' : '\u2212') + Math.abs(n).toFixed(2) + '%';
     return { text: s, cls: n >= 0 ? 'cyre-rwa-up' : 'cyre-rwa-down' };
   }
@@ -80,35 +97,81 @@
     return el;
   }
 
+  function tableShell(rowsHtml) {
+    return (
+      '<div class="cyre-rwa-scroll"><table>' +
+        '<colgroup><col class="c-asset"><col class="c-price"><col class="c-chg"></colgroup>' +
+        '<thead><tr>' +
+          '<th scope="col">Asset</th>' +
+          '<th scope="col">Price</th>' +
+          '<th scope="col">24h</th>' +
+        '</tr></thead>' +
+        '<tbody>' + rowsHtml + '</tbody>' +
+      '</table></div>'
+    );
+  }
+
+  function assetRows(assets) {
+    return (assets || []).map(function (a) {
+      var p = pct(a.change24h);
+      var name = a.name || a.id || 'Unknown';
+      var sym = a.symbol ? '<span class="cyre-rwa-sym">' + a.symbol + '</span>' : '';
+      return (
+        '<tr><td>' + name + sym + '</td>' +
+        '<td class="cyre-rwa-num">' + price(a.price) + '</td>' +
+        '<td class="cyre-rwa-num ' + p.cls + '">' + p.text + '</td></tr>'
+      );
+    }).join('');
+  }
+
+  function hasAnyPrice(assets) {
+    return (assets || []).some(function (a) { return asNum(a && a.price) != null; });
+  }
+
   function render(el, d) {
     var s = d.sector || {};
     var c = pct(s.change24h);
+    var assets = d.assets || [];
+    var live = !!(d.ok && hasAnyPrice(assets) && !d.stale);
+    var unavailable = !d.ok || !hasAnyPrice(assets);
+    var statusHtml = '';
 
-    var rows = (d.assets || []).map(function (a) {
-      var p = pct(a.change24h);
-      return '<tr><td>' + a.name + '<span class="cyre-rwa-sym">' + a.symbol + '</span></td>' +
-        '<td class="cyre-rwa-num">' + price(a.price) + '</td>' +
-        '<td class="cyre-rwa-num ' + p.cls + '">' + p.text + '</td></tr>';
-    }).join('');
+    if (unavailable) {
+      statusHtml =
+        '<p class="cyre-rwa-status" role="status">Market data unavailable' +
+        (d.reason ? ' (' + String(d.reason).replace(/_/g, ' ') + ')' : '') +
+        '. Retrying shortly.</p>';
+    } else if (d.degraded || d.stale) {
+      statusHtml =
+        '<p class="cyre-rwa-status is-degraded" role="status">Showing ' +
+        (d.stale ? 'cached' : 'partial') +
+        ' market data' +
+        (d.reason ? ' \u2014 ' + String(d.reason).replace(/_/g, ' ') : '') +
+        '.</p>';
+    }
+
+    var rows = unavailable && !assets.length
+      ? '<tr><td colspan="3" class="cyre-rwa-muted" style="text-align:left">No prices from CoinGecko right now.</td></tr>'
+      : assetRows(assets);
 
     el.innerHTML =
       '<div class="cyre-rwa-in">' +
         '<div class="cyre-rwa-head">' +
           '<span class="cyre-rwa-eyebrow">RWA market</span>' +
-          '<span class="cyre-rwa-live"><i></i> Live \u00b7 60s</span>' +
+          '<span class="cyre-rwa-live' + (live ? '' : ' is-down') + '"><i></i> ' +
+            (live ? 'Live \u00b7 60s' : (d.stale ? 'Cached' : 'Unavailable')) +
+          '</span>' +
         '</div>' +
+        statusHtml +
         (s.marketCap
           ? '<div class="cyre-rwa-cap"><b>' + money(s.marketCap) + '</b>' +
             '<span class="cyre-rwa-chg ' + c.cls + '">' + c.text + '</span></div>' +
             '<p class="cyre-rwa-label">Tokenized real-world asset market cap, 24h change</p>'
           : '') +
-        '<div class="cyre-rwa-scroll"><table>' +
-          '<thead><tr><th scope="col">Asset</th><th scope="col">Price</th><th scope="col">24h</th></tr></thead>' +
-          '<tbody>' + rows + '</tbody>' +
-        '</table></div>' +
+        tableShell(rows) +
         '<p class="cyre-rwa-foot">' +
           '<a href="https://www.coingecko.com" target="_blank" rel="noopener">Data by CoinGecko</a>' +
-          '<span>Updated ' + clock(d.updatedAt) + '</span>' +
+          '<span>' + (d.updatedAt ? 'Updated ' + clock(d.updatedAt) : '') + '</span>' +
         '</p>' +
       '</div>';
 
@@ -117,15 +180,24 @@
 
   function load(el) {
     fetch('/api/rwa', { cache: 'no-store' })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (!d || !d.ok || !d.assets || !d.assets.length) {
-          el.remove();
-          return;
+      .then(function (r) {
+        return r.json().then(function (d) {
+          return { httpOk: r.ok, d: d };
+        }, function () {
+          return { httpOk: false, d: { ok: false, reason: 'invalid_json', assets: [] } };
+        });
+      })
+      .then(function (pack) {
+        var d = pack.d || { ok: false, reason: 'empty_response', assets: [] };
+        if (!pack.httpOk && d.ok == null) d.ok = false;
+        if (!d.reason && (!d.ok || !hasAnyPrice(d.assets))) {
+          d.reason = d.ok ? 'empty_prices' : (d.message || 'feed_error');
         }
         render(el, d);
       })
-      .catch(function () { el.remove(); });
+      .catch(function () {
+        render(el, { ok: false, reason: 'network_error', assets: [] });
+      });
   }
 
   function init() {
