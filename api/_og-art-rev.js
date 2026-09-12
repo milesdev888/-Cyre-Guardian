@@ -3,7 +3,7 @@
 // X / Telegram unfurl caches refetch (they key on the full image URL).
 
 /** @type {string} Seal brightening + card art revision. Bump on material art changes. */
-export const OG_ART_REV = '4';
+export const OG_ART_REV = '5';
 
 /**
  * Append or replace `r=<OG_ART_REV>` on an absolute or root-relative image URL.
