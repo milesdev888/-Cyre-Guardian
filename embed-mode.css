@@ -24,3 +24,10 @@ html.embed-mode .wrap {
 html.embed-mode .hero {
   padding-top: 8px !important;
 }
+
+/* Cobra LIVE FAB belongs to the App shell when embedded — never cover page copy. */
+html.embed-mode #gp-root,
+html.embed-mode #gp-fab,
+html.embed-mode #gp-panel {
+  display: none !important;
+}

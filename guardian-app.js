@@ -34,11 +34,13 @@
   ];
 
   var MORE_ITEMS = [
+    { id: 'score', label: 'Score', hint: 'Grade' },
+    { id: 'passport', label: 'Passport', hint: 'Profile' },
+    { id: 'forensics', label: 'Forensics', hint: 'Board' },
+    { id: 'oracle', label: 'Oracle Pulse', hint: 'Feeds' },
+    { id: 'signals', label: 'Signals', hint: 'Hits' },
     { id: 'cortex', label: 'Neural Cortex', hint: 'Desks' },
     { id: 'tokenomics', label: 'Tokenomics', hint: '$C7' },
-    { id: 'roadmap', label: 'Roadmap', hint: 'Plan' },
-    { id: 'airdrop', label: 'Airdrop', hint: '3M' },
-    { id: 'guardian', label: 'Guardian Chat', hint: 'Ask' },
   ];
 
   var state = { view: 'home', context: '' };
