@@ -11,9 +11,9 @@
   }
 
   // AI vibe layer (theme + Tools nav + Guardian pop-out + core bolt-ons)
-  if (!document.querySelector('script[src="/ai-vibe-loader.js"]')){
+  if (!document.querySelector('script[src*="/ai-vibe-loader.js"]')){
     var av = document.createElement('script');
-    av.src = '/ai-vibe-loader.js';
+    av.src = '/ai-vibe-loader.js?v=solid-bg1';
     av.defer = true;
     (document.body || document.documentElement).appendChild(av);
   }

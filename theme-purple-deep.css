@@ -111,3 +111,22 @@ body::after {
 .chip.live {
   border-color: rgba(95, 191, 122, 0.4) !important;
 }
+
+/* solid-bg1 — flat forest, no purple wash */
+body{
+  background:#0a0f0a !important;
+  background-image:none !important;
+}
+body::before,
+body::after{
+  display:none !important;
+  content:none !important;
+  background:none !important;
+}
+.hero::before,
+.hero::after{
+  display:none !important;
+  content:none !important;
+  background:none !important;
+}
+#cy-ai-mesh{display:none !important}

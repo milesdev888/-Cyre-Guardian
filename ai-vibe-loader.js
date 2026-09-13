@@ -17,18 +17,19 @@
     s.defer = true;
     (document.body || document.documentElement).appendChild(s);
   }
-  onceLink('cy-ai-vibe', '/theme-ai-vibe.css');
-  onceLink('cy-purple-deep', '/theme-purple-deep.css');
+  onceLink('cy-ai-vibe', '/theme-ai-vibe.css?v=solid-bg1');
+  onceLink('cy-purple-deep', '/theme-purple-deep.css?v=solid-bg1');
   function boot() {
     // Core bolt-ons (may be missing after index restores)
     onceScript('cy-rwa-widget', '/rwa-widget.js');
-    onceScript('cy-vortex', '/vortex.js?v=restore-original');
+    // vortex mesh retired — no-op scrub only (kills cached purple dots)
+    onceScript('cy-vortex', '/vortex.js?v=solid-bg1');
     onceScript('cy-guardian-voice', '/guardian-voice.js');
     onceScript('cy-access-form', '/access-form.js');
-    // AI vibe layer
+    // AI vibe layer (no purple hero bloom)
     onceScript('cy-nav-tools', '/nav-tools.js');
     onceScript('cy-guardian-popout', '/guardian-popout.js');
-    onceScript('cy-ai-presence', '/ai-presence.js');
+    onceScript('cy-ai-presence', '/ai-presence.js?v=solid-bg1');
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
