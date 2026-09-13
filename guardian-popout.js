@@ -1,16 +1,33 @@
 (function () {
   'use strict';
-  if (document.getElementById('gp-fab')) return;
+  // Skip inside Guardian App iframes — App already owns Talk-to-Guardian chrome.
+  // Mounting here made the FAB look "page-dependent" and cover timeline/treasury.
+  var params = new URLSearchParams(location.search || '');
+  var embedded = params.get('embed') === '1' || window.self !== window.top ||
+    (document.documentElement && document.documentElement.classList.contains('embed-mode'));
+  if (embedded) return;
+  if (document.getElementById('gp-fab') || document.getElementById('gp-root')) return;
+
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   var openedOnce = false;
   var panel = null;
   var fab = null;
+  var root = null;
   var video = null;
   var unmuted = false;
+
   var css = document.createElement('style');
   css.id = 'gp-style';
   css.textContent =
-    '#gp-fab{position:fixed;right:22px;bottom:22px;z-index:9500;width:64px;height:64px;border-radius:50%;' +
+    /* Portal host: fixed to the viewport (html), never a transformed page wrapper. */
+    '#gp-root{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9500}' +
+    '#gp-root > *{pointer-events:auto}' +
+    'html.embed-mode #gp-root{display:none!important}' +
+    /* Reserve bottom space so body copy / CoinGecko never sit under the FAB. */
+    'html.gp-fab-on,html.gp-fab-on body{padding-bottom:max(88px,calc(72px + env(safe-area-inset-bottom,0px)))!important}' +
+    '#gp-fab{position:absolute;right:max(16px,env(safe-area-inset-right,0px));' +
+    'bottom:max(16px,env(safe-area-inset-bottom,0px));' +
+    'z-index:2;width:64px;height:64px;border-radius:50%;' +
     'padding:0;border:2px solid rgba(216,188,102,.55);background:transparent;cursor:pointer;overflow:visible;' +
     'box-shadow:0 0 0 2px rgba(216,188,102,.25),0 0 28px rgba(216,188,102,.4),0 0 48px rgba(216,188,102,.22);' +
     'transition:transform .2s,box-shadow .2s}' +
@@ -24,8 +41,9 @@
     'font:700 9px JetBrains Mono,ui-monospace,monospace;letter-spacing:.14em;color:#d8bc66;' +
     'background:rgba(10,15,10,.85);padding:2px 7px;border-radius:999px;border:1px solid rgba(216,188,102,.35)}' +
     '@keyframes gp-pulse-ring{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.6);opacity:0}}' +
-    '#gp-panel{position:fixed;right:22px;bottom:100px;z-index:9501;width:min(380px,calc(100vw - 28px));' +
-    'max-height:min(640px,calc(100vh - 120px));display:none;flex-direction:column;' +
+    '#gp-panel{position:absolute;right:max(16px,env(safe-area-inset-right,0px));' +
+    'bottom:max(96px,calc(88px + env(safe-area-inset-bottom,0px)));z-index:3;' +
+    'width:min(380px,calc(100vw - 28px));max-height:min(640px,calc(100vh - 120px));display:none;flex-direction:column;' +
     'background:rgba(10,15,10,.94);backdrop-filter:blur(20px) saturate(1.2);-webkit-backdrop-filter:blur(20px) saturate(1.2);' +
     'border:1px solid rgba(216,188,102,.28);border-radius:20px;' +
     'box-shadow:0 24px 60px -18px rgba(0,0,0,.9),0 0 32px rgba(216,188,102,.22),0 0 48px rgba(216,188,102,.12);' +
@@ -57,10 +75,14 @@
     '#gp-panel .gp-form button{background:linear-gradient(135deg,#d8bc66,#e6cc7e);color:#0a0f0a;border:0;' +
     'border-radius:999px;padding:0 16px;font:700 13px Inter,system-ui,sans-serif;cursor:pointer}' +
     '#gp-panel .gp-form button:disabled{opacity:.55;cursor:wait}' +
-    /* Phone: keep FAB clear of the hero Scan button (right side of scanbar). */
+    /* Phone: stay bottom-right (never left — left covered timeline/treasury). Lift above homepage scanbar when present. */
     '@media (max-width:720px){' +
-      '#gp-fab{right:auto;left:16px;bottom:max(16px,env(safe-area-inset-bottom,0px));width:56px;height:56px}' +
-      '#gp-panel{right:16px;left:16px;width:auto;bottom:92px;max-height:min(640px,calc(100vh - 110px))}' +
+      '#gp-fab{width:56px;height:56px;right:max(14px,env(safe-area-inset-right,0px));' +
+      'bottom:max(14px,env(safe-area-inset-bottom,0px))}' +
+      'body.has-scanbar #gp-fab{bottom:max(84px,calc(72px + env(safe-area-inset-bottom,0px)))}' +
+      '#gp-panel{left:max(14px,env(safe-area-inset-left,0px));right:max(14px,env(safe-area-inset-right,0px));width:auto;' +
+      'bottom:max(88px,calc(80px + env(safe-area-inset-bottom,0px)));max-height:min(640px,calc(100vh - 110px))}' +
+      'body.has-scanbar #gp-panel{bottom:max(150px,calc(140px + env(safe-area-inset-bottom,0px)))}' +
     '}' +
     '@media (prefers-reduced-motion:reduce){#gp-fab .gp-pulse::after{animation:none!important}#gp-fab,#gp-panel{transition:none!important}}';
   document.head.appendChild(css);
@@ -149,6 +171,16 @@
     if (input) setTimeout(function () { input.focus(); }, 40);
   }
   function mount() {
+    root = document.createElement('div');
+    root.id = 'gp-root';
+    root.setAttribute('aria-hidden', 'false');
+    // Host on <html> so no page transform/filter can retarget position:fixed.
+    document.documentElement.appendChild(root);
+    document.documentElement.classList.add('gp-fab-on');
+    if (document.querySelector('.scanbar, #scanbar, .hero-scan, [data-scanbar]')) {
+      document.body.classList.add('has-scanbar');
+    }
+
     fab = document.createElement('button');
     fab.id = 'gp-fab';
     fab.type = 'button';
@@ -159,10 +191,10 @@
       '<img src="/c7-cobra-256-transparent.png?v=c7t1" srcset="/c7-cobra-256-transparent.png?v=c7t1 1x, /c7-cobra-512-transparent.png?v=c7t1 2x" alt="" width="64" height="64">' +
       '<span class="gp-pulse" aria-hidden="true"></span>' +
       '<span class="gp-live">LIVE</span>';
-    document.body.appendChild(fab);
+    root.appendChild(fab);
+
     panel = document.createElement('aside');
     panel.id = 'gp-panel';
-    panel.className = 'gp-panel';
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', 'Guardian');
     panel.setAttribute('aria-hidden', 'true');
@@ -182,7 +214,7 @@
           '<button type="submit">Send</button>' +
         '</form>' +
       '</div>';
-    document.body.appendChild(panel);
+    root.appendChild(panel);
     video = panel.querySelector('video');
     var log = panel.querySelector('.gp-log');
     addMsg(log, "I'm Guardian. Ask me what I'm watching.", 'bot');
