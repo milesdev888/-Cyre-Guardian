@@ -69,6 +69,12 @@ footer{border-top:1px solid var(--line);padding:22px 0 40px;color:#6c7891;font-s
 .archive{margin:18px 0 0;padding:12px 14px;border-radius:10px;border:1px solid rgba(216,188,102,.4);background:rgba(216,188,102,.08);font-size:13.5px;line-height:1.5;color:#c8cde0}
 .archive strong{color:#e8ecf3;font-weight:600}
 .archive a{color:#d8bc66;font-weight:600}
+
+/* cortex-mesh1 — flat panel chrome; constellation is Cortex-only */
+html,body{background:var(--ink,#0a0f0a)!important}
+.hero{position:relative;background:transparent;z-index:1}
+.hero::before,.hero::after{content:none!important;display:none!important}
+#cy-ai-mesh{display:none!important}
 </style>
   <link rel="stylesheet" href="/theme-guardian.css?v=gw1">
 </head>
@@ -161,6 +167,6 @@ footer{border-top:1px solid var(--line);padding:22px 0 40px;color:#6c7891;font-s
   document.getElementById('more').textContent='\u2026 28 more vehicles, all settled. Guardian re-scores the lot on every new on-chain event.';
 })();
 </script>
-<script src="/ai-vibe-loader.js" defer></script>
+<script src="/ai-vibe-loader.js?v=cortex-mesh1" defer></script>
 </body>
 </html>

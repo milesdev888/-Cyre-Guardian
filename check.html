@@ -89,6 +89,12 @@ h1{font-family:var(--display);font-weight:700;font-size:clamp(26px,6vw,38px);lin
 .note{font-size:11.5px;color:var(--dim);line-height:1.65;margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
 .foot{padding:34px 0 48px;font-size:12px;color:var(--dim)}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* cortex-mesh1 — flat panel chrome; constellation is Cortex-only */
+html,body{background:var(--ink,#0a0f0a)!important}
+.hero{position:relative;background:transparent;z-index:1}
+.hero::before,.hero::after{content:none!important;display:none!important}
+#cy-ai-mesh{display:none!important}
 </style>
 <script>window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };</script>
 <script defer src="/_vercel/insights/script.js"></script>
@@ -226,6 +232,6 @@ input.addEventListener('keydown', function(e){ if (e.key === 'Enter') check(); }
 })();
 </script>
 <script defer src="/embed-mode.js"></script>
-<script src="/ai-vibe-loader.js" defer></script>
+<script src="/ai-vibe-loader.js?v=cortex-mesh1" defer></script>
 </body>
 </html>

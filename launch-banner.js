@@ -11,9 +11,9 @@
   }
 
   // AI vibe layer (theme + Tools nav + Guardian pop-out + core bolt-ons)
-  if (!document.querySelector('script[src="/ai-vibe-loader.js"]')){
+  if (!document.querySelector('script[src*="/ai-vibe-loader.js"]')){
     var av = document.createElement('script');
-    av.src = '/ai-vibe-loader.js';
+    av.src = '/ai-vibe-loader.js?v=cortex-mesh1';
     av.defer = true;
     (document.body || document.documentElement).appendChild(av);
   }
@@ -21,12 +21,12 @@
   var css = document.createElement('style');
   css.textContent =
     '#cy-banner{position:relative;overflow:hidden;isolation:isolate;' +
-      'background:radial-gradient(ellipse 70% 55% at 50% 40%,rgba(60,35,110,.28),transparent 62%),' +
-                 'radial-gradient(ellipse 50% 40% at 18% 80%,rgba(124,239,255,.06),transparent 55%),' +
-                 'linear-gradient(180deg,#0b0618 0%,#07080b 55%,#07080b 100%);' +
-      'border-top:1px solid rgba(196,181,253,.14);border-bottom:1px solid rgba(196,181,253,.14)}' +
+      'background:radial-gradient(ellipse 70% 55% at 50% 40%,rgba(216,188,102,.10),transparent 62%),' +
+                 'radial-gradient(ellipse 50% 40% at 18% 80%,rgba(95,191,122,.05),transparent 55%),' +
+                 'linear-gradient(180deg,#0d130d 0%,#0a0f0a 55%,#0a0f0a 100%);' +
+      'border-top:1px solid rgba(216,188,102,.14);border-bottom:1px solid rgba(216,188,102,.14)}' +
     '#cy-banner::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;' +
-      'background:radial-gradient(circle at 50% 0%,rgba(196,181,253,.08),transparent 42%)}' +
+      'background:radial-gradient(circle at 50% 0%,rgba(216,188,102,.06),transparent 42%)}' +
     '#cy-banner .cyb-in{position:relative;z-index:2;max-width:1180px;margin:0 auto;padding:80px 24px 64px;text-align:center;' +
       'opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s ease}' +
     '#cy-banner .cyb-in.is-in{opacity:1;transform:none}' +

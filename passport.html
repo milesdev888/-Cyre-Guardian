@@ -86,6 +86,12 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'JetBra
 .chip.touch{border-color:rgba(216,188,102,.4);color:var(--ice)}
 .chip.none{opacity:.55;color:var(--dim)}
 @media (prefers-reduced-motion:reduce){.load .scan{animation:none}}
+
+/* cortex-mesh1 — flat panel chrome; constellation is Cortex-only */
+html,body{background:var(--ink,#0a0f0a)!important}
+.hero{position:relative;background:transparent;z-index:1}
+.hero::before,.hero::after{content:none!important;display:none!important}
+#cy-ai-mesh{display:none!important}
 </style>
   <link rel="stylesheet" href="/theme-guardian.css?v=gf1">
 </head>
@@ -385,6 +391,6 @@ header span{color:var(--dim);font-size:12px;margin-left:auto;font-family:'JetBra
 })();
 </script>
 <script defer src="/embed-mode.js"></script>
-<script src="/ai-vibe-loader.js" defer></script>
+<script src="/ai-vibe-loader.js?v=cortex-mesh1" defer></script>
 </body>
 </html>
