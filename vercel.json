@@ -10,40 +10,100 @@
     },
     "api/verify-og.js": {
       "includeFiles": "brand/seals/**"
+    },
+    "api/authentic-pay.js": {
+      "maxDuration": 60
+    },
+    "api/authentic-jobs.js": {
+      "maxDuration": 60
+    },
+    "api/authentic-worker.js": {
+      "maxDuration": 60
+    },
+    "api/authentic-account.js": {
+      "maxDuration": 15
+    },
+    "api/authentic-image.js": {
+      "maxDuration": 15
+    },
+    "api/authentic-check.js": {
+      "maxDuration": 15
+    },
+    "api/authentic-revoke.js": {
+      "maxDuration": 15
     }
   },
   "headers": [
     {
       "source": "/token-metadata.json",
       "headers": [
-        { "key": "Content-Type", "value": "application/json; charset=utf-8" },
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET, HEAD, OPTIONS" },
-        { "key": "Cache-Control", "value": "public, max-age=60, must-revalidate" }
+        {
+          "key": "Content-Type",
+          "value": "application/json; charset=utf-8"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, HEAD, OPTIONS"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=60, must-revalidate"
+        }
       ]
     },
     {
       "source": "/c7-cobra-:size.png",
       "headers": [
-        { "key": "Content-Type", "value": "image/png" },
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }
+        {
+          "key": "Content-Type",
+          "value": "image/png"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, must-revalidate"
+        }
       ]
     },
     {
       "source": "/c7-cobra-:size-transparent.png",
       "headers": [
-        { "key": "Content-Type", "value": "image/png" },
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }
+        {
+          "key": "Content-Type",
+          "value": "image/png"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, must-revalidate"
+        }
       ]
     },
     {
       "source": "/(cyre-token-icon|cyre-token-ticker|cyre-token|guardian-c7-cobra)-:size.png",
       "headers": [
-        { "key": "Content-Type", "value": "image/png" },
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Cache-Control", "value": "public, max-age=300, must-revalidate" }
+        {
+          "key": "Content-Type",
+          "value": "image/png"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, must-revalidate"
+        }
       ]
     },
     {
@@ -288,6 +348,50 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/authentic",
+      "destination": "/authentic/index.html"
+    },
+    {
+      "source": "/authentic/",
+      "destination": "/authentic/index.html"
+    },
+    {
+      "source": "/authentic/check",
+      "destination": "/authentic/check.html"
+    },
+    {
+      "source": "/authentic/c/:serial",
+      "destination": "/authentic/check.html"
+    },
+    {
+      "source": "/api/authentic/account",
+      "destination": "/api/authentic-account"
+    },
+    {
+      "source": "/api/authentic/pay",
+      "destination": "/api/authentic-pay"
+    },
+    {
+      "source": "/api/authentic/jobs",
+      "destination": "/api/authentic-jobs"
+    },
+    {
+      "source": "/api/authentic/worker",
+      "destination": "/api/authentic-worker"
+    },
+    {
+      "source": "/api/authentic/check",
+      "destination": "/api/authentic-check"
+    },
+    {
+      "source": "/api/authentic/image",
+      "destination": "/api/authentic-image"
+    },
+    {
+      "source": "/api/authentic/revoke",
+      "destination": "/api/authentic-revoke"
+    },
     {
       "source": "/brand/guardian-wordmark.jpg",
       "destination": "/api/brand-asset?file=guardian-wordmark.jpg"

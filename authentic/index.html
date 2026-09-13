@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Guardian Authentic</title>
+  <meta name="description" content="Seal your handle to your wallet. $25 USDC on Base. Reissue free." />
+  <meta name="theme-color" content="#0a0f0a" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="/authentic/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/c7-cobra-256.png" />
+  <link rel="stylesheet" href="/authentic/authentic.css" />
+</head>
+<body class="ga-auth">
+  <div class="shell">
+    <header class="top">
+      <a class="brand" href="/authentic">
+        <img src="/c7-cobra-256.png" width="36" height="36" alt="" />
+        <span>Guardian <em>Authentic</em></span>
+      </a>
+      <nav>
+        <a href="/authentic/check">Check</a>
+        <a href="/">Cyre</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <p class="eyebrow">Wallet is the account</p>
+      <h1>Seal the handle to the key that owns it.</h1>
+      <p class="lede">No email. No password. Connect once, pay $25 USDC on Base, stamp your photo. Reissue is always free.</p>
+    </section>
+
+    <section class="card" id="step-connect">
+      <h2>1 · Connect</h2>
+      <p class="hint">Connecting wallet becomes the sole owner. On first connect, seal your handle to it.</p>
+      <div class="row">
+        <input id="handle" maxlength="32" placeholder="@handle" autocomplete="username" />
+        <input id="age" maxlength="40" placeholder="Account age (e.g. since 2018) — labeled user-supplied" />
+      </div>
+      <button type="button" class="btn primary" id="btn-connect">Connect wallet</button>
+      <p class="status" id="connect-status"></p>
+    </section>
+
+    <section class="card muted" id="step-pay" hidden>
+      <h2>2 · Pay $25 USDC on Base</h2>
+      <p class="hint">Same Base USDC rail as Cyre x402. One payment unlocks generation; reissue stays free.</p>
+      <button type="button" class="btn primary" id="btn-pay">Pay $25 USDC</button>
+      <p class="status" id="pay-status"></p>
+      <p class="mono" id="pay-tx" hidden></p>
+    </section>
+
+    <section class="card muted" id="step-seal" hidden>
+      <h2>3 · Seal a photo</h2>
+      <p class="hint">Handle comes from your account record — never typed here. QR stays ≥5px/module.</p>
+      <div class="row wrap">
+        <label class="field">Platform
+          <select id="platform">
+            <option value="x-banner">X banner · 1500×500</option>
+            <option value="x-avatar">X avatar · 400×400</option>
+            <option value="tg-banner">Telegram banner · 1280×640</option>
+            <option value="tg-avatar">Telegram avatar · 512×512</option>
+          </select>
+        </label>
+        <label class="field">Corner
+          <select id="corner">
+            <option value="top-right">Upper right</option>
+            <option value="top-left">Upper left</option>
+            <option value="bottom-right">Lower right</option>
+            <option value="bottom-left">Lower left</option>
+          </select>
+        </label>
+      </div>
+      <label class="file"><input type="file" id="photo" accept="image/png,image/jpeg" /><span>Choose photo</span></label>
+      <button type="button" class="btn primary" id="btn-seal" disabled>Queue seal</button>
+      <p class="status" id="seal-status"></p>
+      <div id="job-panel" class="job" hidden>
+        <div class="job-bar"><i></i></div>
+        <p id="job-note"></p>
+      </div>
+      <div id="result" class="result" hidden>
+        <img id="result-img" alt="Sealed output" />
+        <div class="result-actions">
+          <a class="btn" id="result-dl" download>Download</a>
+          <a class="btn ghost" id="result-check" target="_blank" rel="noopener">Open check page</a>
+          <button type="button" class="btn ghost danger" id="btn-revoke">Revoke serial</button>
+        </div>
+        <p class="warn" id="result-warn" hidden></p>
+      </div>
+    </section>
+
+    <section class="card soft" id="account-card" hidden>
+      <h2>Account</h2>
+      <dl class="meta" id="account-meta"></dl>
+      <p class="hint">Reissue: upload a new photo above. Prior serial becomes <strong>superseded</strong> automatically.</p>
+    </section>
+
+    <footer class="foot">
+      <span>Install on iOS via Share → Add to Home Screen.</span>
+      <button type="button" class="btn ghost" id="btn-ios-hint">How to install</button>
+    </footer>
+  </div>
+
+  <dialog id="ios-dialog">
+    <h3>Add to Home Screen</h3>
+    <ol>
+      <li>Open in Safari.</li>
+      <li>Tap Share.</li>
+      <li>Choose <strong>Add to Home Screen</strong>.</li>
+    </ol>
+    <button type="button" class="btn primary" id="ios-close">Got it</button>
+  </dialog>
+
+  <script type="module" src="/authentic/authentic.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/authentic/sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
