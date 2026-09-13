@@ -88,6 +88,27 @@ export async function getAccount(wallet) {
   return kvGet(accountKey(w));
 }
 
+/** Prefer durable record; if missing, rehydrate from session snapshot into store. */
+export async function getAccountForSession(sess) {
+  if (!sess || !sess.wallet) return null;
+  let acct = await getAccount(sess.wallet);
+  if (acct) return acct;
+  if (!sess.account || !sess.account.handle) return null;
+  return saveAccount({
+    wallet: sess.wallet,
+    handle: sess.account.handle,
+    accountAgeLabel: sess.account.accountAgeLabel || null,
+    accountAgeSource: sess.account.accountAgeSource || null,
+    registeredAt: sess.account.registeredAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    paidAt: sess.account.paidAt || null,
+    paymentTx: sess.account.paymentTx || null,
+    paymentNetwork: sess.account.paymentNetwork || null,
+    activeSerial: sess.account.activeSerial || null,
+    sealCount: sess.account.sealCount || 0
+  });
+}
+
 export async function saveAccount(account) {
   const w = normalizeWallet(account && account.wallet);
   if (!w) throw new Error('invalid_wallet');

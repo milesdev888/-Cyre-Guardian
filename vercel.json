@@ -11,6 +11,9 @@
     "api/verify-og.js": {
       "includeFiles": "brand/seals/**"
     },
+    "api/authentic-gateway.js": {
+      "maxDuration": 60
+    },
     "api/authentic-pay.js": {
       "maxDuration": 60
     },
@@ -357,40 +360,36 @@
       "destination": "/authentic/index.html"
     },
     {
-      "source": "/authentic/check",
-      "destination": "/authentic/check.html"
-    },
-    {
       "source": "/authentic/c/:serial",
-      "destination": "/authentic/check.html"
+      "destination": "/authentic/check?serial=:serial"
     },
     {
       "source": "/api/authentic/account",
-      "destination": "/api/authentic-account"
+      "destination": "/api/authentic-gateway?action=account"
     },
     {
       "source": "/api/authentic/pay",
-      "destination": "/api/authentic-pay"
+      "destination": "/api/authentic-gateway?action=pay"
     },
     {
       "source": "/api/authentic/jobs",
-      "destination": "/api/authentic-jobs"
+      "destination": "/api/authentic-gateway?action=jobs"
     },
     {
       "source": "/api/authentic/worker",
-      "destination": "/api/authentic-worker"
+      "destination": "/api/authentic-gateway?action=worker"
     },
     {
       "source": "/api/authentic/check",
-      "destination": "/api/authentic-check"
+      "destination": "/api/authentic-gateway?action=check"
     },
     {
       "source": "/api/authentic/image",
-      "destination": "/api/authentic-image"
+      "destination": "/api/authentic-gateway?action=image"
     },
     {
       "source": "/api/authentic/revoke",
-      "destination": "/api/authentic-revoke"
+      "destination": "/api/authentic-gateway?action=revoke"
     },
     {
       "source": "/brand/guardian-wordmark.jpg",

@@ -32,6 +32,20 @@ function status(el, text, ok) {
   if (ok === false) el.classList.add('err');
 }
 
+function rememberSession(data) {
+  if (data && data.session) {
+    state.session = data.session;
+    localStorage.setItem('ga_session', data.session);
+  }
+  if (data && data.durable === false) {
+    const w = $('durable-warn');
+    if (w) w.hidden = false;
+  } else if (data && data.durable === true) {
+    const w = $('durable-warn');
+    if (w) w.hidden = true;
+  }
+}
+
 function renderAccount(a) {
   state.account = a;
   if (!a) {
@@ -64,6 +78,7 @@ function renderAccount(a) {
 async function refreshAccount() {
   if (!state.session) return;
   const { res, data } = await api('/api/authentic/account');
+  rememberSession(data);
   if (res.ok && data.account) renderAccount(data.account);
 }
 
@@ -143,8 +158,7 @@ async function connect() {
       status(el, loginRes.data.error || 'Login failed', false);
       return;
     }
-    state.session = loginRes.data.session;
-    localStorage.setItem('ga_session', state.session);
+    rememberSession(loginRes.data);
     renderAccount(loginRes.data.account);
     status(el, 'Connected as @' + loginRes.data.account.handle, true);
   } catch (e) {
@@ -183,6 +197,7 @@ async function pay() {
         status(el, data.error || data.detail || 'Payment failed', false);
         return;
       }
+      rememberSession(data);
       status(el, data.alreadyPaid ? 'Already unlocked.' : 'Paid — generation unlocked.', true);
       if (data.paymentTx) {
         txEl.hidden = false;
@@ -203,6 +218,7 @@ async function pay() {
         status(el, data.error || data.detail || 'Payment failed', false);
         return;
       }
+      rememberSession(data);
       status(el, data.alreadyPaid ? 'Already unlocked.' : 'Paid.', true);
       if (data.paymentTx) {
         txEl.hidden = false;
@@ -321,6 +337,7 @@ async function queueSeal() {
       return;
     }
 
+    rememberSession(data);
     const jobId = data.job.id;
     if (data.job.status === 'done') {
       const poll = await api('/api/authentic/jobs?id=' + encodeURIComponent(jobId));

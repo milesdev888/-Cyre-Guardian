@@ -45,10 +45,25 @@ export function verifyWalletSignature({ wallet, message, signature }) {
   }
 }
 
-export function issueSession(wallet, ttlSec = 60 * 60 * 24 * 14) {
+/** Session carries a compact account snapshot so preview /tmp isolates can rehydrate. */
+export function issueSession(wallet, account = null, ttlSec = 60 * 60 * 24 * 14) {
   const w = normalizeWallet(wallet);
+  const snap = account
+    ? {
+        h: account.handle || null,
+        age: account.accountAgeLabel || null,
+        ages: account.accountAgeSource || null,
+        reg: account.registeredAt || null,
+        paid: account.paidAt || null,
+        ptx: account.paymentTx || null,
+        pnet: account.paymentNetwork || null,
+        ser: account.activeSerial || null,
+        n: account.sealCount || 0
+      }
+    : null;
+  // snap fields mirror store account record for /tmp rehydrate on preview
   const body = Buffer.from(
-    JSON.stringify({ w, exp: Math.floor(Date.now() / 1000) + ttlSec })
+    JSON.stringify({ w, exp: Math.floor(Date.now() / 1000) + ttlSec, a: snap })
   ).toString('base64url');
   const mac = crypto.createHmac('sha256', secret()).update(body).digest('base64url');
   return `${body}.${mac}`;
@@ -65,7 +80,23 @@ export function readSession(token) {
     const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
     if (!payload.exp || payload.exp < Math.floor(Date.now() / 1000)) return null;
     const w = normalizeWallet(payload.w);
-    return w ? { wallet: w } : null;
+    if (!w) return null;
+    const snap = payload.a || null;
+    const account = snap
+      ? {
+          wallet: w,
+          handle: snap.h,
+          accountAgeLabel: snap.age,
+          accountAgeSource: snap.ages,
+          registeredAt: snap.reg,
+          paidAt: snap.paid,
+          paymentTx: snap.ptx,
+          paymentNetwork: snap.pnet,
+          activeSerial: snap.ser,
+          sealCount: snap.n || 0
+        }
+      : null;
+    return { wallet: w, account };
   } catch {
     return null;
   }

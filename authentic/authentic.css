@@ -113,7 +113,24 @@ body.ga-auth {
 .result { margin-top: 16px; }
 .result img { width: 100%; max-width: 520px; border-radius: 12px; border: 1px solid var(--line); display: block; }
 .result-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-.warn { color: var(--warn); font-size: 13px; }
+.warn {
+  color: var(--warn);
+  font-size: 13px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(224,168,74,.35);
+  border-radius: 10px;
+  background: rgba(224,168,74,.08);
+  line-height: 1.45;
+}
+#durable-warn {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(224,168,74,.35);
+  border-radius: 10px;
+  background: rgba(224,168,74,.08);
+  line-height: 1.45;
+}
 
 .meta { margin: 0; display: grid; grid-template-columns: 120px 1fr; gap: 8px 12px; font-size: 13.5px; }
 .meta dt { color: var(--muted); }

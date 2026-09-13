@@ -1,15 +1,16 @@
 // api/authentic-jobs.js
 
 import {
-  getAccount,
+  getAccountForSession,
   enqueueJob,
   getJob,
   getSeal,
   normalizeWallet
 } from './_authentic-store.js';
-import { cors, readJson, sessionFromReq } from './_authentic-auth.js';
+import { cors, readJson, sessionFromReq, issueSession } from './_authentic-auth.js';
 import { PLATFORMS, CORNERS } from './_authentic-compose.js';
 import { processOneJob } from './_authentic-worker.js';
+import { isDurableRedis } from './_redis.js';
 
 export const config = { maxDuration: 60 };
 
@@ -81,13 +82,20 @@ export default async function handler(req, res) {
   const wallet = (sess && sess.wallet) || normalizeWallet(body.wallet);
   if (!wallet) return res.status(401).json({ ok: false, error: 'auth_required' });
 
-  const acct = await getAccount(wallet);
-  if (!acct) return res.status(404).json({ ok: false, error: 'not_registered' });
+  const acct = await getAccountForSession(sess || { wallet, account: null });
+  if (!acct) {
+    return res.status(404).json({
+      ok: false,
+      error: 'not_registered',
+      durable: isDurableRedis()
+    });
+  }
   if (!acct.paidAt) {
     return res.status(402).json({
       ok: false,
       error: 'payment_required',
-      detail: 'Pay $25 USDC on Base once to unlock seal generation. Reissue stays free after that.'
+      detail: 'Pay $25 USDC on Base once to unlock seal generation. Reissue stays free after that.',
+      durable: isDurableRedis()
     });
   }
 
@@ -122,5 +130,16 @@ export default async function handler(req, res) {
   }
 
   const fresh = await getJob(job.id);
-  return res.status(202).json({ ok: true, job: publicJob(fresh || job), worker: kick });
+  let sessionOut = null;
+  if (sess && sess.wallet) {
+    const latest = await getAccountForSession(sess);
+    if (latest) sessionOut = issueSession(wallet, latest);
+  }
+  return res.status(202).json({
+    ok: true,
+    job: publicJob(fresh || job),
+    worker: kick,
+    session: sessionOut,
+    durable: isDurableRedis()
+  });
 }

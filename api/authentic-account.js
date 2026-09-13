@@ -2,6 +2,7 @@
 
 import {
   getAccount,
+  getAccountForSession,
   getOrCreateAccount,
   normalizeHandle,
   normalizeWallet
@@ -15,6 +16,7 @@ import {
   issueSession,
   sessionFromReq
 } from './_authentic-auth.js';
+import { isDurableRedis } from './_redis.js';
 
 export const config = { maxDuration: 15 };
 
@@ -47,9 +49,14 @@ export default async function handler(req, res) {
     if (sess && qWallet && sess.wallet !== qWallet) {
       return res.status(403).json({ ok: false, error: 'wallet_mismatch' });
     }
-    const acct = await getAccount(wallet);
+    const acct = sess ? await getAccountForSession(sess) : await getAccount(wallet);
     if (!acct) return res.status(404).json({ ok: false, error: 'not_registered' });
-    return res.status(200).json({ ok: true, account: publicAccount(acct) });
+    return res.status(200).json({
+      ok: true,
+      account: publicAccount(acct),
+      durable: isDurableRedis(),
+      session: sess ? issueSession(acct.wallet, acct) : undefined
+    });
   }
 
   if (req.method !== 'POST') {
@@ -93,8 +100,9 @@ export default async function handler(req, res) {
     }
     return res.status(200).json({
       ok: true,
-      session: issueSession(wallet),
-      account: publicAccount(acct)
+      session: issueSession(wallet, acct),
+      account: publicAccount(acct),
+      durable: isDurableRedis()
     });
   }
 
