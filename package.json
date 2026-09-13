@@ -11,7 +11,7 @@
     "redis": "^4.7.1"
   },
   "scripts": {
-    "test:badge": "node api/_badge-registry.test.js && node api/_badge-seal-qr.test.js",
+    "test:badge": "node api/_badge-registry.test.js && node api/_badge-seal-qr.test.js && node api/_badge-scan-qr.test.js",
     "test:badge-order": "node api/_badge-order.test.js && node scripts/badge-order-forbidden-words.test.js",
     "test:badge-name-screen": "node api/_badge-name-screen.test.js"
   }

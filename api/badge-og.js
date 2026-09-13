@@ -4,7 +4,7 @@
 import { getBadgeBySerial, normalizeSerial } from './_badge-registry.js';
 import { recheckIssuedPath, pathLabel, pathFamily, pathMark } from './_badge-qualify.js';
 import { renderBadgeOg, formatUtc } from './_badge-og-render.js';
-import { renderOfficialSeal } from './_badge-seal-render.js';
+import { renderOfficialSeal, renderScanQrPng, sealVerifyUrl } from './_badge-seal-render.js';
 
 const SCAN_BASE = process.env.GUARDIAN_SCAN_URL || 'https://guardian-scan.onrender.com';
 const LIVE_TIMEOUT_MS = Number(process.env.BADGE_OG_LIVE_TIMEOUT_MS || 1800);
@@ -97,7 +97,9 @@ export default async function handler(req, res) {
   }
 
   let sealPng = null;
+  let qrPng = null;
   try {
+    // Dime-sized seal on the card — omit embedded QR (sub-3px modules after scale).
     sealPng = await renderOfficialSeal({
       serial: badge.serial,
       ca: badge.mint,
@@ -105,10 +107,21 @@ export default async function handler(req, res) {
       pathFamily: family,
       pathMark: pathMark(family || badge.qualifyPath),
       qualifyPath: badge.qualifyPath,
-      grade: liveGrade || badge.grade || null
+      grade: liveGrade || badge.grade || null,
+      includeQr: false
     });
   } catch {
     sealPng = null;
+  }
+  try {
+    const plate = await renderScanQrPng(sealVerifyUrl(badge.serial), {
+      modulePx: 5,
+      ecc: 'Q',
+      quiet: 4
+    });
+    qrPng = plate.png;
+  } catch {
+    qrPng = null;
   }
 
   const png = renderBadgeOg({
@@ -125,7 +138,8 @@ export default async function handler(req, res) {
     liveGrade,
     livePath,
     checkedAt,
-    sealPng
+    sealPng,
+    qrPng
   });
 
   res.setHeader('Content-Type', 'image/png');

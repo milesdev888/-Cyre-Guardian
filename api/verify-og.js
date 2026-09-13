@@ -6,7 +6,7 @@
 import { getBadgeBySerial, normalizeSerial } from './_badge-registry.js';
 import { pathMark, pathFamily } from './_badge-qualify.js';
 import { renderVerifyOg, VERIFY_OG_W, VERIFY_OG_H } from './_badge-og-render.js';
-import { renderOfficialSeal } from './_badge-seal-render.js';
+import { renderOfficialSeal, renderScanQrPng, sealVerifyUrl } from './_badge-seal-render.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -42,6 +42,7 @@ export default async function handler(req, res) {
   const family = badge.pathFamily || pathFamily(badge.qualifyPath);
 
   let sealPng = null;
+  let qrPng = null;
   try {
     sealPng = await renderOfficialSeal({
       serial: badge.serial,
@@ -51,11 +52,21 @@ export default async function handler(req, res) {
       pathMark: pathMark(family || badge.qualifyPath),
       qualifyPath: badge.qualifyPath,
       grade: badge.grade || null,
-      // Card scales the seal down — decorative QR would be unscannable.
+      // Dime-sized mark — decorative QR would be unscannable after scale.
       includeQr: false
     });
   } catch {
     sealPng = null;
+  }
+  try {
+    const plate = await renderScanQrPng(sealVerifyUrl(badge.serial), {
+      modulePx: 5,
+      ecc: 'Q',
+      quiet: 4
+    });
+    qrPng = plate.png;
+  } catch {
+    qrPng = null;
   }
 
   const png = renderVerifyOg({
@@ -63,7 +74,8 @@ export default async function handler(req, res) {
     name: badge.name || null,
     symbol: badge.symbol || null,
     status,
-    sealPng
+    sealPng,
+    qrPng
   });
 
   res.setHeader('Content-Type', 'image/png');
