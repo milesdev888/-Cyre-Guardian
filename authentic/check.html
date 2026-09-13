@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Check · Guardian Authentic</title>
+  <meta name="theme-color" content="#0a0f0a" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="/authentic/manifest.webmanifest" />
+  <link rel="stylesheet" href="/authentic/authentic.css" />
+</head>
+<body class="ga-auth check-page">
+  <div class="shell">
+    <header class="top">
+      <a class="brand" href="/authentic">
+        <img src="/c7-cobra-256.png" width="36" height="36" alt="" />
+        <span>Guardian <em>Authentic</em></span>
+      </a>
+      <nav>
+        <a href="/authentic">Dashboard</a>
+        <a href="/">Cyre</a>
+      </nav>
+    </header>
+
+    <section class="card">
+      <h1>Check a seal</h1>
+      <form id="check-form" class="row">
+        <input id="serial" placeholder="GA-2026-00001" autocomplete="off" required />
+        <button class="btn primary" type="submit">Check</button>
+      </form>
+    </section>
+
+    <section class="card" id="verdict" hidden>
+      <div id="status-banner" class="banner"></div>
+      <div class="check-grid">
+        <div>
+          <dl class="meta" id="check-meta"></dl>
+          <button type="button" class="btn ghost" id="btn-expand-qr">Show full QR</button>
+        </div>
+        <div class="thumb-wrap">
+          <img id="check-img" alt="Sealed image" hidden />
+          <button type="button" class="glyph" id="glyph-btn" title="Expand QR" aria-label="Expand QR">
+            <img src="/c7-cobra-256.png" width="48" height="48" alt="" />
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <dialog id="qr-dialog">
+    <img id="qr-full" alt="Full-size seal QR" />
+    <button type="button" class="btn primary" id="qr-close">Close</button>
+  </dialog>
+
+  <script type="module" src="/authentic/check.js"></script>
+</body>
+</html>
