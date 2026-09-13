@@ -1,4 +1,6 @@
-/* ai-vibe-loader.js — injects theme-ai-vibe.css + ensures nav/popout + core bolt-ons */
+/* ai-vibe-loader.js — theme + nav/popout + core bolt-ons.
+   Constellation mesh is Cortex-only (inline in cortex.html). This loader must
+   NOT mount vortex / ai-presence on tool pages. */
 (function () {
   'use strict';
   function onceLink(id, href) {
@@ -17,18 +19,16 @@
     s.defer = true;
     (document.body || document.documentElement).appendChild(s);
   }
-  onceLink('cy-ai-vibe', '/theme-ai-vibe.css');
-  onceLink('cy-purple-deep', '/theme-purple-deep.css');
+  onceLink('cy-ai-vibe', '/theme-ai-vibe.css?v=cortex-mesh1');
+  onceLink('cy-purple-deep', '/theme-purple-deep.css?v=cortex-mesh1');
   function boot() {
-    // Core bolt-ons (may be missing after index restores)
     onceScript('cy-rwa-widget', '/rwa-widget.js');
-    onceScript('cy-vortex', '/vortex.js?v=restore-original');
     onceScript('cy-guardian-voice', '/guardian-voice.js');
     onceScript('cy-access-form', '/access-form.js');
-    // AI vibe layer
     onceScript('cy-nav-tools', '/nav-tools.js');
     onceScript('cy-guardian-popout', '/guardian-popout.js');
-    onceScript('cy-ai-presence', '/ai-presence.js');
+    // Scrub any leftover mesh canvas from older cached vortex builds
+    onceScript('cy-vortex-scrub', '/vortex.js?v=cortex-mesh1');
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);

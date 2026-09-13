@@ -48,6 +48,12 @@ h1 span{color:var(--gold)}
 .p-next{--dot:#d8bc66}
 .p-explore{--dot:#9d8cff}
 footer{border-top:1px solid var(--line);padding:22px 0 44px;color:#6c7891;font-size:12.5px;line-height:1.65;margin-top:20px}
+
+/* cortex-mesh1 — flat panel chrome; constellation is Cortex-only */
+html,body{background:var(--ink,#0a0f0a)!important}
+.hero{position:relative;background:transparent;z-index:1}
+.hero::before,.hero::after{content:none!important;display:none!important}
+#cy-ai-mesh{display:none!important}
 </style>
   <link rel="stylesheet" href="/theme-guardian.css?v=gw1">
 </head>
@@ -114,6 +120,6 @@ footer{border-top:1px solid var(--line);padding:22px 0 44px;color:#6c7891;font-s
 </footer>
 </div>
 <script defer src="/embed-mode.js"></script>
-<script src="/ai-vibe-loader.js" defer></script>
+<script src="/ai-vibe-loader.js?v=cortex-mesh1" defer></script>
 </body>
 </html>
