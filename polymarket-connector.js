@@ -8,8 +8,8 @@
 //   CONNECT_SECRET         — long random string; part of the URL path so only Claude (and you) can call this
 //   PORT                   — provided by Render automatically
 
-const http = require('http');
-const crypto = require('crypto');
+import http from 'http';
+import crypto from 'crypto';
 
 const PORT = process.env.PORT || 10000;
 const SECRET = process.env.CONNECT_SECRET || '';
