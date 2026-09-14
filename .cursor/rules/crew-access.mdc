@@ -1,0 +1,32 @@
+---
+description: Crew access — role allowlist + echo-back before any write
+alwaysApply: true
+---
+
+# Crew access (executor binding)
+
+Before any file write, PR, or deploy-related action:
+
+1. Identify your **role** from the task prompt (`ship`, `guardian`,
+   `guardian-engineer`, `chief-of-staff`, `research`). If none is
+   stated and you cannot infer a single role, **refuse to act**.
+2. Read `config/crew/allowlists/<role>.yaml`.
+3. **Echo back** in the first reply (or before the first edit):
+
+```text
+ROLE: …
+REPO: …
+PATHS_WRITABLE: …
+PATHS_DENIED: …
+SETTINGS: none
+```
+
+4. If the echo does not match the task, stop.
+5. Do not write paths listed under `paths_denied` (especially
+   `vercel.json`, `package.json`, `.github/workflows/**`,
+   `config/crew/allowlists/**`).
+6. Do not change Vercel/Render **project settings**. Output Directory
+   is a setting — never set it.
+
+Full model: `docs/crew-access-model.md`.
+Task template: `config/crew/TASK_PROMPT_TEMPLATE.md`.

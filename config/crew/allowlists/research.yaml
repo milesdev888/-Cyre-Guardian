@@ -1,0 +1,28 @@
+# Role allowlist — Research
+# Research notes and docs only. No product code, no infra.
+
+role: research
+repos:
+  - milesdev888/-Cyre-Guardian
+paths_writable:
+  - docs/**
+  - REHEARSAL.md
+  - REHEARSAL_RESULTS.md
+  - CORTEX-SPEC.md
+  - SWAP-SPEC.md
+  - SKILL.md
+paths_denied:
+  - config/crew/allowlists/**
+  - vercel.json
+  - package.json
+  - package-lock.json
+  - .github/workflows/**
+  - api/**
+  - index.html
+  - "*.html"
+  - "*.js"
+  - "*.css"
+settings: none
+notes: >
+  Research writes documents. It does not ship site or API changes.
+  Anything outside docs requires a different role.

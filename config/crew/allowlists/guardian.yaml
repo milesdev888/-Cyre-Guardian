@@ -1,0 +1,30 @@
+# Role allowlist — Guardian
+# Persona, voice, and watcher surface. No infra.
+
+role: guardian
+repos:
+  - milesdev888/-Cyre-Guardian
+paths_writable:
+  - GUARDIAN.md
+  - guardian-brain.cjs
+  - mention-grader.cjs
+  - watcher.cjs
+  - bot-bridge.cjs
+  - api/chat.js
+  - guardian-popout.js
+  - guardian-voice.js
+  - guardian-head.js
+  - guardian-home-report.js
+  - ai-presence.js
+paths_denied:
+  - config/crew/allowlists/**
+  - vercel.json
+  - package.json
+  - package-lock.json
+  - .github/workflows/**
+  - api/_x402.js
+  - api/_redis.js
+settings: none
+notes: >
+  Guardian owns voice/persona and mention/watch cron sources. Does not
+  touch deploy config or shared payment/redis primitives.
