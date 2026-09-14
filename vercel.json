@@ -369,6 +369,30 @@
       "destination": "/api/badge-qualify"
     },
     {
+      "source": "/seal",
+      "destination": "/api/seal-app"
+    },
+    {
+      "source": "/api/seal-api",
+      "destination": "/api/seal-api"
+    },
+    {
+      "source": "/api/seal-image",
+      "destination": "/api/seal-image"
+    },
+    {
+      "source": "/s/:serial",
+      "destination": "/api/seal-check?serial=:serial"
+    },
+    {
+      "source": "/seal-sw.js",
+      "destination": "/seal-sw.js"
+    },
+    {
+      "source": "/seal-manifest.webmanifest",
+      "destination": "/seal-manifest.webmanifest"
+    },
+    {
       "source": "/order/:id",
       "destination": "/api/order-page?id=:id"
     },
