@@ -316,3 +316,15 @@ Vercel Analytics snippet on index.html (only check.html has it), stray root
   is confirmed firing. Point it at exact sections; never let it explore index.html.
 - **Founder** — merges, spends, posts. The only human in the loop, and the only one
   who can change §2.
+
+### 9.1 Crew access model (Cursor / bot executors)
+
+Connector scopes do **not** scope the work. Every crew task states a **role**;
+the executor re-reads `config/crew/allowlists/<role>.yaml` and **echoes back**
+repo + writable/denied paths before the first write. See
+`docs/crew-access-model.md` and `config/crew/TASK_PROMPT_TEMPLATE.md`.
+
+Roles: `chief-of-staff`, `guardian`, `guardian-engineer`, `ship`, `research`.
+Default deny. `settings: none` — no Vercel/Render project-setting changes
+(Output Directory, Root Directory, Build Command). Feature PRs that need
+`vercel.json` / `package.json` / `.github/workflows/**` stop for a human.

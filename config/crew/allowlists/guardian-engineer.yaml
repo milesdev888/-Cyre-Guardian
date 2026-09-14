@@ -1,0 +1,34 @@
+# Role allowlist — Guardian Engineer
+# Engineering on Guardian product surfaces. Still no project settings.
+
+role: guardian-engineer
+repos:
+  - milesdev888/-Cyre-Guardian
+paths_writable:
+  - api/**
+  - check.html
+  - watch.html
+  - passport.html
+  - score.html
+  - forensics.html
+  - signals.html
+  - oracle.html
+  - scan.html
+  - app.html
+  - app/**
+  - "*.js"
+  - "*.css"
+  - scripts/**
+  - docs/**
+paths_denied:
+  - config/crew/allowlists/**
+  - vercel.json
+  - package.json
+  - package-lock.json
+  - .github/workflows/**
+  - .nvmrc
+  - .node-version
+settings: none
+notes: >
+  Broader than Ship on API/tool pages. Same infra deny list. Feature
+  work that needs vercel.json or package.json changes stops for a human.

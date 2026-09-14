@@ -1,0 +1,45 @@
+# Role allowlist — Ship
+# Feature shipping on cyre.dev. Code only. No project settings.
+
+role: ship
+repos:
+  - milesdev888/-Cyre-Guardian
+paths_writable:
+  - index.html
+  - index-legacy.html
+  - app.html
+  - app/**
+  - check.html
+  - watch.html
+  - passport.html
+  - score.html
+  - forensics.html
+  - signals.html
+  - oracle.html
+  - tokenomics.html
+  - roadmap.html
+  - airdrop.html
+  - cortex.html
+  - monitor.html
+  - am.html
+  - "*.css"
+  - "*.js"
+  - brand/**
+  - public/**
+  - api/**
+  - docs/**
+paths_denied:
+  - config/crew/allowlists/**
+  - vercel.json
+  - package.json
+  - package-lock.json
+  - .github/workflows/**
+  - .nvmrc
+  - .node-version
+services:
+  - srv-dae3hrgu01pc73cv6peg   # guardian-scan
+settings: none
+notes: >
+  Ship may write product/UI/API code. Build config, dependency manifests,
+  and workflow files require a human. Never change Vercel/Render project
+  settings (Output Directory, Root Directory, Build Command, env).

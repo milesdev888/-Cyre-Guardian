@@ -1,0 +1,29 @@
+# Role allowlist — Chief of Staff
+# Spec upkeep, coordination docs, crew process. Narrow code writes.
+
+role: chief-of-staff
+repos:
+  - milesdev888/-Cyre-Guardian
+paths_writable:
+  - SPEC.md
+  - GUARDIAN.md
+  - docs/**
+  - config/crew/TASK_PROMPT_TEMPLATE.md
+  - config/crew/README.md
+  - REHEARSAL.md
+  - CORTEX-SPEC.md
+  - SWAP-SPEC.md
+  - SKILL.md
+paths_denied:
+  - config/crew/allowlists/**
+  - vercel.json
+  - package.json
+  - package-lock.json
+  - .github/workflows/**
+  - api/**
+  - index.html
+settings: none
+notes: >
+  Owns the constitution and crew process docs. Cannot edit allowlists
+  (paths_denied covers them). Cannot change site code or infra without
+  founder / a different role.
